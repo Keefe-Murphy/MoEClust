@@ -1,0 +1,22 @@
+Package: MoEClust
+Type: Package
+Date: 2017-08-09
+Title: Finite Gaussian Mixtures of Experts: Model-Based Clustering with Covariates
+Version: 0.1.0
+Authors@R: person("Keefe", "Murphy", email = "keefe.murphy@ucd.ie", role = c("aut", "cre"))
+Description: Fits finite Mixtures of Experts models with mclust family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various covariance parameterisations in the mclust family.
+Depends: R (>= 2.10)
+License: GPL (>=2)
+Encoding: UTF-8
+URL: https://cran.r-project.org/package=MoEClust
+BugReports: https://github.com/Keefe-Murphy/MoEClust
+LazyData: true
+Imports:
+    matrixStats,
+    mclust (>= 5.1),
+    mvnfast,
+    nnet,
+    stats
+Suggests: 
+    glmnet
+RoxygenNote: 6.0.1
