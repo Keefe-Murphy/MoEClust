@@ -17,25 +17,30 @@ MoE_dens(modelName, data, mus, sigs, log.pis = 0, logarithm = TRUE)
 
 \item{log.pis}{If covariates enter the gating network, an \code{nrow(data)} times k matrix of mixing proportions, otherwise a k-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
 
-\item{logarithm}{A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log densities by exponentiation.}
+\item{logarithm}{A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.}
 }
 \value{
-A list with two elements:
-\itemize{
-\item{\strong{dens} - }{A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions.}
-\item{\strong{norm} - }{A numeric vector giving the denominator in the density for each observation on the log-scale, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}, such that the sum of \code{norm} yields the log-likelihood.}
-}
+A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions.
 }
 \description{
-Computes densities of observations in parameterised MVN mixtures of experts.
+Computes densities (or log-densities) of observations in parameterised MVN mixtures of experts.
+}
+\note{
+This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities.
 }
 \examples{
 data(ais)
 hema  <- ais[,3:7]
-model <- MoE_clust(hema, G=2, gating= ~ ais$BMI, expert= ~ ais$sex)
+model <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, model="VVE")
 Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
                   mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+
+# Construct the Z matrix and compute the log-likelihood
+Estep <- MoE_estep(Dens)
+Z     <- Estep$Z
+sum(Z - model$Z) == 0
+Estep$loglik
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[matrixStats]{rowLogSumExps}}
+\code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}
 }

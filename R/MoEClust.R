@@ -4,7 +4,7 @@
 #' @section Usage:
 #' The most important function in the \pkg{MoEClust} package is: \code{\link{MoE_clust}}, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces.
 #'
-#' Other functions also exist, e.g. \code{\link{MoE_control}}, \code{\link{MoE_crit}}, and \code{\link{MoE_dens}}, which are all used within \code{\link{MoE_clust}} but are nonetheless made available for standalone use.
+#' Other functions also exist, e.g. \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_dens}}, and \code{\link{MoE_estep}}, which are all used within \code{\link{MoE_clust}} but are nonetheless made available for standalone use.
 #'
 #' @section Details:
 #' Package: MoEClust

@@ -8,7 +8,7 @@
 
 Fits finite Mixtures of Experts models with mclust family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various covariance parameterisations in the mclust family.
 
-The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, and `MoE_dens`, which are all used within `MoE_clust` but are nonetheless made available for standalone use.
+The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, and `MoE_estep`, which are all used within `MoE_clust` but are nonetheless made available for standalone use.
 
 To install the development version of the package type:
 

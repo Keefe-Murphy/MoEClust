@@ -78,5 +78,5 @@ get(gsub("\\\\..*", "", names(BICS)[which.max(BICS)]))$best.model
 }
 }
 \seealso{
-\code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_dens}}
+\code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}
 }

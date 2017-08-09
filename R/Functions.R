@@ -38,7 +38,7 @@
 #' \item{\strong{gating} - }{The \code{\link[nnet]{multinom}} coefficients of the \code{gating} network if \code{gating} covariates were supplied.}
 #' \item{\strong{expert} - }{The multivariate WLS coefficients of the \code{expert} network if \code{expert} covariates were supplied.}
 #' }
-#' @seealso \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_dens}}
+#' @seealso \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}
 #' @export
 #'
 #' @examples
@@ -89,6 +89,7 @@
     tol           <- control$tol[1]
     max.it        <- control$itmax[1]
     equal.pro     <- control$equalPro
+    control       <- control[-c(1, 2, length(control))]
     mod.fam       <- mclust.options("emModelNames")
     range.G       <- sort(unique(G))
     Gall          <- all(G  > 1)
@@ -166,6 +167,7 @@
       Z           <- Z.init   <- unmap(classes)
 
     # Initialise gating network
+      lpi         <- matrix(0, nrow=N, ncol=g)
       if(gate.g)  {
         g.init    <- multinom(gating, trace=FALSE)
        #g.init    <- glmnet::cv.glmnet(y=Z, x=model.matrix(gating)[,-1], family="multinomial", type.multinomial="grouped")
@@ -175,8 +177,8 @@
         gate.pen  <- length(coef(g.init))
        #gate.pen  <- sum(lengths(coef(g.init, s="lambda.1se")[-1]))
       } else      {
-        pis       <- if(equal.pro)     rep(1/g, g) else 1
-        lpi       <- matrix(if(equal.pro) log(pis) else 0, nrow=N, ncol=g)
+        pis       <- if(equal.pro) rep(1/g, g) else 1
+        lpi[,]    <- if(equal.pro)    log(pis) else 0
         gate.pen  <- ifelse(equal.pro, 0, g - 1)
       }
       if(exp.x)   {
@@ -204,9 +206,7 @@
           if(isTRUE(verbose))    cat(paste0("\t\t# Iterations: ", ifelse(FAIL, "stopped at ", ""), j, "\n"))
           next
         } else    {
-          normx   <- medensity$norm
-          densi   <- medensity$dens
-          Z       <- exp(sweep(densi, 1, normx, "-"))
+          Z       <- MoE_estep(medensity)$Z
           ll      <- c(0, -sqrt(.Machine$double.xmax))
           j       <- 2
           stopx   <- TRUE
@@ -256,11 +256,9 @@
             ll    <- c(ll, NA)
             break
           } else  {
-            normx <- medensity$norm
-            densi <- medensity$dens
-            Z     <- exp(sweep(densi, 1, normx, "-"))
-           #ll    <- c(ll, sum(Z * densi)) # complete log-likelihood
-            ll    <- c(ll, sum(normx))
+            Estep <- MoE_estep(medensity)
+            Z     <- Estep$Z
+            ll    <- c(ll, Estep$loglik)
             j     <- j + 1
             stopx <- abs((ll[j] - ll[j - 1])/(1 + ll[j])) >= tol && j < max.it
           }
@@ -270,10 +268,9 @@
       # Store values corresponding to the maximum BIC/ICL so far
         if(isTRUE(verbose))      cat(paste0("\t\t# Iterations: ", ifelse(FAIL, "stopped at ", ""), j, "\n"))
         classes   <- max.col(Z)
-        choose    <- MoE_crit(modelName=mod.type, loglik=ll[j], N=N, D=D, G=g, gate.pen=gate.pen, expert.pen=ifelse(exp.x, length(coef(fitE)), g * D), nn=tabulate(classes, nbins=g))[[1]]
-       #choose    <- MoE_crit(modelName=mod.type, loglik=ll[j], N=N, D=D, G=g, gate.pen=gate.pen, expert.pen=ifelse(exp.x, sum(lengths(e.fit)), g * D), nn=tabulate(classes, nbins=g))[[1]]
-        bics      <- choose$bic
-        icls      <- choose$icl
+        choose    <- MoE_crit(modelName=mod.type, loglik=ll[j], N=N, D=D, G=g, gate.pen=gate.pen, expert.pen=expert.pen, nn=tabulate(classes, nbins=g))
+        bics      <- choose["bic",]
+        icls      <- choose["icl",]
         j.x       <- ifelse(FAIL, NA, j)
         crit.t    <- switch(criterion, bic=bics, icl=icls)
         crit.t    <- ifelse(is.na(crit.t), -Inf, crit.t)
@@ -347,33 +344,35 @@
 
 #' Density for Parameterised MVN Mixture of Experts Models
 #'
-#' Computes densities of observations in parameterised MVN mixtures of experts.
+#' Computes densities (or log-densities) of observations in parameterised MVN mixtures of experts.
 #' @param modelName A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.
 #' @param data If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations and columns correspond to variables. If there are expert network covariates, this should be a list of length k containing matrices/data.frames of multivariate residuals for each component.
 #' @param mus The mean for each component. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a k-vector of means.
 #' @param sigs A list of length k of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.
 #' @param log.pis If covariates enter the gating network, an \code{nrow(data)} times k matrix of mixing proportions, otherwise a k-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.
-#' @param logarithm A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log densities by exponentiation.
+#' @param logarithm A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.
 #'
-#' @importFrom matrixStats "rowLogSumExps"
+#' @note This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities.
 #' @importFrom mvnfast "dmvn"
 #' @importFrom stats "dnorm"
 #' @importFrom utils "capture.output"
-#' @return A list with two elements:
-#' \itemize{
-#' \item{\strong{dens} - }{A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions.}
-#' \item{\strong{norm} - }{A numeric vector giving the denominator in the density for each observation on the log-scale, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}, such that the sum of \code{norm} yields the log-likelihood.}
-#' }
+#' @return A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions.
 #' @export
 #'
-#' @seealso \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[matrixStats]{rowLogSumExps}}
+#' @seealso \code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}
 #'
 #' @examples
 #' data(ais)
 #' hema  <- ais[,3:7]
-#' model <- MoE_clust(hema, G=2, gating= ~ ais$BMI, expert= ~ ais$sex)
+#' model <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, model="VVE")
 #' Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
 #'                   mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+#'
+#' # Construct the Z matrix and compute the log-likelihood
+#' Estep <- MoE_estep(Dens)
+#' Z     <- Estep$Z
+#' sum(Z - model$Z) == 0
+#' Estep$loglik
   MoE_dens        <- function(modelName, data, mus, sigs, log.pis = 0, logarithm = TRUE) {
     G             <- ifelse(is.matrix(mus),       ncol(mus),       length(mus))
     Gseq          <- seq_len(G)
@@ -403,7 +402,41 @@
       densi[which(check, arr.ind=TRUE)[1],]   <- rep(0, G)
     }
     densi         <- densi  + if(is.matrix(log.pis) || missing(log.pis)) log.pis else matrix(log.pis, nrow=N, ncol=G, byrow=TRUE)
-      return(list(dens = if(logarithm) densi else exp(densi), norm = rowLogSumExps(densi)))
+      if(logarithm)  densi    else exp(densi)
+  }
+
+#' Compute the Z matrix and log-likelihood for MoEClust models
+#'
+#' Takes the output from \code{\link{MoE_dens}} and computes the responsibility matrix Z, as well as the log-likelihood.
+#' @param Dens A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, typically obtained by \code{\link{MoE_dens}} but this is not necessary.
+#'
+#' @return A list containing two elements:
+#' \itemize{
+#' \item{\strong{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
+#' \item{\strong{Z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
+#' }
+#' @importFrom matrixStats "rowLogSumExps"
+#' @export
+#'
+#' @seealso \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}
+#'
+#' @examples
+#' data(ais)
+#' hema  <- ais[,3:7]
+#' model <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, model="VVE")
+#' Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
+#'                   mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+#'
+#' # Construct the Z matrix and compute the log-likelihood
+#' Estep <- MoE_estep(Dens)
+#' Z     <- Estep$Z
+#' sum(Z - model$Z) == 0
+#' Estep$loglik
+  MoE_estep       <- function(Dens) {
+    norm          <- rowLogSumExps(Dens)
+    Z             <- exp(sweep(Dens, 1, norm, "-"))
+   #ll            <- sum(Z * Dens)  # complete log-likelihood
+      return(list(loglik = sum(norm), Z = Z))
   }
 
 #' MoEClust BIC and ICL Model-Selection Criteria
@@ -421,7 +454,7 @@
 #'
 #' @details The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.
 #' @importFrom mclust "mclustModelNames" "nVarParams"
-#' @return A list containing the BIC for the given input arguments, and if \code{nn} is supplied, also the ICL. If a vector is supplied for \code{modelName} &/or \code{loglik}, this will be a list of lists.
+#' @return A simplified array containing the BIC (and if \code{nn} is supplied, also the ICL) for each of the given input arguments.
 #' @note In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
 #' @export
 #'
@@ -433,10 +466,17 @@
 #' MoE_crit(modelName=c("VVI", "VVE", "VVV"),
 #'          loglik=c(-4036.99, -3987.12, -3992.45),
 #'          N=120, D=8, G=3, nn=c(54, 38, 28))
+#'
+#' data(CO2data)
+#' model    <- MoE_clust(CO2data$CO2, G=2)
+#' (new.bic <- MoE_crit(modelName=model$best.model$modelName,
+#'                      loglik=max(model$log.likes), N=length(CO2data$CO2), D=1,
+#'                      G=model$best.model$G, nn=tabulate(model$classes))["bic",])
+#' identical(new.bic, unname(model$best.model$bic))
   MoE_crit        <- Vectorize(function(modelName, loglik, N, D, G, gate.pen = G - 1, expert.pen = G * D, nn = NULL, delta = 0.5) {
     bicx          <- 2 * loglik - (nVarParams(modelName, D, G) + expert.pen + gate.pen) * log(N)
-      return(list(bic = bicx, icl = if(!missing(nn)) bicx + ifelse(G == 1, 0, lgamma(G * delta) + sum(lgamma(nn + delta)) - G * lgamma(delta) - lgamma(N + G * delta))))
-  }, vectorize.args = c("modelName", "loglik"), SIMPLIFY=FALSE)
+      return(c(bic = bicx, icl = if(!missing(nn)) bicx + ifelse(G == 1, 0, lgamma(G * delta) + sum(lgamma(nn + delta)) - G * lgamma(delta) - lgamma(N + G * delta))))
+  }, vectorize.args = c("modelName", "loglik"), SIMPLIFY="array")
 
 #' Set control values for use with MoEClust
 #'

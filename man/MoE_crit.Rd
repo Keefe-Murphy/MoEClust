@@ -27,7 +27,7 @@ MoE_crit(modelName, loglik, N, D, G, gate.pen = G - 1, expert.pen = G * D,
 \item{delta}{Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.}
 }
 \value{
-A list containing the BIC for the given input arguments, and if \code{nn} is supplied, also the ICL. If a vector is supplied for \code{modelName} &/or \code{loglik}, this will be a list of lists.
+A simplified array containing the BIC (and if \code{nn} is supplied, also the ICL) for each of the given input arguments.
 }
 \description{
 Computes the BIC (Bayesian Information Criterion) and ICL (Integrated Complete Likelihood) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
@@ -42,6 +42,13 @@ In order to speed up repeated calls to the function inside \code{\link{MoE_clust
 MoE_crit(modelName=c("VVI", "VVE", "VVV"),
          loglik=c(-4036.99, -3987.12, -3992.45),
          N=120, D=8, G=3, nn=c(54, 38, 28))
+
+data(CO2data)
+model    <- MoE_clust(CO2data$CO2, G=2)
+(new.bic <- MoE_crit(modelName=model$best.model$modelName,
+                     loglik=max(model$log.likes), N=length(CO2data$CO2), D=1,
+                     G=model$best.model$G, nn=tabulate(model$classes))["bic",])
+identical(new.bic, unname(model$best.model$bic))
 }
 \references{
 Biernacki, C., Celeux, G., Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
