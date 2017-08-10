@@ -40,5 +40,8 @@ data(CO2data)
 res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=cont)
 }
 \seealso{
-\code{\link[mclust]{hc}}
+\code{\link{MoE_clust}}, \code{\link[mclust]{hc}}
+}
+\author{
+Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 }

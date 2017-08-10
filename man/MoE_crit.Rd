@@ -4,7 +4,7 @@
 \alias{MoE_crit}
 \title{MoEClust BIC and ICL Model-Selection Criteria}
 \usage{
-MoE_crit(modelName, loglik, N, D, G, gate.pen = G - 1, expert.pen = G * D,
+MoE_crit(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D,
   nn = NULL, delta = 0.5)
 }
 \arguments{
@@ -18,9 +18,9 @@ MoE_crit(modelName, loglik, N, D, G, gate.pen = G - 1, expert.pen = G * D,
 
 \item{G}{The number of components in the Gaussian mixture model used to compute \code{loglik}.}
 
-\item{gate.pen}{The number of parameters of the \emph{gating} network of the MoEClust model. Defaults to \code{G - 1}, which corresponds to no gating covariates. If covariates are included, this should be the number of coefficients in the fitted object. If there are no covariates and mixing proportions are further assumed to be present in equal proportion, \code{gate.pen} should be 0.}
+\item{gating.pen}{The number of parameters of the \emph{gating} network of the MoEClust model. Defaults to \code{G - 1}, which corresponds to no gating covariates. If covariates are included, this should be the number of regression coefficients in the fitted object. If there are no covariates and mixing proportions are further assumed to be present in equal proportion, \code{gating.pen} should be 0.}
 
-\item{expert.pen}{The number of parameters of the \emph{expert} network of the MoEClust model. Defaults to \code{G * D}, which corresponds to no expert covariates. If covariates are included, this should be the number of coefficients in the fitted object.}
+\item{expert.pen}{The number of parameters of the \emph{expert} network of the MoEClust model. Defaults to \code{G * D}, which corresponds to no expert covariates. If covariates are included, this should be the number of regression coefficients in the fitted object.}
 
 \item{nn}{A vector of length \code{G} which sums to \code{N} giving the number of observations in each component. If supplied the ICL is also computed and returned, otherwise only the BIC.}
 
@@ -33,7 +33,9 @@ A simplified array containing the BIC (and if \code{nn} is supplied, also the IC
 Computes the BIC (Bayesian Information Criterion) and ICL (Integrated Complete Likelihood) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
 }
 \details{
-The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.
+The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.\cr
+
+If \code{model} is an object of class \code{"MoEClust"}, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(model$gating)} and \code{sum(lengths(model$expert))}, respectively.
 }
 \note{
 In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
@@ -44,15 +46,18 @@ MoE_crit(modelName=c("VVI", "VVE", "VVV"),
          N=120, D=8, G=3, nn=c(54, 38, 28))
 
 data(CO2data)
-model    <- MoE_clust(CO2data$CO2, G=2)
-(new.bic <- MoE_crit(modelName=model$best.model$modelName,
-                     loglik=max(model$log.likes), N=length(CO2data$CO2), D=1,
-                     G=model$best.model$G, nn=tabulate(model$classes))["bic",])
-identical(new.bic, unname(model$best.model$bic))
+model <- MoE_clust(CO2data$CO2, G=2, expert= ~ CO2data$GNP)
+(bic2 <- MoE_crit(modelName=model$best.model$modelName, N=length(CO2data$CO2),
+                  loglik=max(model$log.likes), expert.pen=sum(lengths(model$expert)),
+                  D=1, G=model$best.model$G, nn=tabulate(model$classes))["bic",])
+identical(bic2, unname(model$best.model$bic))
 }
 \references{
 Biernacki, C., Celeux, G., Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{nVarParams}}, \code{\link[mclust]{mclustModelNames}}
+}
+\author{
+Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 }

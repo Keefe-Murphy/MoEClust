@@ -4,34 +4,55 @@
 \alias{MoE_estep}
 \title{Compute the Z matrix and log-likelihood for MoEClust models}
 \usage{
-MoE_estep(Dens)
+MoE_estep(modelName, data, mus, sigs, log.pis = 0, Dens = NULL)
 }
 \arguments{
-\item{Dens}{A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, typically obtained by \code{\link{MoE_dens}} but this is not necessary.}
+\item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
+
+\item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (N) and columns correspond to variables (D). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of multivariate WLS residuals for each component.}
+
+\item{mus}{The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means.}
+
+\item{sigs}{a list of length G of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.}
+
+\item{log.pis}{If covariates enter the gating network, an N times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
+
+\item{Dens}{(Optional) A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, typically obtained by \code{\link{MoE_dens}} but this is not necessary. If this is supplied, all other arguments are ignored, otherwise \code{\link{MoE_dens}} is called according to the other supplied arguments.}
 }
 \value{
 A list containing two elements:
 \itemize{
-\item{\strong{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
 \item{\strong{Z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
+\item{\strong{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
 }
 }
 \description{
-Takes the output from \code{\link{MoE_dens}} and computes the responsibility matrix Z, as well as the log-likelihood.
+Computes the responsibility matrix Z and the log-likelihood for parameterised MVN mixtures of experts, with the aid of \code{\link{MoE_dens}}.
+}
+\note{
+This function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities.
 }
 \examples{
 data(ais)
-hema  <- ais[,3:7]
-model <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, model="VVE")
-Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
-                  mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+hema   <- ais[,3:7]
+model  <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
+Dens   <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
+                   mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
 
 # Construct the Z matrix and compute the log-likelihood
-Estep <- MoE_estep(Dens)
-Z     <- Estep$Z
+Estep  <- MoE_estep(Dens=Dens)
+Z      <- Estep$Z
 sum(Z - model$Z) == 0
-Estep$loglik
+(ll    <- Estep$loglik)
+
+# Call MoE_estep directly
+Estep2 <- MoE_estep(modelName=model$best.mod$modelName, data=hema,
+                    mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+identical(Estep2$loglik, ll)
 }
 \seealso{
-\code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}
+\code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}, \code{\link[mclust]{mclustModelNames}}
+}
+\author{
+Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 }

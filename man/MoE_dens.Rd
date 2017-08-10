@@ -9,13 +9,13 @@ MoE_dens(modelName, data, mus, sigs, log.pis = 0, logarithm = TRUE)
 \arguments{
 \item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
 
-\item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations and columns correspond to variables. If there are expert network covariates, this should be a list of length k containing matrices/data.frames of multivariate residuals for each component.}
+\item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (N) and columns correspond to variables (D). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of multivariate WLS residuals for each component.}
 
-\item{mus}{The mean for each component. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a k-vector of means.}
+\item{mus}{The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means.}
 
-\item{sigs}{A list of length k of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.}
+\item{sigs}{a list of length G of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.}
 
-\item{log.pis}{If covariates enter the gating network, an \code{nrow(data)} times k matrix of mixing proportions, otherwise a k-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
+\item{log.pis}{If covariates enter the gating network, an N times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
 
 \item{logarithm}{A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.}
 }
@@ -31,16 +31,19 @@ This function is intended for joint use with \code{\link{MoE_estep}}, using the 
 \examples{
 data(ais)
 hema  <- ais[,3:7]
-model <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, model="VVE")
+model <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
 Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
                   mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
 
 # Construct the Z matrix and compute the log-likelihood
-Estep <- MoE_estep(Dens)
+Estep <- MoE_estep(Dens=Dens)
 Z     <- Estep$Z
 sum(Z - model$Z) == 0
 Estep$loglik
 }
 \seealso{
 \code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}
+}
+\author{
+Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 }

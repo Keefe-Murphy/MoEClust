@@ -25,34 +25,34 @@ for multivariate data \eqn{N > D}{N > D} \tab \code{c("EII", "EEI", "EEE")}\cr
 for high-dimensional multivariate data \eqn{N \leq D}{N <= D}  \tab \code{c("EII", "EEI")}
 }}
 
-\item{gating}{A formula for determining the model matrix for the multinomial logistic regression in the gating network when covariates enter the mixing proportions. This will be ignored where \code{G=1}.}
+\item{gating}{A formula for determining the model matrix for the multinomial logistic regression in the gating network when covariates enter the mixing proportions. This will be ignored where \code{G=1}. Interactions etc. are permitted. The specification of the LHS of the formula is ignored.}
 
-\item{expert}{A formula for determining the model matrix for the multivariate WLS in the expert network when covariates are included in the component densities.}
+\item{expert}{A formula for determining the model matrix for the multivariate WLS in the expert network when covariates are included in the component densities. Interactions etc. are permitted. The specification of the LHS of the formula is ignored.}
 
-\item{control}{A list of control parameters for the EM algorithm. The defaults are set by a call to \code{\link{MoE_control}}. Note that the argument \code{equalPro} will be ignored if \code{gating} network covariates are included.}
+\item{control}{A list of control parameters for the EM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}. Note that the argument \code{equalPro} will be ignored if \code{gating} network covariates are included.}
 }
 \value{
-A list with the following named entries for the 'best' model as determined by the \code{criterion} within \code{\link{MoE_control}}:\cr
+A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen 'best' model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
 \itemize{
 \item{\strong{mus} - }{The means of each component.}
 \item{\strong{sigmas} - }{The variance parameters of each component.}
 \item{\strong{Z} - }{The final responsibility matrix of probabilities of component membership.}
-\item{\strong{pis} - }{The mixing proportion parameters: either a vector or, if \code{gating} covariates were supplied, an matrix with an entry for each observation and component.}
-\item{\strong{BICs} - }{BIC values for every visited model.}
-\item{\strong{ICLs} - }{ICL values for every visited model.}
-\item{\strong{iters} - }{Total number of EM iterations for every visited model.}
+\item{\strong{pis} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
 \item{\strong{classes} - }{The vector of cluster labels for the chosen model.}
-\item{\strong{best.model} - }{A list of details pertaining to the chosen model, incl. the mclust model type, the number of components, as well as "\code{bic}" and "\code{icl}" values.}
+\item{\strong{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated.}
+\item{\strong{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated.}
+\item{\strong{iters} - }{Total number of EM iterations for every visited model. May include \code{NA} values for models which were terminated.}
+\item{\strong{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components, as well as "\code{bic}" and "\code{icl}" values.}
 \item{\strong{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
-\item{\strong{gating} - }{The \code{\link[nnet]{multinom}} coefficients of the \code{gating} network if \code{gating} covariates were supplied.}
-\item{\strong{expert} - }{The multivariate WLS coefficients of the \code{expert} network if \code{expert} covariates were supplied.}
+\item{\strong{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(gating)}.}
+\item{\strong{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{sum(lengths(expert))}.}
 }
 }
 \description{
-Fits Mixture of Experts models with mclust-family covariance structures. In other words, performs model-based clustering via the EM algorithm where covariates are allowed to enter neither, either, or both the mixing proportions (gating network) and/or component densities (expert network).
+Fits Mixture of Experts models with \pkg{mclust}-family covariance structures. In other words, performs model-based clustering via the EM algorithm where covariates are allowed to enter neither, either, or both the mixing proportions (gating network) and/or component densities (expert network).
 }
 \details{
-The function effectively allows 4 different types of Mixture of Expert model (as well as the different models in the mclust family, for each): i) the standard finite Gaussian mixture, ii) covariates only in the gating network, iii) covariates only in the expert network, iv) the full Mixture of Experts model with covariates entering both the mixing proportions and component densities. Note that it having the same covariates in both networks is allowed.
+The function effectively allows 4 different types of Mixture of Expert model (as well as the different models in the mclust family, for each): i) the standard finite Gaussian mixture, ii) covariates only in the gating network, iii) covariates only in the expert network, iv) the full Mixture of Experts model with covariates entering both the mixing proportions and component densities. Note that having the same covariates in both networks is allowed.
 }
 \examples{
 \dontrun{
@@ -60,17 +60,16 @@ data(ais)
 hema <- ais[,3:7]
 
 # Fit a standard finite mixture model
-m1   <- MoE_clust(hema, G=3)
+m1   <- MoE_clust(hema, G=2)
 
 # Allow covariates to enter the mixing proportions
-m2   <- MoE_clust(hema, G=3, gating= ~ ais$sex + ais$BMI)
+m2   <- MoE_clust(hema, G=2, gating= ~ ais$sex + ais$BMI)
 
 # Allow covariates to enter the component densities
-m3   <- MoE_clust(hema, G=3, expert= ~ ais$sex + ais$BMI)
+m3   <- MoE_clust(hema, G=2, expert= ~ ais$sex)
 
 # Allow covariates to enter both the gating & expert network
-m4   <- MoE_clust(hema, G=3, gating= ~ ais$sex + ais$BMI,
-                  expert= ~ ais$sex + ais$BMI)
+m4   <- MoE_clust(hema, G=2, gating= ~ ais$BMI, expert= ~ ais$sex)
 
 # Extract the model with highest BIC
 BICS <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
@@ -79,4 +78,7 @@ get(gsub("\\\\..*", "", names(BICS)[which.max(BICS)]))$best.model
 }
 \seealso{
 \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}
+}
+\author{
+Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 }
