@@ -25,18 +25,18 @@
 #' @importFrom stats "as.formula" "coef" "complete.cases" "kmeans" "lm" "predict" "residuals" "setNames" "update.formula"
 #' @return A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen 'best' model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
 #' \itemize{
-#' \item{\strong{mus} - }{The means of each component.}
-#' \item{\strong{sigmas} - }{The variance parameters of each component.}
-#' \item{\strong{Z} - }{The final responsibility matrix of probabilities of component membership.}
-#' \item{\strong{pis} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
-#' \item{\strong{classes} - }{The vector of cluster labels for the chosen model.}
-#' \item{\strong{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated.}
-#' \item{\strong{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated.}
-#' \item{\strong{iters} - }{Total number of EM iterations for every visited model. May include \code{NA} values for models which were terminated.}
-#' \item{\strong{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components, as well as "\code{bic}" and "\code{icl}" values.}
-#' \item{\strong{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
-#' \item{\strong{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(gating)}.}
-#' \item{\strong{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{sum(lengths(expert))}.}
+#' \item{\code{mus} - }{The means of each component.}
+#' \item{\code{sigmas} - }{The variance parameters of each component.}
+#' \item{\code{Z} - }{The final responsibility matrix of probabilities of component membership.}
+#' \item{\code{pis} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
+#' \item{\code{classes} - }{The vector of cluster labels for the chosen model.}
+#' \item{\code{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated.}
+#' \item{\code{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated.}
+#' \item{\code{iters} - }{Total number of EM iterations for every visited model. May include \code{NA} values for models which were terminated.}
+#' \item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components, as well as "\code{bic}" and "\code{icl}" values.}
+#' \item{\code{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
+#' \item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(gating)}.}
+#' \item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{sum(lengths(expert))}.}
 #' }
 #' @seealso \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}
 #' @export
@@ -60,10 +60,16 @@
 #' m4   <- MoE_clust(hema, G=2, gating= ~ ais$BMI, expert= ~ ais$sex)
 #'
 #' # Extract the model with highest BIC
-#' BICS <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
-#' get(gsub("\\..*", "", names(BICS)[which.max(BICS)]))$best.model
+#' BICs <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
+#' best <- get(gsub("\\..*", "", names(BICs)[which.max(BICs)]))
+#' best$best.model
+#'
+#' # Visualise the results using the 'lattice' library
+#' # require("lattice")
+#' # z  <- factor(best$classes, labels=paste0("Cluster", seq_len(best$best.model$G)))
+#' # splom(~ hema | sex, groups=z)
+#' # splom(~ hema | z, groups=sex)
 #' }
-
   MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = NULL, expert = NULL, control = MoE_control()) {
 
   # Definitions and storage set-up
@@ -82,14 +88,17 @@
     N             <- nrow(X)
     D             <- ncol(X)
 
-    if(!all(is.integer(G)) && any(G < 1))        stop("Invalid range of G vales supplied")
+    if(!all(is.integer(G)) && any(G < 1))        stop("Invalid range of G values supplied")
     criterion     <- control$criterion
+    stopping      <- control$stopping
     init.z        <- control$init.z
     multi         <- missing(modelNames)
     tol           <- control$tol[1]
     max.it        <- control$itmax[1]
     equal.pro     <- control$equalPro
-    control       <- control[-c(1, 2, length(control))]
+    warnit        <- control$warn.it
+    itwarn        <- warnit > 2
+    control       <- control[-c(1:3, length(control), length(control) - 1)]
     mod.fam       <- mclust.options("emModelNames")
     range.G       <- sort(unique(G))
     Gall          <- all(G  > 1)
@@ -135,7 +144,7 @@
           gate.G  <- rep(gate.x, length(range.G))
         }
       }
-      if(!Gall)   {  if(verbose)                 message("Can't include gating network covariates for a single component mixture")
+      if(!Gall)   {  if(verbose)                 message("Can't include gating network covariates in a single component mixture")
         gate.G[1] <- FALSE
       }
     }
@@ -153,7 +162,7 @@
       Nseq        <- seq_len(N)
     }
     if(init.z == "mclust"     &&
-       !any(gate.x, exp.x))                      stop("Can't initialise using 'mclust' when there are no gating or expert covariates: try another init.z method")
+       !any(gate.x, exp.x))                      stop("Can't initialise using 'mclust' when there are no gating or expert covariates: try another 'init.z' method")
 
   # Loop over range of G values and initialise allocations
     for(g in range.G)    {
@@ -188,6 +197,7 @@
     # Loop over the mclust model type(s)
       modelsG1    <- if(g == 1)  mf1    else mfg
       for(modtype in modelsG1)  {
+        m0W       <- m0X      <- FALSE
         m1        <- modtype  == modelsG1[1]
 
       # Initialise parameters from allocations
@@ -209,7 +219,7 @@
           next
         } else    {
           Z       <- MoE_estep(Dens=medensity)$Z
-          ll      <- c(0, -sqrt(.Machine$double.xmax))
+          ll      <- c(-Inf, -sqrt(.Machine$double.xmax))
           j       <- 2
           stopx   <- TRUE
         }
@@ -263,7 +273,14 @@
             Z     <- Estep$Z
             ll    <- c(ll, Estep$loglik)
             j     <- j + 1
-            stopx <- abs((ll[j] - ll[j - 1])/(1 + ll[j])) >= tol && j < max.it
+            stopx <- switch(stopping, relative=abs((ll[j] - ll[j - 1])/(1 + ll[j])) >= tol,
+                                      aitken=MoE_aitken(ll[seq(j - 2, j, 1)])$diff  >= tol) && j < max.it
+            if(itwarn && !m0X)  {
+             m0W  <- ifelse(!m0X, warnit < j, m0X)
+             if(m0W   && !m0X)  {                tryCatch(warning("WARNIT", call.=FALSE), warning=function(w) message(paste0("\tEM algorithm for the ", modtype, " model has yet to converge in 'warn.it'=", warnit, " iterations")))
+              m0X <- TRUE
+             }
+            }
           }
 
         } # while (j)
@@ -332,14 +349,14 @@
     best.gate     <- gate.G[which(range.G == x.G)]
     exp.gate      <- c(exp.x, best.gate)
     net.msg       <- ifelse(any(exp.gate), paste0(" (incl. ", ifelse(all(exp.gate), "gating and expert", ifelse(exp.x, "expert", ifelse(best.gate, "gating", ""))), " network covariates)"), "")
-    best.mod      <- list(modelName=best.mod, modelDetails=paste0(best.mod, ": ", x.G, " components", net.msg), bic = bic.fin, icl = icl.fin, G = x.G)
+    best.mod      <- list(modelName=best.mod, modelDetails=paste0(best.mod, ": ", x.G, " component", ifelse(x.G > 1, "s ", ""), net.msg), bic = bic.fin, icl = icl.fin, G = x.G)
     if(multi && verbose)         cat(paste0("\n\t\tBest Model: ", names(crit.fin), ", with ",
                                      x.G, " component", ifelse(x.G > 1, "s", ""), net.msg, "\n\t\t",
                                      switch(criterion, bic="BIC", "ICL"), " = ", round(crit.fin, 2), "\n"))
     if(all(x.log  != cummax(x.log)))             warning("Log-likelihoods are not strictly increasing", call.=FALSE)
     if(any(it.x[!is.na(it.x)] == max.it))        warning(paste0("One or more models failed to converge in ", max.it, " iterations"), call.=FALSE)
     results       <- c(list(mus = x.mu, sigmas = x.sig, Z = x.z, pis = x.pi, classes = x.class, BICs = BICs,
-                            ICLs = ICLs, best.model = best.mod, iters = it.x, log.likes = x.log[!is.na(x.log)][-1]),
+                            ICLs = ICLs, best.model = best.mod, iters = it.x, log.likes = x.log[!is.na(x.log)][-c(1:2)]),
                        if(best.gate) list(gating = x.fitg), if(exp.x) list(expert = setNames(x.fite, paste0("Cluster", seq_len(x.G)))))
     class(results)            <- "MoEClust"
       return(results)
@@ -374,8 +391,7 @@
 #'
 #' # Construct the Z matrix and compute the log-likelihood
 #' Estep <- MoE_estep(Dens=Dens)
-#' Z     <- Estep$Z
-#' sum(Z - model$Z) == 0
+#' identical(Estep$Z, model$Z)
 #' Estep$loglik
   MoE_dens        <- function(modelName, data, mus, sigs, log.pis = 0, logarithm = TRUE) {
     G             <- ifelse(is.matrix(mus),       ncol(mus),       length(mus))
@@ -420,8 +436,8 @@
 #'
 #' @return A list containing two elements:
 #' \itemize{
-#' \item{\strong{Z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
-#' \item{\strong{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
+#' \item{\code{Z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
+#' \item{\code{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
 #' }
 #' @importFrom matrixStats "rowLogSumExps"
 #' @export
@@ -439,8 +455,7 @@
 #'
 #' # Construct the Z matrix and compute the log-likelihood
 #' Estep  <- MoE_estep(Dens=Dens)
-#' Z      <- Estep$Z
-#' sum(Z - model$Z) == 0
+#' identical(Estep$Z, model$Z)
 #' (ll    <- Estep$loglik)
 #'
 #' # Call MoE_estep directly
@@ -466,7 +481,7 @@
 #' @param N The number of observations in the data used to compute \code{loglik}.
 #' @param D The dimension of the data used to compute \code{loglik}.
 #' @param G The number of components in the Gaussian mixture model used to compute \code{loglik}.
-#' @param gating.pen The number of parameters of the \emph{gating} network of the MoEClust model. Defaults to \code{G - 1}, which corresponds to no gating covariates. If covariates are included, this should be the number of regression coefficients in the fitted object. If there are no covariates and mixing proportions are further assumed to be present in equal proportion, \code{gating.pen} should be 0.
+#' @param gating.pen The number of parameters of the \emph{gating} network of the MoEClust model. Defaults to \code{G - 1}, which corresponds to no gating covariates. If covariates are included, this should be the number of regression coefficients in the fitted object. If there are no covariates and mixing proportions are further assumed to be present in equal proportion, \code{gating.pen} should be \code{0}.
 #' @param expert.pen The number of parameters of the \emph{expert} network of the MoEClust model. Defaults to \code{G * D}, which corresponds to no expert covariates. If covariates are included, this should be the number of regression coefficients in the fitted object.
 #' @param nn A vector of length \code{G} which sums to \code{N} giving the number of observations in each component. If supplied the ICL is also computed and returned, otherwise only the BIC.
 #' @param delta Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.
@@ -504,11 +519,13 @@
 #'
 #' Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
 #' @param criterion When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion) or "\code{icl}" (Integrated Complete Likelihood) is used to determine the 'best' model when gathering output. Note that both criteria will be returned in any case.
+#' @param stopping The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{MoE_aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}.
 #' @param init.z The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}}. Other options include \code{kmeans}, \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.
 #' @param eps A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of eps allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.
 #' @param tol A vector of length two giving relative convergence tolerances for the log-likelihood and for parameter convergence in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(1e-05,sqrt(.Machine$double.eps))}. If only one number is supplied, it is used as the tolerance for the outer iterations and the tolerance for the inner iterations is as in the default.
 #' @param itmax A vector of length two giving integer limits on the number of EM iterations and on the number of iterations in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(.Machine$integer.max, .Machine$integer.max)} allowing termination to be completely governed by \code{tol}. If only one number is supplied, it is used as the iteration limit for the outer iteration only.
 #' @param equalPro Logical variable indicating whether or not the mixing proportions are equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}.
+#' @param warn.it A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}
 #' @param verbose Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.
 #'
 #' @details \code{MoE_control} is provided for assigning values and defaults within \code{\link{MoE_clust}}.
@@ -516,18 +533,21 @@
 #' @export
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #'
-#' @seealso \code{\link{MoE_clust}}, \code{\link[mclust]{hc}}
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}
 #'
 #' @examples
-#' cont <- MoE_control(criterion="icl", itmax=1000)
+#' cont <- MoE_control(criterion="icl", itmax=10000, warn.it=12)
 #'
 #' data(CO2data)
 #' res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=cont)
-  MoE_control     <- function(criterion = c("bic", "icl"), init.z = c("hc", "kmeans", "mclust", "random"),
-                              eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps)),
-                              itmax = c(.Machine$integer.max, .Machine$integer.max), equalPro = FALSE, verbose = interactive()) {
+  MoE_control     <- function(criterion = c("bic", "icl"), stopping = c("aitken", "relative"),
+                              init.z = c("hc", "kmeans", "mclust", "random"), eps = .Machine$double.eps,
+                              tol = c(1e-05, sqrt(.Machine$double.eps)), itmax = c(.Machine$integer.max,
+                              .Machine$integer.max), equalPro = FALSE, warn.it = 0, verbose = interactive()) {
     if(!is.character(criterion))                 stop("'criterion' must be a character vector of length 1")
     criterion     <- match.arg(criterion)
+    if(!is.character(stopping))                  stop("'stopping' must be a character vector of length 1")
+    stopping      <- match.arg(stopping)
     if(!is.character(init.z))                    stop("'init.z' must be a character vector of length 1")
     init.z        <- match.arg(init.z)
     if(length(eps) > 2)                          stop("'eps' can be of length at most 2")
@@ -546,6 +566,46 @@
        !is.logical(equalPro))                    stop("'equalPro' must be a single logical indicator")
     if(length(verbose)  < 1 ||
        !is.logical(verbose))                     stop("'verbose' must be a single logical indicator")
-      list(criterion = criterion, init.z = init.z, eps = eps, tol = tol, itmax = itmax, equalPro = equalPro, verbose=verbose)
+    if(length(warn.it)  > 1 ||
+       !is.numeric(warn.it))                     stop("'warn.it' must be a numeric vector of length 1")
+      list(criterion = criterion, stopping = stopping, init.z = init.z, eps = eps, tol = tol,
+           itmax = itmax, equalPro = equalPro, warn.it=warn.it, verbose = verbose)
+  }
+
+#' Aitken Acceleration
+#'
+#' Calculates the Aitken acceleration estimate of the final converged maximized log-likelihood.
+#' @param log.likes A vector of three consecutive log-likelihood values. These three values should be in ascending order, though this is not checked.
+#'
+#' @details The final converged maximized log-likelihood can be used to determine convergence of the EM algorithm within \code{\link{MoE_clust}}, i.e. by checking whether the absolute difference in the current log-likelihood and estimated final converged maximised log-likelihood is less than some tolerance.
+#' @note Within \code{\link{MoE_clust}}, as specified by the \code{stopping} argument of \code{\link{MoE_control}}, this is the default method used to assess convergence. The other option monitors the relative change in log-likelihood against some tolerance.
+#' @return A list with the following components:
+#' \itemize{
+#' \item{\code{ll} - }{The most current estimate for the log-likelihood.}
+#' \item{\code{linf} - }{An estimate of the final converged maxmised log-likelihood.}
+#' \item{\code{a} - }{The Aitken acceleration value where \code{0 <= a <= 1}.}
+#' \item{\code{diff} - }{The absolute difference between \code{ll} and \code{inf}. Note that if \code{a} goes to exactly \code{0} this will be also set to \code{0}.}
+#' }
+#' @export
+#' @references Boehning, D., Dietz, E., Schaub, R., Schlattmann, and Lindsay, B. (1994, June). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.
+#'
+#' @seealso \code{\link{MoE_control}}
+#' @examples
+#' MoE_aitken(-c(451.67, 442.84, 436.59))
+#'
+#' MoE_aitken(-c(359.11, 359.109, 359.109))$diff < 1e-05
+  MoE_aitken      <- function(log.likes) {
+    l1            <- log.likes[1]
+    l2            <- log.likes[2]
+    l3            <- log.likes[3]
+    if(any(is.infinite(log.likes)))  {
+      linf        <- diff     <- Inf
+      a           <- NA
+    } else {
+      a           <- ifelse(l2 > l1, (l3 - l2) / (l2 - l1),       0)
+      linf        <- ifelse(a  < 1,   l3 + (l3 - l2) / (1 - a), Inf)
+      diff        <- abs(linf  - l3)
+    }
+      list(ll = l3, linf = linf, a = a, diff = ifelse(identical(a, 0), 0, diff))
   }
 #

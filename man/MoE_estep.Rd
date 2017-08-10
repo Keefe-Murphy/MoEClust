@@ -22,8 +22,8 @@ MoE_estep(modelName, data, mus, sigs, log.pis = 0, Dens = NULL)
 \value{
 A list containing two elements:
 \itemize{
-\item{\strong{Z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
-\item{\strong{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
+\item{\code{Z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
+\item{\code{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
 }
 }
 \description{
@@ -41,8 +41,7 @@ Dens   <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
 
 # Construct the Z matrix and compute the log-likelihood
 Estep  <- MoE_estep(Dens=Dens)
-Z      <- Estep$Z
-sum(Z - model$Z) == 0
+identical(Estep$Z, model$Z)
 (ll    <- Estep$loglik)
 
 # Call MoE_estep directly
