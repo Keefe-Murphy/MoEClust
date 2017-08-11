@@ -13,24 +13,28 @@ MoE_aitken(log.likes)
 A list with the following components:
 \itemize{
 \item{\code{ll} - }{The most current estimate for the log-likelihood.}
-\item{\code{linf} - }{An estimate of the final converged maxmised log-likelihood.}
+\item{\code{linf} - }{The most current estimate of the final converged maxmised log-likelihood.}
 \item{\code{a} - }{The Aitken acceleration value where \code{0 <= a <= 1}.}
-\item{\code{diff} - }{The absolute difference between \code{ll} and \code{inf}. Note that if \code{a} goes to exactly \code{0} this will be also set to \code{0}.}
 }
 }
 \description{
 Calculates the Aitken acceleration estimate of the final converged maximized log-likelihood.
 }
 \details{
-The final converged maximized log-likelihood can be used to determine convergence of the EM algorithm within \code{\link{MoE_clust}}, i.e. by checking whether the absolute difference in the current log-likelihood and estimated final converged maximised log-likelihood is less than some tolerance.
+The final converged maximized log-likelihood can be used to determine convergence of the EM algorithm within \code{\link{MoE_clust}}, i.e. by checking whether the absolute difference in the current and previous estimates of the final converged maximised log-likelihood is less than some tolerance.
 }
 \note{
-Within \code{\link{MoE_clust}}, as specified by the \code{stopping} argument of \code{\link{MoE_control}}, this is the default method used to assess convergence. The other option monitors the relative change in log-likelihood against some tolerance.
+Within \code{\link{MoE_clust}}, as specified by the \code{stopping} argument of \code{\link{MoE_control}}, \code{"aitken"} is the default method used to assess convergence. The other option monitors the \code{"relative"} change in log-likelihood against some tolerance. \cr
+
+When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.
 }
 \examples{
-MoE_aitken(-c(451.67, 442.84, 436.59))
-
-MoE_aitken(-c(359.11, 359.109, 359.109))$diff < 1e-05
+(a1 <- MoE_aitken(-c(449.61534, 442.84221, 436.58999)))
+a2  <- MoE_aitken(-c(442.84221, 436.58999, 436.58998))
+abs(a2$linf - a1$linf) < 1e-05
+a3  <- MoE_aitken(-c(436.58998, 436.58997, 436.58997))
+abs(a3$linf - a2$linf) < 1e-05
+(ll <- a3$linf)
 }
 \references{
 Boehning, D., Dietz, E., Schaub, R., Schlattmann, and Lindsay, B. (1994, June). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.

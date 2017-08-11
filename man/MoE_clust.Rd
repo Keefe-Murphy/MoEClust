@@ -5,7 +5,7 @@
 \title{Mixtures of Experts: Model-Based Clustering with Covariates}
 \usage{
 MoE_clust(data, G = 1:9, modelNames = NULL, gating = NULL,
-  expert = NULL, control = MoE_control())
+  expert = NULL, control = MoE_control(...), ...)
 }
 \arguments{
 \item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed. If a matrix or data frame, rows correspond to observations and columns correspond to variables.}
@@ -23,13 +23,16 @@ For single-component models these options reduce to:\cr
 for univariate data \tab \code{"E"}\cr
 for multivariate data \eqn{N > D}{N > D} \tab \code{c("EII", "EEI", "EEE")}\cr
 for high-dimensional multivariate data \eqn{N \leq D}{N <= D}  \tab \code{c("EII", "EEI")}
-}}
+}
+The help file for \code{\link[mclust]{mclustModelNames}} further describes the available models (though the \code{"X"} in the single-component models will be coerced to \code{"E"} if supplied that way).}
 
 \item{gating}{A formula for determining the model matrix for the multinomial logistic regression in the gating network when covariates enter the mixing proportions. This will be ignored where \code{G=1}. Interactions etc. are permitted. The specification of the LHS of the formula is ignored.}
 
 \item{expert}{A formula for determining the model matrix for the multivariate WLS in the expert network when covariates are included in the component densities. Interactions etc. are permitted. The specification of the LHS of the formula is ignored.}
 
-\item{control}{A list of control parameters for the EM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}. Note that the argument \code{equalPro} will be ignored if \code{gating} network covariates are included.}
+\item{control}{A list of control parameters for the EM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}.}
+
+\item{...}{An alternative means of passing control parameters via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here!}
 }
 \value{
 A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen 'best' model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
@@ -79,12 +82,12 @@ best$best.model
 # Visualise the results using the 'lattice' library
 # require("lattice")
 # z  <- factor(best$classes, labels=paste0("Cluster", seq_len(best$best.model$G)))
-# splom(~ hema | sex, groups=z)
-# splom(~ hema | z, groups=sex)
+# splom(~ hema | ais$sex, groups=z)
+# splom(~ hema | z, groups=ais$sex)
 }
 }
 \seealso{
-\code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}
+\code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}
 }
 \author{
 Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}

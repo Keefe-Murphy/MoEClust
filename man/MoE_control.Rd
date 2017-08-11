@@ -13,7 +13,7 @@ MoE_control(criterion = c("bic", "icl"), stopping = c("aitken", "relative"),
 \arguments{
 \item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion) or "\code{icl}" (Integrated Complete Likelihood) is used to determine the 'best' model when gathering output. Note that both criteria will be returned in any case.}
 
-\item{stopping}{The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{MoE_aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}.}
+\item{stopping}{The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{MoE_aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.}
 
 \item{init.z}{The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}}. Other options include \code{kmeans}, \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.}
 
@@ -23,7 +23,7 @@ MoE_control(criterion = c("bic", "icl"), stopping = c("aitken", "relative"),
 
 \item{itmax}{A vector of length two giving integer limits on the number of EM iterations and on the number of iterations in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(.Machine$integer.max, .Machine$integer.max)} allowing termination to be completely governed by \code{tol}. If only one number is supplied, it is used as the iteration limit for the outer iteration only.}
 
-\item{equalPro}{Logical variable indicating whether or not the mixing proportions are equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}.}
+\item{equalPro}{Logical variable indicating whether or not the mixing proportions are equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored.}
 
 \item{warn.it}{A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}}
 
@@ -39,10 +39,17 @@ Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}
 \code{MoE_control} is provided for assigning values and defaults within \code{\link{MoE_clust}}.
 }
 \examples{
-cont <- MoE_control(criterion="icl", itmax=10000, warn.it=12)
+ctrl <- MoE_control(criterion="icl", itmax=10000, warn.it=12)
 
 data(CO2data)
-res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=cont)
+res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=ctrl)
+
+# Alternatively, specify control arguments directly
+res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, stopping="relative")
+
+# Supplying ctrl without naming it as control throws an error,
+# when any of {modelNames, gating, expert} are not supplied
+res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}
