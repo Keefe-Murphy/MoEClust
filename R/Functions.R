@@ -27,7 +27,7 @@
 #' @importFrom stats "as.formula" "coef" "complete.cases" "kmeans" "lm" "predict" "residuals" "setNames" "update.formula"
 #' @return A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen 'best' model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
 #' \itemize{
-#' \item{\code{mus} - }{The means of each component.}
+#' \item{\code{mus} - }{The means of each component. Will be all \code{0} if there are \code{expert} network covariates.}
 #' \item{\code{sigmas} - }{The variance parameters of each component.}
 #' \item{\code{Z} - }{The final responsibility matrix of probabilities of component membership.}
 #' \item{\code{pis} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
@@ -35,10 +35,10 @@
 #' \item{\code{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated.}
 #' \item{\code{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated.}
 #' \item{\code{iters} - }{Total number of EM iterations for every visited model. May include \code{NA} values for models which were terminated.}
-#' \item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components, as well as "\code{bic}" and "\code{icl}" values.}
+#' \item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}" and "\code{icl}" values.}
 #' \item{\code{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
-#' \item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(gating)}.}
-#' \item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{sum(lengths(expert))}.}
+#' \item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}.}
+#' \item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}.}
 #' }
 #' @seealso \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}
 #' @export
@@ -50,16 +50,16 @@
 #' hema <- ais[,3:7]
 #'
 #' # Fit a standard finite mixture model
-#' m1   <- MoE_clust(hema, G=2)
+#' m1   <- MoE_clust(hema, G=2:3)
 #'
 #' # Allow covariates to enter the mixing proportions
-#' m2   <- MoE_clust(hema, G=2, gating= ~ ais$sex + ais$BMI)
+#' m2   <- MoE_clust(hema, G=2:3, gating= ~ ais$sex + ais$BMI)
 #'
 #' # Allow covariates to enter the component densities
-#' m3   <- MoE_clust(hema, G=2, expert= ~ ais$sex)
+#' m3   <- MoE_clust(hema, G=2:3, expert= ~ ais$sex)
 #'
 #' # Allow covariates to enter both the gating & expert network
-#' m4   <- MoE_clust(hema, G=2, gating= ~ ais$BMI, expert= ~ ais$sex)
+#' m4   <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, expert= ~ ais$sex)
 #'
 #' # Extract the model with highest BIC
 #' BICs <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
@@ -70,8 +70,7 @@
 #' # require("lattice")
 #' # z  <- factor(best$classes, labels=paste0("Cluster", seq_len(best$best.model$G)))
 #' # splom(~ hema | ais$sex, groups=z)
-#' # splom(~ hema | z, groups=ais$sex)
-#' }
+#' # splom(~ hema | z, groups=ais$sex)}
   MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = NULL, expert = NULL, control = MoE_control(...), ...) {
 
   # Definitions and storage set-up
@@ -89,26 +88,26 @@
     itwarn        <- warnit > 2
     control       <- control[-c(1:3, length(control), length(control) - 1)]
     if(!multi     &&
-       !all(is.character(modelNames)))           stop("'modelNames' must be a vector of character strings")
+       !all(is.character(modelNames)))            stop("'modelNames' must be a vector of character strings")
     if(gate.x     &&
-       !inherits(gating, "formula"))             stop("'gating' must be a formula'")
+       !inherits(gating, "formula"))              stop("'gating' must be a formula'")
     if(exp.x      &&
-       !inherits(expert, "formula"))             stop("'expert' must be a formula'")
+       !inherits(expert, "formula"))              stop("'expert' must be a formula'")
 
     data          <- as.data.frame(data)
     num.X         <- vapply(data, is.numeric, logical(1L))
     if(anyNA(data))    {
-      if(verbose)                                message("Rows with missing values removed from data")
+      if(verbose)                                 message("Rows with missing values removed from data")
       data        <- data[complete.cases(data),, drop=FALSE]
     }
     if(sum(num.X) != ncol(data))    {
-      if(verbose)                                message("Non-numeric columns removed from data")
+      if(verbose)                                 message("Non-numeric columns removed from data")
       data        <- data[,num.X, drop=FALSE]
     }
     X             <- as.matrix(data)
     N             <- nrow(X)
     D             <- ncol(X)
-    if(!all(is.integer(G)) && any(G < 1))        stop("Invalid range of G values supplied")
+    if(!all(is.integer(G)) && any(G < 1))         stop("Invalid range of G values supplied")
 
     mod.fam       <- mclust.options("emModelNames")
     range.G       <- sort(unique(G))
@@ -127,31 +126,30 @@
       }
     }
     if(!multi)    {
-      mNames      <- toupper(modelNames)
-      sX          <- grepl("X", mNames)
+      mNs         <- toupper(modelNames)
+      sX          <- grepl("X",     mNs)
       if(any(sX))             {
-       mNames     <- gsub("X", "E",  mNames)
+       mNs        <- gsub("X", "E", mNs)
        if(verbose &&
-          all(is.element(mNames,         mfg)))  message(paste0("'modelNames' which contain 'X' coerced to ", paste(shQuote(mNames[sX]), collapse=", ")))
+          all(is.element(mNs,         mfg)))      message(paste0("'modelNames' which contain 'X' coerced to ", paste(shQuote(mNs[sX]), collapse=", ")))
       }
-      if(Gany && any(!is.element(mNames, mfg)))  stop(paste0("Invalid 'modelNames'", ifelse(uni, " for univariate data", ifelse(N > D, "", " for high-dimensional data")), "!"))
+      if(Gany && any(!is.element(mNs, mfg)))      stop(paste0("Invalid 'modelNames'", ifelse(uni, " for univariate data", ifelse(N > D, "", " for high-dimensional data")), "!"))
       if(!Gall)   {
-        sZ        <- !is.element(mNames, mf1)
+        sZ        <- !is.element(mNs, mf1)
         if(any(sZ))           {
-          mNew    <- vapply(mNames, function(x)  switch(EXPR=x, E=, V="E", EII=, VII="EII",  EEI=, VEI=, EVI=, VVI="EEI", EEE=, EVE=, VEE=,  VVE=, EEV=, VEV=, EVV=, VVV="EEE", x), character(1L))
-          if(all(sZ, G == 1)) {                  stop(paste0("Invalid 'modelNames' for single component models", ifelse(uni, " for univariate data", ifelse(N > D, "", " for high-dimensional data")), "!"))
-          } else if(verbose)  {                  message(paste0("'modelNames'", ifelse(any(sX), " further", ""), " coerced from ", paste(shQuote(mNames[sZ]), collapse=", "), " to ", paste(shQuote(mNew[sZ]), collapse=", "), " where 'G'=1"))
-            mf1   <- unname(mNew)
-          }
+          mf1     <- tryCatch(unname(vapply(mNs,  function(x)  switch(EXPR=x, E=, V="E", EII=, VII="EII", EEI=, VEI=, EVI=, VVI="EEI", EEE=, EVE=, VEE=,  VVE=, EEV=, VEV=, EVV=, VVV="EEE"), character(1L))),
+                              error=function(e) { e$message <- paste0("Invalid 'modelNames' for single component models", ifelse(uni, " for univariate data", ifelse(N > D, "", " for high-dimensional data")), "!")
+                                                  stop(e) } )
+          if(verbose)                             message(paste0("'modelNames'", ifelse(any(sX), " further", ""), " coerced from ", paste(shQuote(mNs[sZ]), collapse=", "), " to ", paste(shQuote(mf1[sZ]), collapse=", "), " where 'G'=1"))
         }
       }
-      mfg         <- mNames
+      mfg         <- mNs
     }
     mf1           <- unique(mf1)
     mfg           <- unique(mfg)
     all.mod       <- unique(c(mf1, mfg))
     multi         <- ifelse(Gall, length(unique(mfg)) > 1, ifelse(Gany, length(all.mod) > 1, length(unique(mf1)) > 1))
-    BICs          <- ICLs     <- it.x         <- provideDimnames(matrix(NA, nrow=length(range.G), ncol=length(all.mod)), base=list(paste0("G = ", as.character(range.G)), all.mod))
+    BICs          <- ICLs     <- it.x          <- provideDimnames(matrix(NA, nrow=length(range.G), ncol=length(all.mod)), base=list(paste0("G = ", as.character(range.G)), all.mod))
     crit.tx       <- crit.gx  <- -sqrt(.Machine$double.xmax)
 
   # Define the gating formula
@@ -159,31 +157,31 @@
     if(gate.x)    {
       if(Gany)    {
         gating    <- tryCatch(update.formula(as.formula(gating), Z ~ .),
-                              error=function(e)  stop("Invalid 'gating' network formula supplied"))
+                              error=function(e)   stop("Invalid 'gating' network formula supplied"))
         environment(gating)   <- environment()
-        if(gating[[3]] == 1)   { if(verbose)     message("Not including gating network covariates with only intercept on gating formula RHS")
+        if(gating[[3]] == 1)   { if(verbose)      message("Not including gating network covariates with only intercept on gating formula RHS")
           gate.x  <- FALSE
           gate.G  <- rep(gate.x, length(range.G))
         }
       }
-      if(!Gall)   {  if(verbose)                 message("Can't include gating network covariates in a single component mixture")
+      if(!Gall)   {  if(verbose)                  message("Can't include gating network covariates in a single component mixture")
         gate.G[1] <- FALSE
       }
     }
-    if(gate.x     && equal.pro)                  stop("Can't constrain mixing proportions to be equal when gating covariates are supplied")
+    if(gate.x     && equal.pro)                   stop("Can't constrain mixing proportions to be equal when gating covariates are supplied")
 
   # Define the expert formula
     if(exp.x)     {
       expert      <- tryCatch(update.formula(as.formula(expert), X ~ .),
-                              error=function(e)  stop("Invalid 'expert' network formula supplied"))
+                              error=function(e)   stop("Invalid 'expert' network formula supplied"))
       environment(expert)     <- environment()
-      if(expert[[3]]   == 1)   { if(verbose)     message("Not including expert network covariates with only intercept on expert formula RHS")
+      if(expert[[3]]   == 1)   { if(verbose)      message("Not including expert network covariates with only intercept on expert formula RHS")
         exp.x     <- FALSE
       }
       Nseq        <- seq_len(N)
     }
     if(init.z == "mclust"     &&
-       !any(gate.x, exp.x))                      stop("Can't initialise using 'mclust' when there are no gating or expert covariates: try another 'init.z' method")
+       !any(gate.x, exp.x))                       stop("Can't initialise using 'mclust' when there are no gating or expert covariates: try another 'init.z' method")
 
   # Loop over range of G values and initialise allocations
     for(g in range.G)    {
@@ -204,7 +202,7 @@
         pis       <- predict(g.init, type="probs")
        #pis       <- predict(g.init, type="response", newx=model.matrix(gating)[,-1], s="lambda.1se")[,,1]
         lpi       <- log(pis)
-        gate.pen  <- length(coef(g.init))
+        gate.pen  <- g.init$rank
        #gate.pen  <- sum(lengths(coef(g.init, s="lambda.1se")[-1]))
       } else      {
         pis       <- if(equal.pro) rep(1/g, g) else 1
@@ -213,6 +211,7 @@
       }
       if(exp.x)   {
         Z.mat     <- matrix(0, nrow=N * g, ncol=g)
+        muX       <- if(uni) rep(0, g) else matrix(0, nrow=D, ncol=g)
       } else expert.pen       <- g * D
 
     # Loop over the mclust model type(s)
@@ -231,8 +230,8 @@
           pis     <- if(equal.pro) pis  else Mstep$parameters$pro
           lpi     <- if(equal.pro) lpi  else matrix(log(pis), nrow=N, ncol=g, byrow=TRUE)
         }
-        densme    <- capture.output(medensity <- try(MoE_dens(modelName=modtype, data=x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
-        if((ERR   <- attr(Mstep, "returnCode") < 0 || inherits(medensity, "try-error"))) {
+        densme    <- capture.output(medensity <-  try(MoE_dens(modelName=modtype, data=x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
+        if((ERR   <- attr(Mstep, "returnCode") <  0 || inherits(medensity, "try-error"))) {
           ll      <- NA
           j       <- 1
           if(isTRUE(verbose))    cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, "\n"))
@@ -254,19 +253,19 @@
             for(k in Gseq) {
              fitE <- lm(expert,  weights=Z[,k])
             #fitE <- glmnet::cv.glmnet(y=X, x=model.matrix(expert), weights=Z[,k])
-             e.fit[[k]]       <- coef(fitE)
+             e.fit[[k]]       <- fitE
             #e.fit[[k]]       <- coef(fitE, s="lambda.1se")
              e.res[[k]]       <- residuals(fitE)
             #e.res[[k]]       <- X - predict(fitE, type="response", newx=model.matrix(expert), s="lambda.1se")[,,1]
              Z.mat[(k - 1) * N + Nseq,k]       <- Z[,k]
             }
             res.x <- if(uni) as.matrix(do.call(c, e.res)) else do.call(rbind, e.res)
-            expert.pen        <- ifelse(m1, sum(lengths(e.fit)), expert.pen)
+            expert.pen        <- ifelse(j == 2, ifelse(m1, g * e.fit[[1]]$rank, expert.pen), expert.pen)
           }
 
         # M step
           Mstep   <- if(exp.x) mstep(modtype, res.x, Z.mat, control=control) else mstep(modtype, X, Z, control=control)
-          mus     <- Mstep$parameters$mean
+          mus     <- if(exp.x) muX else Mstep$parameters$mean
           sigs    <- Mstep$parameters$variance$sigma
 
         # Gating Network
@@ -284,8 +283,8 @@
           }
 
         # E step & record log-likelihood
-          densme  <- capture.output(medensity <- try(MoE_dens(modelName=modtype, data=if(exp.x) e.res else x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
-          if((ERR <- attr(Mstep, "returnCode") < 0 || inherits(medensity, "try-error"))) {
+          densme  <- capture.output(medensity <-  try(MoE_dens(modelName=modtype, data=if(exp.x) e.res else x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
+          if((ERR <- attr(Mstep, "returnCode") <  0 || inherits(medensity, "try-error"))) {
             ll    <- c(ll, NA)
             break
           } else  {
@@ -304,7 +303,8 @@
             stX   <- dX >= tol && j < max.it
             if(itwarn && !m0X)  {
              m0W  <- ifelse(!m0X, warnit < j, m0X)
-             if(m0W   && !m0X)  {                tryCatch(warning("WARNIT", call.=FALSE), warning=function(w) message(paste0("\tEM algorithm for the ", modtype, " model has yet to converge in 'warn.it'=", warnit, " iterations")))
+             if(m0W   && !m0X)  {                 tryCatch(warning("WARNIT", call.=FALSE), warning=function(w)
+                                                  message(paste0("\tEM algorithm for the ", modtype, " model has yet to converge in 'warn.it'=", warnit, " iterations")))
               m0X <- TRUE
              }
             }
@@ -334,7 +334,7 @@
           j.x     <- j
           class.x <- classes
           if(gate.g)     {
-            gfit  <- coef(fitG)
+            gfit  <- fitG
           }
           if(exp.x)      {
             efit  <- e.fit
@@ -346,7 +346,7 @@
       } # for (modtype)
 
     # Pull out mclust model corresponding to highest BIC/ICL
-      if(all(is.na(BICs)))                       stop("All models failed!")
+      if(all(is.na(BICs)))                        stop("All models failed!")
       crit.g      <- switch(criterion, bic=bic.x, icl=icl.x)
       if(crit.g    > crit.gx)   {
         x.bic     <- bic.x
@@ -381,8 +381,8 @@
     if(multi && verbose)         cat(paste0("\n\t\tBest Model: ", names(crit.fin), ", with ",
                                      x.G, " component", ifelse(x.G > 1, "s", ""), net.msg, "\n\t\t",
                                      switch(criterion, bic="BIC", "ICL"), " = ", round(crit.fin, 2), "\n"))
-    if(all(x.log  != cummax(x.log)))             warning("Log-likelihoods are not strictly increasing", call.=FALSE)
-    if(any(it.x[!is.na(it.x)] == max.it))        warning(paste0("One or more models failed to converge in ", max.it, " iterations"), call.=FALSE)
+    if(all(x.log  != cummax(x.log)))              warning("Log-likelihoods are not strictly increasing", call.=FALSE)
+    if(any(it.x[!is.na(it.x)] == max.it))         warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")"), call.=FALSE)
     results       <- c(list(mus = x.mu, sigmas = x.sig, Z = x.z, pis = x.pi, classes = x.class, BICs = BICs,
                             ICLs = ICLs, best.model = best.mod, iters = it.x, log.likes = x.log[!is.na(x.log)][-c(1:2)]),
                        if(best.gate) list(gating = x.fitg), if(exp.x) list(expert = setNames(x.fite, paste0("Cluster", seq_len(x.G)))))
@@ -433,24 +433,24 @@
     P             <- ifelse(is.matrix(dat1), ncol(dat1), 1)
     sq_mat        <- if(P > 50) function(x)  diag(sqrt(diag(x)))  else sqrt
     switch(EXPR=modelName, EVE=, VVE=, EEV=, EVV=, VVV = {
-      idens       <- capture.output(densi     <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigs[,,k],         log=TRUE, isChol=FALSE), numeric(N)), silent=TRUE))
+      idens       <- capture.output(densi      <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigs[,,k],         log=TRUE, isChol=FALSE), numeric(N)), silent=TRUE))
     }, EEE=, VEE=, VEV =    {
       sigx        <- chol(sigs[,,1])  ;
-      idens       <- capture.output(densi     <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(N)), silent=TRUE))
+      idens       <- capture.output(densi      <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(N)), silent=TRUE))
     }, VII=, VEI=, VVI =    {
-      idens       <- capture.output(densi     <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sq_mat(sigs[,,k]), log=TRUE, isChol=TRUE),  numeric(N)), silent=TRUE))
+      idens       <- capture.output(densi      <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sq_mat(sigs[,,k]), log=TRUE, isChol=TRUE),  numeric(N)), silent=TRUE))
     }, EII=, EEI=, EVI =    {
       sigx        <- sq_mat(sigs[,,1]);
-      idens       <- capture.output(densi     <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(N)), silent=TRUE))
+      idens       <- capture.output(densi      <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(N)), silent=TRUE))
     }, E= {
-      densi       <- vapply(Gseq, function(k)    dnorm(data[[k]], mus[k], sqrt(sigs), log=TRUE), numeric(N))
+      densi       <- vapply(Gseq, function(k)     dnorm(data[[k]], mus[k], sqrt(sigs), log=TRUE), numeric(N))
     }, V= {
       sigx        <- sqrt(sigs);
-      densi       <- vapply(Gseq, function(k)    dnorm(data[[k]], mus[k], sigx[k],    log=TRUE), numeric(N))
+      densi       <- vapply(Gseq, function(k)     dnorm(data[[k]], mus[k], sigx[k],    log=TRUE), numeric(N))
     } )
-    check         <- is.infinite(densi)        & densi > 0
+    check         <- is.infinite(densi)         & densi > 0
     if(any(check))          {
-      densi[which(check, arr.ind=TRUE)[1],]   <- rep(0, G)
+      densi[which(check, arr.ind=TRUE)[1],]    <- rep(0, G)
     }
     densi         <- densi  + if(is.matrix(log.pis) || missing(log.pis)) log.pis else matrix(log.pis, nrow=N, ncol=G, byrow=TRUE)
       if(logarithm)  densi    else exp(densi)
@@ -494,10 +494,10 @@
     if(missing(Dens)) {
       Dens        <- do.call(MoE_dens, as.list(match.call())[-1])
     } else if(!is.matrix(Dens) ||
-              !is.numeric(Dens))                 stop("'Dens' must be a numeric matrix")
+              !is.numeric(Dens))                  stop("'Dens' must be a numeric matrix")
     norm          <- rowLogSumExps(Dens)
     Z             <- exp(sweep(Dens, 1, norm, "-"))
-   #ll            <- sum(Z * Dens)             # complete log-likelihood
+   #ll            <- sum(Z * Dens)              # complete log-likelihood
       return(list(Z = Z, loglik = sum(norm)))
   }
 
@@ -516,7 +516,7 @@
 #'
 #' @details The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.\cr
 #'
-#' If \code{model} is an object of class \code{"MoEClust"}, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(model$gating)} and \code{sum(lengths(model$expert))}, respectively.
+#' If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{model$gating$rank} and \code{G * model$expert[[1]]$rank}, respectively.
 #' @importFrom mclust "mclustModelNames" "nVarParams"
 #' @return A simplified array containing the BIC (and if \code{nn} is supplied, also the ICL) for each of the given input arguments.
 #' @note In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
@@ -533,10 +533,11 @@
 #'          N=120, D=8, G=3, nn=c(54, 38, 28))
 #'
 #' data(CO2data)
-#' model <- MoE_clust(CO2data$CO2, G=2, expert= ~ CO2data$GNP)
-#' (bic2 <- MoE_crit(modelName=model$best.model$modelName, N=length(CO2data$CO2),
-#'                   loglik=max(model$log.likes), expert.pen=sum(lengths(model$expert)),
-#'                   D=1, G=model$best.model$G, nn=tabulate(model$classes))["bic",])
+#' model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ CO2data$GNP)
+#' G     <- model$best.model$G
+#' (bic2 <- MoE_crit(modelName=model$best.model$modelName, loglik=max(model$log.likes),
+#'                   N=length(CO2data$CO2), expert.pen=G * model$expert[[1]]$rank,
+#'                   D=1, G=G, nn=tabulate(model$classes))["bic",])
 #' identical(bic2, unname(model$best.model$bic))
   MoE_crit        <- Vectorize(function(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D, nn = NULL, delta = 0.5) {
     bicx          <- 2 * loglik - (nVarParams(modelName, D, G) + expert.pen + gating.pen) * log(N)
@@ -553,7 +554,7 @@
 #' @param tol A vector of length two giving relative convergence tolerances for the log-likelihood and for parameter convergence in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(1e-05,sqrt(.Machine$double.eps))}. If only one number is supplied, it is used as the tolerance for the outer iterations and the tolerance for the inner iterations is as in the default.
 #' @param itmax A vector of length two giving integer limits on the number of EM iterations and on the number of iterations in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(.Machine$integer.max, .Machine$integer.max)} allowing termination to be completely governed by \code{tol}. If only one number is supplied, it is used as the iteration limit for the outer iteration only.
 #' @param equalPro Logical variable indicating whether or not the mixing proportions are equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored.
-#' @param warn.it A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}
+#' @param warn.it A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}. A warning will always be printed if one of more models fail to converge in \code{itmax[1]} iterations.
 #' @param verbose Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.
 #'
 #' @details \code{MoE_control} is provided for assigning values and defaults within \code{\link{MoE_clust}}.
@@ -574,35 +575,36 @@
 #'
 #' # Supplying ctrl without naming it as control throws an error,
 #' # when any of {modelNames, gating, expert} are not supplied
-#' res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)
+#' \dontrun{
+#' res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)}
   MoE_control     <- function(criterion = c("bic", "icl"), stopping = c("aitken", "relative"),
                               init.z = c("hc", "kmeans", "mclust", "random"), eps = .Machine$double.eps,
                               tol = c(1e-05, sqrt(.Machine$double.eps)), itmax = c(.Machine$integer.max,
                               .Machine$integer.max), equalPro = FALSE, warn.it = 0, verbose = interactive()) {
-    if(!is.character(criterion))                 stop("'criterion' must be a character vector of length 1")
+    if(!is.character(criterion))                  stop("'criterion' must be a character vector of length 1")
     criterion     <- match.arg(criterion)
-    if(!is.character(stopping))                  stop("'stopping' must be a character vector of length 1")
+    if(!is.character(stopping))                   stop("'stopping' must be a character vector of length 1")
     stopping      <- match.arg(stopping)
-    if(!is.character(init.z))                    stop("'init.z' must be a character vector of length 1")
+    if(!is.character(init.z))                     stop("'init.z' must be a character vector of length 1")
     init.z        <- match.arg(init.z)
-    if(length(eps) > 2)                          stop("'eps' can be of length at most 2")
-    if(any(eps     < 0))                         stop("'eps' is negative")
-    if(any(eps    >= 1))                         stop("'eps' is not less than 1")
-    if((len.tol   <- length(tol))   > 2)         stop("'tol' can be of length at most 2")
-    if(any(tol     < 0))                         stop("'tol' is negative")
-    if(any(tol    >= 1))                         stop("'tol' is not less than 1")
-    if(any(itmax   < 0))                         stop("'itmax' is negative")
+    if(length(eps) > 2)                           stop("'eps' can be of length at most 2")
+    if(any(eps     < 0))                          stop("'eps' is negative")
+    if(any(eps    >= 1))                          stop("'eps' is not less than 1")
+    if((len.tol   <- length(tol))   > 2)          stop("'tol' can be of length at most 2")
+    if(any(tol     < 0))                          stop("'tol' is negative")
+    if(any(tol    >= 1))                          stop("'tol' is not less than 1")
+    if(any(itmax   < 0))                          stop("'itmax' is negative")
     if(len.tol    == 1)        tol <- rep(tol, 2)
-    if((len.itmax <- length(itmax)) > 2)         stop("'itmax' can be of length at most 2")
+    if((len.itmax <- length(itmax)) > 2)          stop("'itmax' can be of length at most 2")
     if(len.itmax  == 1)      itmax <- c(itmax, .Machine$integer.max)
     inf           <- is.infinite(itmax)
     if(any(inf))        itmax[inf] <- .Machine$integer.max
     if(length(equalPro) > 1 ||
-       !is.logical(equalPro))                    stop("'equalPro' must be a single logical indicator")
+       !is.logical(equalPro))                     stop("'equalPro' must be a single logical indicator")
     if(length(verbose)  < 1 ||
-       !is.logical(verbose))                     stop("'verbose' must be a single logical indicator")
+       !is.logical(verbose))                      stop("'verbose' must be a single logical indicator")
     if(length(warn.it)  > 1 ||
-       !is.numeric(warn.it))                     stop("'warn.it' must be a numeric vector of length 1")
+       !is.numeric(warn.it))                      stop("'warn.it' must be a numeric vector of length 1")
       list(criterion = criterion, stopping = stopping, init.z = init.z, eps = eps, tol = tol,
            itmax = itmax, equalPro = equalPro, warn.it=warn.it, verbose = verbose)
   }

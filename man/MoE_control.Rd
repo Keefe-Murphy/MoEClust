@@ -25,7 +25,7 @@ MoE_control(criterion = c("bic", "icl"), stopping = c("aitken", "relative"),
 
 \item{equalPro}{Logical variable indicating whether or not the mixing proportions are equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored.}
 
-\item{warn.it}{A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}}
+\item{warn.it}{A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}. A warning will always be printed if one of more models fail to converge in \code{itmax[1]} iterations.}
 
 \item{verbose}{Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.}
 }
@@ -49,7 +49,8 @@ res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, stopping="relative")
 
 # Supplying ctrl without naming it as control throws an error,
 # when any of {modelNames, gating, expert} are not supplied
-res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)
+\dontrun{
+res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)}
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}
