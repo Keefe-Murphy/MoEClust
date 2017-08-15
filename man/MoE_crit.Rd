@@ -5,7 +5,7 @@
 \title{MoEClust BIC and ICL Model-Selection Criteria}
 \usage{
 MoE_crit(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D,
-  nn = NULL, delta = 0.5)
+  nn = NULL, df = NULL, delta = 0.5)
 }
 \arguments{
 \item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
@@ -24,10 +24,12 @@ MoE_crit(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D,
 
 \item{nn}{A vector of length \code{G} which sums to \code{N} giving the number of observations in each component. If supplied the ICL is also computed and returned, otherwise only the BIC.}
 
+\item{df}{An alternative way to specify the degrees of freedom exactly. If supplied, the arguments \code{D, gating.pen} and \code{expert.pen}, which are used to calculate the degrees of freedom, will be ignored.}
+
 \item{delta}{Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.}
 }
 \value{
-A simplified array containing the BIC (and if \code{nn} is supplied, also the ICL) for each of the given input arguments.
+A simplified array containing the BIC, the degrees of freedom and, if \code{nn} is supplied, also the ICL, for each of the given input arguments.
 }
 \description{
 Computes the BIC (Bayesian Information Criterion) and ICL (Integrated Complete Likelihood) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
@@ -48,10 +50,19 @@ MoE_crit(modelName=c("VVI", "VVE", "VVV"),
 data(CO2data)
 model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ CO2data$GNP)
 G     <- model$best.model$G
-(bic2 <- MoE_crit(modelName=model$best.model$modelName, loglik=max(model$log.likes),
-                  N=length(CO2data$CO2), expert.pen=G * model$expert[[1]]$rank,
-                  D=1, G=G, nn=tabulate(model$classes))["bic",])
+name  <- model$best.model$modelName
+ll    <- max(model$log.likes)
+N     <- length(CO2data$CO2)
+nn    <- tabulate(model$classification)
+
+# Compare BIC from MoE_crit to the BIC of the model
+(bic2 <- MoE_crit(modelName=name, loglik=ll, N=N, D=1, G=G, nn=nn,
+                  expert.pen=G * model$expert[[1]]$rank)["bic",])
 identical(bic2, unname(model$best.model$bic))
+
+# Make the same comparison with the known degrees of freedom
+(bic3 <- MoE_crit(modelName=name, loglik=ll, N=N, G=G, df=model$best.model$df, nn=nn)["bic",])
+identical(bic3, bic2)
 }
 \references{
 Biernacki, C., Celeux, G., Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.

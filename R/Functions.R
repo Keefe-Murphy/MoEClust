@@ -27,19 +27,20 @@
 #' @importFrom stats "as.formula" "coef" "complete.cases" "kmeans" "lm" "predict" "residuals" "setNames" "update.formula"
 #' @return A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen 'best' model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
 #' \itemize{
-#' \item{\code{mus} - }{The means of each component. Will be all \code{0} if there are \code{expert} network covariates.}
-#' \item{\code{sigmas} - }{The variance parameters of each component.}
+#' \item{\code{mean} - }{The means of each component. Will be all \code{0} if there are \code{expert} network covariates.}
+#' \item{\code{variance} - }{The variance parameters of each component.}
 #' \item{\code{Z} - }{The final responsibility matrix of probabilities of component membership.}
-#' \item{\code{pis} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
-#' \item{\code{classes} - }{The vector of cluster labels for the chosen model.}
-#' \item{\code{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated.}
-#' \item{\code{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated.}
+#' \item{\code{pro} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
+#' \item{\code{classification} - }{The vector of cluster labels for the chosen model.}
+#' \item{\code{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated due to error.}
+#' \item{\code{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated due to error.}
 #' \item{\code{iters} - }{Total number of EM iterations for every visited model. May include \code{NA} values for models which were terminated.}
-#' \item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}" and "\code{icl}" values.}
+#' \item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}" and "\code{icl}" values. The supplied \code{gating} and \code{expert} formulas can also be found here, as well as the total degrees of freedom \code{df}.}
 #' \item{\code{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
 #' \item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}.}
 #' \item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}.}
 #' }
+#' Dedicated \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}.
 #' @seealso \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}
 #' @export
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
@@ -47,33 +48,34 @@
 #' @examples
 #' \dontrun{
 #' data(ais)
-#' hema <- ais[,3:7]
+#' hema  <- ais[,3:7]
 #'
 #' # Fit a standard finite mixture model
-#' m1   <- MoE_clust(hema, G=2:3)
+#' m1    <- MoE_clust(hema, G=2:3)
 #'
 #' # Allow covariates to enter the mixing proportions
-#' m2   <- MoE_clust(hema, G=2:3, gating= ~ ais$sex + ais$BMI)
+#' m2    <- MoE_clust(hema, G=2:3, gating= ~ ais$sex + ais$BMI)
 #'
 #' # Allow covariates to enter the component densities
-#' m3   <- MoE_clust(hema, G=2:3, expert= ~ ais$sex)
+#' m3    <- MoE_clust(hema, G=2:3, expert= ~ ais$sex)
 #'
 #' # Allow covariates to enter both the gating & expert network
-#' m4   <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, expert= ~ ais$sex)
+#' m4    <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, expert= ~ ais$sex)
 #'
 #' # Extract the model with highest BIC
-#' BICs <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
-#' best <- get(gsub("\\..*", "", names(BICs)[which.max(BICs)]))
-#' best$best.model
+#' BICs  <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
+#' (best <- get(gsub("\\..*", "", names(BICs)[which.max(BICs)])))
+#' summary(best)
 #'
 #' # Visualise the results using the 'lattice' library
 #' # require("lattice")
-#' # z  <- factor(best$classes, labels=paste0("Cluster", seq_len(best$best.model$G)))
+#' # z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$best.model$G)))
 #' # splom(~ hema | ais$sex, groups=z)
 #' # splom(~ hema | z, groups=ais$sex)}
   MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = NULL, expert = NULL, control = MoE_control(...), ...) {
 
   # Definitions and storage set-up
+    call          <- match.call()
     multi         <- missing(modelNames)
     gate.x        <- !missing(gating)
     exp.x         <- !missing(expert)
@@ -168,7 +170,10 @@
         gate.G[1] <- FALSE
       }
     }
-    if(gate.x     && equal.pro)                   stop("Can't constrain mixing proportions to be equal when gating covariates are supplied")
+    if(equal.pro  && gate.x)   { if(verbose)      message("Can't constrain mixing proportions to be equal when gating covariates are supplied")
+      equal.pro   <- FALSE
+    }
+    equal.pis     <- c(ifelse(!Gall, TRUE, equal.pro), rep(equal.pro, length(G) - 1))
 
   # Define the expert formula
     if(exp.x)     {
@@ -188,6 +193,7 @@
       if(isTRUE(verbose))        cat(paste0("\n", g, " cluster model", ifelse(multi, "s", ""), " -\n"))
       x.dat       <- replicate(g, X, FALSE)
       h           <- which(range.G == g)
+      equal.pro   <- equal.pis[h]
       gate.g      <- gate.G[h]
       Gseq        <- seq_len(g)
       classes     <- if(g > 1) switch(init.z, hc=as.vector(hclass(hc(X, minclus=g), g)), kmeans=kmeans(X, g)$cluster,
@@ -215,13 +221,12 @@
       } else expert.pen       <- g * D
 
     # Loop over the mclust model type(s)
-      modelsG1    <- if(g == 1)  mf1    else mfg
-      for(modtype in modelsG1)  {
+      for(modtype in if(g == 1)  mf1   else mfg)  {
         m0W       <- m0X      <- FALSE
-        m1        <- modtype  == modelsG1[1]
 
       # Initialise parameters from allocations
         if(isTRUE(verbose))      cat(paste0("\n\tModel: ", modtype, "\n"))
+        df        <- nVarParams(modtype, D, g)  + gate.pen
         Mstep     <- mstep(modtype, X, Z.init, control=control, equalPro=equal.pro)
         mus       <- Mstep$parameters$mean
         sigs      <- Mstep$parameters$variance$sigma
@@ -230,14 +235,15 @@
           pis     <- if(equal.pro) pis  else Mstep$parameters$pro
           lpi     <- if(equal.pro) lpi  else matrix(log(pis), nrow=N, ncol=g, byrow=TRUE)
         }
-        densme    <- capture.output(medensity <-  try(MoE_dens(modelName=modtype, data=x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
-        if((ERR   <- attr(Mstep, "returnCode") <  0 || inherits(medensity, "try-error"))) {
+        densme    <- capture.output(medensity  <- try(MoE_dens(modelName=modtype, data=x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
+        if((ERR   <- attr(Mstep, "returnCode")  < 0 || inherits(medensity, "try-error"))) {
           ll      <- NA
           j       <- 1
           if(isTRUE(verbose))    cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, "\n"))
           next
         } else    {
           Z       <- MoE_estep(Dens=medensity)$Z
+          if((ERR <- any(is.nan(Z))))             next
           ll      <- c(-Inf, -sqrt(.Machine$double.xmax))
           linf    <- rep(Inf, 2)
           j       <- 2
@@ -260,8 +266,8 @@
              Z.mat[(k - 1) * N + Nseq,k]       <- Z[,k]
             }
             res.x <- if(uni) as.matrix(do.call(c, e.res)) else do.call(rbind, e.res)
-            expert.pen        <- ifelse(j == 2, ifelse(m1, g * e.fit[[1]]$rank, expert.pen), expert.pen)
           }
+          df      <- ifelse(j == 2, ifelse(exp.x, g * e.fit[[1]]$rank, expert.pen) + df, df)
 
         # M step
           Mstep   <- if(exp.x) mstep(modtype, res.x, Z.mat, control=control) else mstep(modtype, X, Z, control=control)
@@ -283,13 +289,15 @@
           }
 
         # E step & record log-likelihood
-          densme  <- capture.output(medensity <-  try(MoE_dens(modelName=modtype, data=if(exp.x) e.res else x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
-          if((ERR <- attr(Mstep, "returnCode") <  0 || inherits(medensity, "try-error"))) {
+          densme  <- capture.output(medensity  <- try(MoE_dens(modelName=modtype, data=if(exp.x) e.res else x.dat, mus=mus, sigs=sigs, log.pis=lpi), silent=TRUE))
+          if((ERR <- attr(Mstep, "returnCode")  < 0 || inherits(medensity, "try-error"))) {
             ll    <- c(ll, NA)
             break
           } else  {
             Estep <- MoE_estep(Dens=medensity)
             Z     <- Estep$Z
+            ERR   <- any(is.nan(Z))
+            if(isTRUE(ERR))                       break
             ll    <- c(ll, Estep$loglik)
             j     <- j + 1
             if(stopx  == "aitken")  {
@@ -316,7 +324,7 @@
         if(isTRUE(verbose))      cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, "\n"))
         classes   <- max.col(Z)
         ll[j]     <- switch(stopx, aitken=max(ll[j], ifelse(is.finite(linf[2]), linf[2], linf[1])), ll[j])
-        choose    <- MoE_crit(modelName=modtype, loglik=ll[j], N=N, D=D, G=g, gating.pen=gate.pen, expert.pen=expert.pen, nn=tabulate(classes, nbins=g))
+        choose    <- MoE_crit(modelName=modtype, loglik=ll[j], N=N, G=g, nn=tabulate(classes, nbins=g), df=df)
         bics      <- choose["bic",]
         icls      <- choose["icl",]
         j.x       <- ifelse(ERR, NA, j)
@@ -333,6 +341,7 @@
           log.x   <- ll
           j.x     <- j
           class.x <- classes
+          df.x    <- df
           if(gate.g)     {
             gfit  <- fitG
           }
@@ -358,6 +367,7 @@
         x.z       <- z.x
         x.log     <- log.x
         x.class   <- class.x
+        x.df      <- df.x
         x.G       <- g
         if(gate.g)     {
           x.fitg  <- gfit
@@ -377,16 +387,20 @@
     best.gate     <- gate.G[which(range.G == x.G)]
     exp.gate      <- c(exp.x, best.gate)
     net.msg       <- ifelse(any(exp.gate), paste0(" (incl. ", ifelse(all(exp.gate), "gating and expert", ifelse(exp.x, "expert", ifelse(best.gate, "gating", ""))), " network covariates)"), "")
-    best.mod      <- list(modelName=best.mod, modelDetails=paste0(best.mod, ": ", x.G, " component", ifelse(x.G > 1, "s ", ""), net.msg), bic = bic.fin, icl = icl.fin, G = x.G)
-    if(multi && verbose)         cat(paste0("\n\t\tBest Model: ", names(crit.fin), ", with ",
-                                     x.G, " component", ifelse(x.G > 1, "s", ""), net.msg, "\n\t\t",
+    best.mod      <- c(list(modelName=best.mod, modelDetails=paste0(best.mod, ": ", x.G, " component", ifelse(x.G > 1, "s", ""), net.msg), bic = bic.fin, icl = icl.fin, G = x.G, df = x.df),
+                       if(best.gate) list(gating = Reduce(paste, deparse(gating[-2]))), if(exp.x) list(expert = Reduce(paste, deparse(expert[-2]))))
+    if(multi && verbose)         cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod$modelName)$type, " (", best.mod$modelName, "), with ",
+                                     x.G, " component", ifelse(x.G > 1, "s", ""), ifelse(any(exp.gate), net.msg, ""), "\n\t\t",
                                      switch(criterion, bic="BIC", "ICL"), " = ", round(crit.fin, 2), "\n"))
     if(all(x.log  != cummax(x.log)))              warning("Log-likelihoods are not strictly increasing", call.=FALSE)
     if(any(it.x[!is.na(it.x)] == max.it))         warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")"), call.=FALSE)
-    results       <- c(list(mus = x.mu, sigmas = x.sig, Z = x.z, pis = x.pi, classes = x.class, BICs = BICs,
+    results       <- c(list(mean = x.mu, variance = x.sig, Z = x.z, pro = x.pi, classification = x.class, BICs = BICs,
                             ICLs = ICLs, best.model = best.mod, iters = it.x, log.likes = x.log[!is.na(x.log)][-c(1:2)]),
                        if(best.gate) list(gating = x.fitg), if(exp.x) list(expert = setNames(x.fite, paste0("Cluster", seq_len(x.G)))))
     class(results)            <- "MoEClust"
+    attr(results, "Call")     <- call
+    attr(results, "Crit")     <- criterion
+    attr(results, "Dims")     <- dim(X)
       return(results)
   }
 
@@ -415,14 +429,14 @@
 #' hema  <- ais[,3:7]
 #' model <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
 #' Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
-#'                   mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+#'                   mus=model$mean, sigs=model$variance, log.pis=log(model$pro))
 #'
 #' # Construct the Z matrix and compute the log-likelihood
 #' Estep <- MoE_estep(Dens=Dens)
 #' identical(Estep$Z, model$Z)
 #' (ll   <- Estep$loglik)
   MoE_dens        <- function(modelName, data, mus, sigs, log.pis = 0, logarithm = TRUE) {
-    G             <- ifelse(is.matrix(mus),       ncol(mus),       length(mus))
+    G             <- ifelse(is.matrix(mus),  ncol(mus),  length(mus))
     Gseq          <- seq_len(G)
     if(!is.list(data) ||
         length(data)  != G) {
@@ -479,7 +493,7 @@
 #' hema   <- ais[,3:7]
 #' model  <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
 #' Dens   <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
-#'                    mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+#'                    mus=model$mean, sigs=model$variance, log.pis=log(model$pro))
 #'
 #' # Construct the Z matrix and compute the log-likelihood
 #' Estep  <- MoE_estep(Dens=Dens)
@@ -488,7 +502,7 @@
 #'
 #' # Call MoE_estep directly
 #' Estep2 <- MoE_estep(modelName=model$best.mod$modelName, data=hema,
-#'                     mus=model$mus, sigs=model$sigmas, log.pis=log(model$pis))
+#'                     mus=model$mean, sigs=model$variance, log.pis=log(model$pro))
 #' identical(Estep2$loglik, ll)
   MoE_estep       <- function(modelName, data, mus, sigs, log.pis = 0, Dens = NULL) {
     if(missing(Dens)) {
@@ -512,13 +526,14 @@
 #' @param gating.pen The number of parameters of the \emph{gating} network of the MoEClust model. Defaults to \code{G - 1}, which corresponds to no gating covariates. If covariates are included, this should be the number of regression coefficients in the fitted object. If there are no covariates and mixing proportions are further assumed to be present in equal proportion, \code{gating.pen} should be \code{0}.
 #' @param expert.pen The number of parameters of the \emph{expert} network of the MoEClust model. Defaults to \code{G * D}, which corresponds to no expert covariates. If covariates are included, this should be the number of regression coefficients in the fitted object.
 #' @param nn A vector of length \code{G} which sums to \code{N} giving the number of observations in each component. If supplied the ICL is also computed and returned, otherwise only the BIC.
+#' @param df An alternative way to specify the degrees of freedom exactly. If supplied, the arguments \code{D, gating.pen} and \code{expert.pen}, which are used to calculate the degrees of freedom, will be ignored.
 #' @param delta Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.
 #'
 #' @details The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.\cr
 #'
 #' If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{model$gating$rank} and \code{G * model$expert[[1]]$rank}, respectively.
 #' @importFrom mclust "mclustModelNames" "nVarParams"
-#' @return A simplified array containing the BIC (and if \code{nn} is supplied, also the ICL) for each of the given input arguments.
+#' @return A simplified array containing the BIC, the degrees of freedom and, if \code{nn} is supplied, also the ICL, for each of the given input arguments.
 #' @note In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
 #' @export
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
@@ -535,13 +550,23 @@
 #' data(CO2data)
 #' model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ CO2data$GNP)
 #' G     <- model$best.model$G
-#' (bic2 <- MoE_crit(modelName=model$best.model$modelName, loglik=max(model$log.likes),
-#'                   N=length(CO2data$CO2), expert.pen=G * model$expert[[1]]$rank,
-#'                   D=1, G=G, nn=tabulate(model$classes))["bic",])
+#' name  <- model$best.model$modelName
+#' ll    <- max(model$log.likes)
+#' N     <- length(CO2data$CO2)
+#' nn    <- tabulate(model$classification)
+#'
+#' # Compare BIC from MoE_crit to the BIC of the model
+#' (bic2 <- MoE_crit(modelName=name, loglik=ll, N=N, D=1, G=G, nn=nn,
+#'                   expert.pen=G * model$expert[[1]]$rank)["bic",])
 #' identical(bic2, unname(model$best.model$bic))
-  MoE_crit        <- Vectorize(function(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D, nn = NULL, delta = 0.5) {
-    bicx          <- 2 * loglik - (nVarParams(modelName, D, G) + expert.pen + gating.pen) * log(N)
-      return(c(bic = bicx, icl = if(!missing(nn)) bicx + ifelse(G == 1, 0, lgamma(G * delta) + sum(lgamma(nn + delta)) - G * lgamma(delta) - lgamma(N + G * delta))))
+#'
+#' # Make the same comparison with the known degrees of freedom
+#' (bic3 <- MoE_crit(modelName=name, loglik=ll, N=N, G=G, df=model$best.model$df, nn=nn)["bic",])
+#' identical(bic3, bic2)
+  MoE_crit        <- Vectorize(function(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D, nn = NULL, df = NULL, delta = 0.5) {
+    df            <- ifelse(!missing(df), df, nVarParams(modelName, D, G) +  expert.pen + gating.pen)
+    bic.x         <- 2 * loglik - df * log(N)
+      return(c(bic = bic.x, icl = if(!missing(nn)) bic.x + ifelse(G == 1, 0, lgamma(G   * delta) + sum(lgamma(nn + delta)) - G * lgamma(delta) - lgamma(N + G * delta)), df = df))
   }, vectorize.args = c("modelName", "loglik"), SIMPLIFY="array")
 
 #' Set control values for use with MoEClust
@@ -648,5 +673,68 @@
       linf        <- ifelse(a  < 1,   l3 + (l3 - l2) / denom, Inf)
     }
       list(ll = l3, linf = linf, a = a)
+  }
+#
+
+#' @method print MoEClust
+#' @export
+  print.MoEClust  <- function(x, ...) {
+    cat("Call:\t");  print(attr(x, "Call")); cat("\n")
+    criterion     <- attr(x, "Crit")
+    best          <- x$best.model
+    name          <- best$modelName
+    G             <- best$G
+    gating        <- best$gating
+    expert        <- best$expert
+    gate.x        <- is.null(gating)
+    exp.x         <- is.null(expert)
+    net.x         <- !c(gate.x, exp.x)
+    cat(paste0("Best Model: ", mclustModelNames(name)$type, " (", best$modelName,
+               "), with ", G, " component", ifelse(G > 1, "s\n", "\n"),
+               switch(criterion, bic="BIC", "ICL"), " = ", round(unname(best[switch(criterion, bic="bic", "icl")][[1]]), 2),
+               ifelse(any(net.x), paste0("\nIncluding ", ifelse(all(net.x), "gating and expert", ifelse(!gate.x, "gating", ifelse(!exp.x, "expert", ""))), " network covariates:\n"), "\n"),
+               ifelse(gate.x, "", paste0("\tGating: ",   gating, ifelse(exp.x, "", "\n"))),
+               ifelse(exp.x,  "", paste0("\tExpert: ",   expert, ""))))
+      invisible()
+  }
+
+#' @method summary MoEClust
+#' @export
+  summary.MoEClust       <- function(object, ...) {
+    title         <- "Gaussian finite mixture of experts model fitted by EM algorithm"
+    best          <- object$best.model
+    dims          <- attr(object, "Dims")
+    gating        <- best$gating
+    expert        <- best$expert
+    summ          <- list(title = title, N = dims[1], D = dims[2], G = best$G, modelName = best$modelName,
+                          loglik = object$log.likes[length(object$log.likes)], df = best$df, bic=unname(best$bic),
+                          icl = unname(best$icl), mean = object$mean, variance = object$variance, Z = object$Z,
+                          pro = object$pro, classification = object$classification)
+    summ          <- c(summ, if(!is.null(gating)) list(gating = gating), if(!is.null(expert)) list(expert = expert))
+    class(summ)   <- "summary_MoEClust"
+     summ
+ }
+
+#' @method print summary_MoEClust
+#' @export
+  print.summary_MoEClust <- function(x, ...) {
+    tmp           <- data.frame(log.likelihood = x$loglik, N = x$N, D = x$D, df = x$df, BIC = x$bic, ICL = x$icl)
+    rownames(tmp) <- NULL
+    zs            <- setNames(table(x$classification), NULL)
+    name          <- x$modelName
+    G             <- x$G
+    gating        <- x$gating
+    expert        <- x$expert
+    gate.x        <- is.null(gating)
+    exp.x         <- is.null(expert)
+    cat(paste0("---------------------------------------------------------------\n", x$title,
+               "\n", "---------------------------------------------------------------\n\n",
+               "MoEClust ", name, " (", mclustModelNames(name)$type, "), with ", G, " component", ifelse(G > 1, "s", ""), ":\n\n",
+               ifelse(gate.x, "", paste0("Gating Network Covariates: ", gating, "\n")),
+               ifelse(exp.x,  "", paste0("Expert Network Covariates: ", expert, "\n")), "\n"))
+    print(tmp, row.names = FALSE)
+    cat("\nClustering table:")
+    print(zs,  row.names = FALSE)
+      invisible()
   }
 #

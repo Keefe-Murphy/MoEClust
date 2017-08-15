@@ -37,19 +37,20 @@ The help file for \code{\link[mclust]{mclustModelNames}} further describes the a
 \value{
 A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen 'best' model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
 \itemize{
-\item{\code{mus} - }{The means of each component. Will be all \code{0} if there are \code{expert} network covariates.}
-\item{\code{sigmas} - }{The variance parameters of each component.}
+\item{\code{mean} - }{The means of each component. Will be all \code{0} if there are \code{expert} network covariates.}
+\item{\code{variance} - }{The variance parameters of each component.}
 \item{\code{Z} - }{The final responsibility matrix of probabilities of component membership.}
-\item{\code{pis} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
-\item{\code{classes} - }{The vector of cluster labels for the chosen model.}
-\item{\code{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated.}
-\item{\code{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated.}
+\item{\code{pro} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
+\item{\code{classification} - }{The vector of cluster labels for the chosen model.}
+\item{\code{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated due to error.}
+\item{\code{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated due to error.}
 \item{\code{iters} - }{Total number of EM iterations for every visited model. May include \code{NA} values for models which were terminated.}
-\item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}" and "\code{icl}" values.}
+\item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}" and "\code{icl}" values. The supplied \code{gating} and \code{expert} formulas can also be found here, as well as the total degrees of freedom \code{df}.}
 \item{\code{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
 \item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}.}
 \item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}.}
 }
+Dedicated \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}.
 }
 \description{
 Fits Mixture of Experts models with \pkg{mclust}-family covariance structures. In other words, performs model-based clustering via the EM algorithm where covariates are allowed to enter neither, either, or both the mixing proportions (gating network) and/or component densities (expert network).
@@ -60,28 +61,28 @@ The function effectively allows 4 different types of Mixture of Expert model (as
 \examples{
 \dontrun{
 data(ais)
-hema <- ais[,3:7]
+hema  <- ais[,3:7]
 
 # Fit a standard finite mixture model
-m1   <- MoE_clust(hema, G=2:3)
+m1    <- MoE_clust(hema, G=2:3)
 
 # Allow covariates to enter the mixing proportions
-m2   <- MoE_clust(hema, G=2:3, gating= ~ ais$sex + ais$BMI)
+m2    <- MoE_clust(hema, G=2:3, gating= ~ ais$sex + ais$BMI)
 
 # Allow covariates to enter the component densities
-m3   <- MoE_clust(hema, G=2:3, expert= ~ ais$sex)
+m3    <- MoE_clust(hema, G=2:3, expert= ~ ais$sex)
 
 # Allow covariates to enter both the gating & expert network
-m4   <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, expert= ~ ais$sex)
+m4    <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, expert= ~ ais$sex)
 
 # Extract the model with highest BIC
-BICs <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
-best <- get(gsub("\\\\..*", "", names(BICs)[which.max(BICs)]))
-best$best.model
+BICs  <- c(m1=m1$best.model$bic, m2=m2$best.model$bic, m3=m3$best.model$bic, m4=m4$best.model$bic)
+(best <- get(gsub("\\\\..*", "", names(BICs)[which.max(BICs)])))
+summary(best)
 
 # Visualise the results using the 'lattice' library
 # require("lattice")
-# z  <- factor(best$classes, labels=paste0("Cluster", seq_len(best$best.model$G)))
+# z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$best.model$G)))
 # splom(~ hema | ais$sex, groups=z)
 # splom(~ hema | z, groups=ais$sex)}
 }
