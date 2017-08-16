@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions.R
 \name{MoE_crit}
 \alias{MoE_crit}
-\title{MoEClust BIC and ICL Model-Selection Criteria}
+\title{MoEClust BIC, ICL, and AIC Model-Selection Criteria}
 \usage{
 MoE_crit(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D,
   nn = NULL, df = NULL, delta = 0.5)
@@ -22,17 +22,17 @@ MoE_crit(modelName, loglik, N, D, G, gating.pen = G - 1, expert.pen = G * D,
 
 \item{expert.pen}{The number of parameters of the \emph{expert} network of the MoEClust model. Defaults to \code{G * D}, which corresponds to no expert covariates. If covariates are included, this should be the number of regression coefficients in the fitted object.}
 
-\item{nn}{A vector of length \code{G} which sums to \code{N} giving the number of observations in each component. If supplied the ICL is also computed and returned, otherwise only the BIC.}
+\item{nn}{A vector of length \code{G} which sums to \code{N} giving the number of observations in each component. If supplied the ICL is also computed and returned, otherwise only the BIC and AIC.}
 
 \item{df}{An alternative way to specify the degrees of freedom exactly. If supplied, the arguments \code{D, gating.pen} and \code{expert.pen}, which are used to calculate the degrees of freedom, will be ignored.}
 
 \item{delta}{Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.}
 }
 \value{
-A simplified array containing the BIC, the degrees of freedom and, if \code{nn} is supplied, also the ICL, for each of the given input arguments.
+A simplified array containing the BIC, AIC, degrees of freedom and, if \code{nn} is supplied, also the ICL, for each of the given input arguments.
 }
 \description{
-Computes the BIC (Bayesian Information Criterion) and ICL (Integrated Complete Likelihood) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
+Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Likelihood), and AIC (Akaike Information Criterion) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
 }
 \details{
 The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.\cr

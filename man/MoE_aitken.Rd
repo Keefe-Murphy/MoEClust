@@ -42,3 +42,6 @@ Boehning, D., Dietz, E., Schaub, R., Schlattmann, and Lindsay, B. (1994, June). 
 \seealso{
 \code{\link{MoE_control}}
 }
+\author{
+Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+}

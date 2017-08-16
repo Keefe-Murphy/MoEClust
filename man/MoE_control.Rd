@@ -4,14 +4,14 @@
 \alias{MoE_control}
 \title{Set control values for use with MoEClust}
 \usage{
-MoE_control(criterion = c("bic", "icl"), stopping = c("aitken", "relative"),
-  init.z = c("hc", "kmeans", "mclust", "random"), eps = .Machine$double.eps,
-  tol = c(1e-05, sqrt(.Machine$double.eps)), itmax = c(.Machine$integer.max,
-  .Machine$integer.max), equalPro = FALSE, warn.it = 0,
-  verbose = interactive())
+MoE_control(criterion = c("bic", "icl", "aic"), stopping = c("aitken",
+  "relative"), init.z = c("hc", "kmeans", "mclust", "random"),
+  eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps)),
+  itmax = c(.Machine$integer.max, .Machine$integer.max), equalPro = FALSE,
+  warn.it = 0, verbose = interactive())
 }
 \arguments{
-\item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion) or "\code{icl}" (Integrated Complete Likelihood) is used to determine the 'best' model when gathering output. Note that both criteria will be returned in any case.}
+\item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.}
 
 \item{stopping}{The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{MoE_aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.}
 
@@ -36,7 +36,9 @@ A named list in which the names are the names of the arguments and the values ar
 Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
 }
 \details{
-\code{MoE_control} is provided for assigning values and defaults within \code{\link{MoE_clust}}.
+\code{MoE_control} is provided for assigning values and defaults within \code{\link{MoE_clust}}.\cr
+
+While the \code{criterion} argument controls the choice of the optimal number of components and \pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates.
 }
 \examples{
 ctrl <- MoE_control(criterion="icl", itmax=10000, warn.it=12)
@@ -53,7 +55,7 @@ res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, stopping="relative")
 res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)}
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}
+\code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link{MoE_compare}}
 }
 \author{
 Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
