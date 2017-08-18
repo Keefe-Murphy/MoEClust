@@ -35,9 +35,9 @@ model <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
 Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
                   mus=model$mean, sigs=model$variance, log.pis=log(model$pro))
 
-# Construct the Z matrix and compute the log-likelihood
+# Construct the z matrix and compute the log-likelihood
 Estep <- MoE_estep(Dens=Dens)
-identical(Estep$Z, model$Z)
+identical(Estep$z, model$z)
 (ll   <- Estep$loglik)
 }
 \seealso{

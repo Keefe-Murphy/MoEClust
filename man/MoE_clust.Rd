@@ -39,17 +39,18 @@ A list (of class \code{"MoEClust"}) with the following named entries, mostly cor
 \itemize{
 \item{\code{mean} - }{The means of each component. Will be all \code{0} if there are \code{expert} network covariates.}
 \item{\code{variance} - }{The variance parameters of each component.}
-\item{\code{Z} - }{The final responsibility matrix of probabilities of component membership.}
+\item{\code{z} - }{The final responsibility matrix of probabilities of component membership.}
 \item{\code{pro} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
 \item{\code{classification} - }{The vector of cluster labels for the chosen model.}
-\item{\code{BICs} - }{BIC values for every visited model. May include \code{NA} values for models which were terminated due to error.}
-\item{\code{ICLs} - }{ICL values for every visited model. May include \code{NA} values for models which were terminated due to error.}
-\item{\code{AICs} - }{AIC values for every visited model. May include \code{NA} values for models which were terminated due to error.}
-\item{\code{iters} - }{Total number of EM iterations for every visited model. May include \code{NA} values for models which were terminated.}
-\item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}", "\code{icl}" and "\code{aic}" values. The supplied \code{gating} and \code{expert} formulas can also be found here, as well as the total degrees of freedom \code{df}.}
+\item{\code{BICs} - }{A matrix of BIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
+\item{\code{ICLs} - }{A matrix of ICL values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
+\item{\code{AICs} - }{A matrix of AIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
+\item{\code{iters} - }{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
+\item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}", "\code{icl}" and "\code{aic}" values (corresponding to the best model, which may not necessarily be the optimal for all three criteria). The supplied \code{gating} and \code{expert} formulas can also be found here, as well as the total degrees of freedom \code{df}.}
 \item{\code{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
-\item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network if \code{gating} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}.}
-\item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network if \code{expert} covariates were supplied. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}.}
+\item{\code{uncertainty} - }{The uncertainty associated with the classification.}
+\item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}.}
+\item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}.}
 }
 Dedicated \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}.
 }

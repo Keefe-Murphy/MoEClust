@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions.R
 \name{MoE_estep}
 \alias{MoE_estep}
-\title{Compute the Z matrix and log-likelihood for MoEClust models}
+\title{Compute the responsility matrix z and log-likelihood for MoEClust models}
 \usage{
 MoE_estep(modelName, data, mus, sigs, log.pis = 0, Dens = NULL)
 }
@@ -17,20 +17,20 @@ MoE_estep(modelName, data, mus, sigs, log.pis = 0, Dens = NULL)
 
 \item{log.pis}{If covariates enter the gating network, an N times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
 
-\item{Dens}{(Optional) A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, typically obtained by \code{\link{MoE_dens}} but this is not necessary. If this is supplied, all other arguments are ignored, otherwise \code{\link{MoE_dens}} is called according to the other supplied arguments.}
+\item{Dens}{(Optional) A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, to which the softmax function is to be applied, typically obtained by \code{\link{MoE_dens}} but this is not necessary. If this is supplied, all other arguments are ignored, otherwise \code{\link{MoE_dens}} is called according to the other supplied arguments.}
 }
 \value{
 A list containing two elements:
 \itemize{
-\item{\code{Z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
+\item{\code{z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
 \item{\code{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
 }
 }
 \description{
-Computes the responsibility matrix Z and the log-likelihood for parameterised MVN mixtures of experts, with the aid of \code{\link{MoE_dens}}.
+Softmax function to compute the responsibility matrix z and the log-likelihood for parameterised MVN mixtures of experts, with the aid of \code{\link{MoE_dens}}.
 }
 \note{
-This function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities.
+This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities.
 }
 \examples{
 data(ais)
@@ -41,7 +41,7 @@ Dens   <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
 
 # Construct the Z matrix and compute the log-likelihood
 Estep  <- MoE_estep(Dens=Dens)
-identical(Estep$Z, model$Z)
+identical(Estep$z, model$z)
 (ll    <- Estep$loglik)
 
 # Call MoE_estep directly
