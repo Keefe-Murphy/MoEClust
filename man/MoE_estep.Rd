@@ -39,10 +39,14 @@ model  <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
 Dens   <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
                    mus=model$mean, sigs=model$variance, log.pis=log(model$pro))
 
-# Construct the Z matrix and compute the log-likelihood
+# Construct the z matrix and compute the log-likelihood
 Estep  <- MoE_estep(Dens=Dens)
-identical(Estep$z, model$z)
 (ll    <- Estep$loglik)
+
+# The z matrix will be close but not exactly the same as that from the model
+# as the EM algorithm finishes on an M-step, but the classification should be
+identical(max.col(Estep$z), model$classification)    #TRUE
+round(sum(Estep$z - model$z), options()$digits) == 0 #TRUE
 
 # Call MoE_estep directly
 Estep2 <- MoE_estep(modelName=model$best.mod$modelName, data=hema,

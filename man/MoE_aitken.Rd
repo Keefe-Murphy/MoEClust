@@ -31,9 +31,9 @@ When the \code{"aitken"} method is employed, the final estimate of the log-likel
 \examples{
 (a1 <- MoE_aitken(-c(449.61534, 442.84221, 436.58999)))
 a2  <- MoE_aitken(-c(442.84221, 436.58999, 436.58998))
-abs(a2$linf - a1$linf) < 1e-05
+abs(a2$linf - a1$linf) < 1e-05 #FALSE
 a3  <- MoE_aitken(-c(436.58998, 436.58997, 436.58997))
-abs(a3$linf - a2$linf) < 1e-05
+abs(a3$linf - a2$linf) < 1e-05 #TRUE
 (ll <- a3$linf)
 }
 \references{

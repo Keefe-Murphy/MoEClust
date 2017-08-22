@@ -37,8 +37,12 @@ Dens  <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
 
 # Construct the z matrix and compute the log-likelihood
 Estep <- MoE_estep(Dens=Dens)
-identical(Estep$z, model$z)
 (ll   <- Estep$loglik)
+
+# The z matrix will be close but not exactly the same as that from the model
+# as the EM algorithm finishes on an M-step, but the classification should be
+identical(max.col(Estep$z), model$classification)    #TRUE
+round(sum(Estep$z - model$z), options()$digits) == 0 #TRUE
 }
 \seealso{
 \code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}

@@ -37,20 +37,22 @@ The help file for \code{\link[mclust]{mclustModelNames}} further describes the a
 \value{
 A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen 'best' model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
 \itemize{
-\item{\code{mean} - }{The means of each component. Will be all \code{0} if there are \code{expert} network covariates.}
-\item{\code{variance} - }{The variance parameters of each component.}
+\item{\code{mean} - }{The means of each component. If there are \code{expert} network covariates, this is the result of the extra M-step on the identified best model \emph{without} the \code{expert} covariates; as such it is just the cluster means according to the final allocation. The mean of the residuals used in the clustering accounting for the \code{expert} covariates can be found in \code{resid.mean}; if there are no \code{expert} covariates \code{mean} and \code{resid.mean} will be equal.}
+\item{\code{variance} - }{The variance parameters of each component. If there are \code{expert} network covariates, this is the result of the extra M-step on the identified best model \emph{without} the \code{expert} covariates; as such it just the (co)variance of the clusters according to the final allocation. The (co)variance of the residuals used in the clustering accounting for the \code{expert} covariates can be found in \code{resid.variance}; if there are no \code{expert} covariates \code{variance} and \code{resid.variance} will be equal.}
+\item{\code{resid.mean} - }{The mean of the residuals of each component used in the clustering accounting for the \code{expert} covariates; will be all \code{0} in the presence of \code{expert} network covariates, otherwise will be equal to \code{mean}, the cluster means according to the final allocation.}
+\item{\code{resid.variance} - }{The variance parameters of the residuals of each component used in the clustering accounting for the \code{expert} covariates. Will be equal to \code{variance} in the absence of \code{expert} network covariates, otherwise will be the (less variable) residual (co)variance.}
 \item{\code{z} - }{The final responsibility matrix of probabilities of component membership.}
 \item{\code{pro} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
 \item{\code{classification} - }{The vector of cluster labels for the chosen model.}
 \item{\code{BICs} - }{A matrix of BIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
 \item{\code{ICLs} - }{A matrix of ICL values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
 \item{\code{AICs} - }{A matrix of AIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
-\item{\code{iters} - }{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
 \item{\code{best.model} - }{A list of details pertaining to the chosen model, incl. the \pkg{mclust} model type, the number of components (G), as well as "\code{bic}", "\code{icl}" and "\code{aic}" values (corresponding to the best model, which may not necessarily be the optimal for all three criteria). The supplied \code{gating} and \code{expert} formulas can also be found here, as well as the total degrees of freedom \code{df}.}
+\item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were NOT supplied (or the best model has just one component), this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}.}
+\item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}.}
+\item{\code{iters} - }{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
 \item{\code{log.likes} - }{The vector of increasing log-likelihood values for every EM iteration under the chosen model.}
 \item{\code{uncertainty} - }{The uncertainty associated with the classification.}
-\item{\code{gating} - }{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}.}
-\item{\code{expert} - }{The multivariate WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}.}
 }
 Dedicated \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}.
 }
@@ -58,9 +60,12 @@ Dedicated \code{print} and \code{summary} functions exist for objects of class \
 Fits Mixture of Experts models with \pkg{mclust}-family covariance structures. In other words, performs model-based clustering via the EM algorithm where covariates are allowed to enter neither, either, or both the mixing proportions (gating network) and/or component densities (expert network).
 }
 \details{
-The function effectively allows 4 different types of Mixture of Expert model (as well as the different models in the mclust family, for each): i) the standard finite Gaussian mixture, ii) covariates only in the gating network, iii) covariates only in the expert network, iv) the full Mixture of Experts model with covariates entering both the mixing proportions and component densities. Note that having the same covariates in both networks is allowed.\cr
+The function effectively allows 4 different types of Mixture of Experts model (as well as the different models in the mclust family, for each): i) the standard finite Gaussian mixture, ii) covariates only in the gating network, iii) covariates only in the expert network, iv) the full Mixture of Experts model with covariates entering both the mixing proportions and component densities. Note that having the same covariates in both networks is allowed.\cr
 
 While model selection in terms of choosing the optimal number of components and the \pkg{mclust} model type is performed within this function using one of the \code{criterion} options within \code{\link{MoE_control}}, choosing between multiple fits with different combinations of covariates can be done via \code{\link{MoE_compare}}.
+}
+\note{
+The EM algorithm finishes on an extra M-step once the best model has been identified. The returned object contains as attributes the matched call and the dimensions of the input data matrix.
 }
 \examples{
 \dontrun{
@@ -82,7 +87,7 @@ m4    <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, expert= ~ ais$sex)
 # Extract the model with highest BIC
 (comp <- MoE_compare(m1, m2, m3, m4))
 (best <- get(comp$MoENames[1]))
-summary(best)
+(summ <- summary(best))
 
 # Visualise the results using the 'lattice' library
 # require("lattice")

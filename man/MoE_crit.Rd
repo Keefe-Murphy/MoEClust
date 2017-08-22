@@ -58,11 +58,11 @@ nn    <- tabulate(model$classification)
 # Compare BIC from MoE_crit to the BIC of the model
 (bic2 <- MoE_crit(modelName=name, loglik=ll, N=N, D=1, G=G, nn=nn,
                   expert.pen=G * model$expert[[1]]$rank)["bic",])
-identical(bic2, unname(model$best.model$bic))
+identical(bic2, unname(model$best.model$bic)) #TRUE
 
 # Make the same comparison with the known degrees of freedom
 (bic3 <- MoE_crit(modelName=name, loglik=ll, N=N, G=G, df=model$best.model$df, nn=nn)["bic",])
-identical(bic3, bic2)
+identical(bic3, bic2)                         #TRUE
 }
 \references{
 Biernacki, C., Celeux, G., Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
