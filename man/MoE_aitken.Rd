@@ -4,10 +4,10 @@
 \alias{MoE_aitken}
 \title{Aitken Acceleration}
 \usage{
-MoE_aitken(log.likes)
+MoE_aitken(loglik)
 }
 \arguments{
-\item{log.likes}{A vector of three consecutive log-likelihood values. These three values should be in ascending order, though this is not checked.}
+\item{loglik}{A vector of three consecutive log-likelihood values. These three values should be in ascending order, though this is not checked.}
 }
 \value{
 A list with the following components:

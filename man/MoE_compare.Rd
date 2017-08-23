@@ -14,16 +14,18 @@ MoE_compare(..., criterion = c("bic", "icl", "aic"), num.models = 3L)
 \item{num.models}{The (integer) number of models to be ranked and compared. Defaults to the \code{3L}. Will be constrained by the number of \code{"MoEClust"} objects supplied via \code{...}.}
 }
 \value{
-An list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(num.models)}:
-\itemize{
-\item{\code{MoENames} - }{The names of the supplied \code{"MoEClust"} objects.}
-\item{\code{modelNames} - }{The \code{\link[mclust]{mclustModelNames}}.}
-\item{\code{G} - }{The optimal numbers of components.}
-\item{\code{bic} - }{The ranked BIC values.}
-\item{\code{icl} - }{The ranked ICL values.}
-\item{\code{aic} - }{The ranked AIC values.}
-\item{\code{gating} - }{The gating formulas.}
-\item{\code{expert} - }{The expert formulas.}
+A list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(num.models)}:
+\describe{
+\item{\code{optimal}}{The single optimal model (an object of class \code{"MoEClust"}) among those supplied, according to the chosen \code{criterion}.}
+\item{\code{MoENames}}{The names of the supplied \code{"MoEClust"} objects.}
+\item{\code{modelNames}}{The \code{\link[mclust]{mclustModelNames}}.}
+\item{\code{G}}{The optimal numbers of components.}
+\item{\code{bic}}{The ranked BIC values.}
+\item{\code{icl}}{The ranked ICL values.}
+\item{\code{aic}}{The ranked AIC values.}
+\item{\code{gating}}{The gating formulas.}
+\item{\code{expert}}{The expert formulas.}
+\item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
 }
 }
 \description{
@@ -33,18 +35,21 @@ Takes one or more MoEClust objects from \code{\link{MoE_clust}} and ranks them a
 The purpose of this function is to conduct model selection on \code{"MoEClust"} objects, fit to the same data set, with different combinations of gating/expert network covariates. Model selection will have already been performed in terms of choosing the optimal number of components and \pkg{mclust} model type. The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object.
 }
 \note{
-The true ranking of second and third best model, and so on, may not be as reported here: these may be merely models with different numbers of components &/or \pkg{mclust} model types. The true purpose of this function is to compare the models already selected for different combinations of gating and expert network covariates.
+The true ranking of the second and third best model, and so on, may not be as reported here: these may be merely models with different numbers of components &/or \pkg{mclust} model types. The true purpose of this function is to compare the models already selected for different combinations of gating and expert network covariates.
 }
 \examples{
 data(CO2data)
 GNP   <- CO2data[,1]
 CO2   <- CO2data[,2]
 m1    <- MoE_clust(CO2, G=1:2)
-m2    <- MoE_clust(CO2, G=1:2, gating = ~ GNP)
-m3    <- MoE_clust(CO2, G=1:2, expert = ~ GNP)
-m4    <- MoE_clust(CO2, G=1:2, gating = ~ GNP, expert = ~ GNP)
-(comp <- MoE_compare(m1, m2, m3, m4))
-(mx   <- get(comp$MoENames[1]))
+m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP)
+m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
+m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
+m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
+m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
+(comp <- MoE_compare(m1, m2, m3, m4, m5, m6))
+(best <- comp$optimal)
+(summ <- summary(best))
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}

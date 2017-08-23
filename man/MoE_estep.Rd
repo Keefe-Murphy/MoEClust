@@ -9,20 +9,20 @@ MoE_estep(modelName, data, mus, sigs, log.pis = 0, Dens = NULL)
 \arguments{
 \item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
 
-\item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (N) and columns correspond to variables (D). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of multivariate WLS residuals for each component.}
+\item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (n) and columns correspond to variables (d). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of multivariate WLS residuals for each component.}
 
 \item{mus}{The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means.}
 
-\item{sigs}{a list of length G of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.}
+\item{sigs}{A list of length G of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.}
 
-\item{log.pis}{If covariates enter the gating network, an N times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
+\item{log.pis}{If covariates enter the gating network, an n times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
 
 \item{Dens}{(Optional) A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, to which the softmax function is to be applied, typically obtained by \code{\link{MoE_dens}} but this is not necessary. If this is supplied, all other arguments are ignored, otherwise \code{\link{MoE_dens}} is called according to the other supplied arguments.}
 }
 \value{
 A list containing two elements:
 \itemize{
-\item{\code{z} - }{A matrix with N rows and G columns containing the probability of cluster membership for each of N observations and G clusters}
+\item{\code{z} - }{A matrix with n rows and G columns containing the probability of cluster membership for each of n observations and G clusters}
 \item{\code{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
 }
 }
@@ -36,8 +36,9 @@ This softmax function is intended for joint use with \code{\link{MoE_dens}}, usi
 data(ais)
 hema   <- ais[,3:7]
 model  <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
-Dens   <- MoE_dens(modelName=model$best.mod$modelName, data=hema,
-                   mus=model$mean, sigs=model$variance, log.pis=log(model$pro))
+Dens  <- MoE_dens(modelName=model$modelName, data=hema,
+                  mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
+                  log.pis=log(model$parameters$pro))
 
 # Construct the z matrix and compute the log-likelihood
 Estep  <- MoE_estep(Dens=Dens)
@@ -49,8 +50,9 @@ identical(max.col(Estep$z), model$classification)    #TRUE
 round(sum(Estep$z - model$z), options()$digits) == 0 #TRUE
 
 # Call MoE_estep directly
-Estep2 <- MoE_estep(modelName=model$best.mod$modelName, data=hema,
-                    mus=model$mean, sigs=model$variance, log.pis=log(model$pro))
+Estep2 <- MoE_estep(modelName=model$modelName, data=hema,
+                    mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
+                    log.pis=log(model$parameters$pro))
 identical(Estep2$loglik, ll)
 }
 \seealso{
