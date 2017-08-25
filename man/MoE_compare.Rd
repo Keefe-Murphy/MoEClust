@@ -4,17 +4,17 @@
 \alias{MoE_compare}
 \title{Choose the best MoEClust model}
 \usage{
-MoE_compare(..., criterion = c("bic", "icl", "aic"), num.models = 3L)
+MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L)
 }
 \arguments{
 \item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single list of such objects can also be supplied.}
 
 \item{criterion}{The criterion used to determine the ranking. Defaults to \code{"bic"}.}
 
-\item{num.models}{The (integer) number of models to be ranked and compared. Defaults to the \code{3L}. Will be constrained by the number of \code{"MoEClust"} objects supplied via \code{...}.}
+\item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of \code{"MoEClust"} objects supplied via \code{...}.}
 }
 \value{
-A list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(num.models)}:
+A list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(pick)}:
 \describe{
 \item{\code{optimal}}{The single optimal model (an object of class \code{"MoEClust"}) among those supplied, according to the chosen \code{criterion}.}
 \item{\code{MoENames}}{The names of the supplied \code{"MoEClust"} objects.}

@@ -43,9 +43,9 @@ A list (of class \code{"MoEClust"}) with the following named entries, mostly cor
 \item{\code{n}}{The number of observations in the \code{data}.}
 \item{\code{d}}{The dimension of the \code{data}.}
 \item{\code{G}}{The optimal number of mixture components.}
-\item{\code{BIC}}{A matrix of \emph{all} BIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
-\item{\code{ICL}}{A matrix of \emph{all} ICL values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
-\item{\code{AIC}}{A matrix of \emph{all} AIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
+\item{\code{BIC}}{A matrix of \emph{all} BIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated.}
+\item{\code{ICL}}{A matrix of \emph{all} ICL values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated.}
+\item{\code{AIC}}{A matrix of \emph{all} AIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated.}
 \item{\code{bic}}{The BIC value corresponding to the optimal model. May not necessarily be the optimal BIC.}
 \item{\code{icl}}{The ICL value corresponding to the optimal model. May not necessarily be the optimal ICL.}
 \item{\code{aic}}{The AIC value corresponding to the optimal model. May not necessarily be the optimal AIC.}
@@ -63,7 +63,7 @@ A list (of class \code{"MoEClust"}) with the following named entries, mostly cor
 \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component.}
 \item{\code{classification}}{The vector of cluster labels for the chosen model corresponding to \code{z}, i.e. \code{max.col(z)}.}
 \item{\code{uncertainty}}{The uncertainty associated with the \code{classification}.}
-\item{\code{iters}}{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{NaN} represents models which were terminated due to error.}
+\item{\code{iters}}{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged.}
 }
 Dedicated \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}.
 }
@@ -78,7 +78,7 @@ While model selection in terms of choosing the optimal number of components and 
 \note{
 The EM algorithm finishes on an extra M-step once the best model has been identified.
 
-Where \code{BIC}, \code{ICL}, \code{AIC} and \code{iters} contain missing entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value.
+Where \code{BIC}, \code{ICL}, \code{AIC} and \code{iters} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL} and \code{AIC} all inherit the class \code{"MoECriterion"}, for which a dedicated print function exists.
 }
 \examples{
 \dontrun{

@@ -5,7 +5,7 @@
 \title{MoEClust BIC, ICL, and AIC Model-Selection Criteria}
 \usage{
 MoE_crit(modelName, loglik, n, d, G, gating.pen = G - 1, expert.pen = G * d,
-  n.vec = NULL, df = NULL, delta = 0.5)
+  z = NULL, df = NULL, delta = 0.5)
 }
 \arguments{
 \item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
@@ -22,14 +22,14 @@ MoE_crit(modelName, loglik, n, d, G, gating.pen = G - 1, expert.pen = G * d,
 
 \item{expert.pen}{The number of parameters of the \emph{expert} network of the MoEClust model. Defaults to \code{G * d}, which corresponds to no expert covariates. If covariates are included, this should be the number of regression coefficients in the fitted object.}
 
-\item{n.vec}{A vector of length \code{G} which sums to \code{n} giving the number of observations in each component. If supplied the ICL is also computed and returned, otherwise only the BIC and AIC.}
+\item{z}{The \code{n} times \code{G} responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component.. If supplied the ICL is also computed and returned, otherwise only the BIC and AIC.}
 
 \item{df}{An alternative way to specify the degrees of freedom exactly. If supplied, the arguments \code{d, gating.pen} and \code{expert.pen}, which are used to calculate the degrees of freedom, will be ignored.}
 
 \item{delta}{Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.}
 }
 \value{
-A simplified array containing the BIC, AIC, degrees of freedom and, if \code{n.vec} is supplied, also the ICL, for each of the given input arguments.
+A simplified array containing the BIC, AIC, degrees of freedom and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
 }
 \description{
 Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Likelihood), and AIC (Akaike Information Criterion) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
@@ -43,9 +43,8 @@ If \code{model} is an object of class \code{"MoEClust"} with \code{G} components
 In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
 }
 \examples{
-MoE_crit(modelName=c("VVI", "VVE", "VVV"),
-         loglik=c(-4036.99, -3987.12, -3992.45),
-         n=120, d=8, G=3, n.vec=c(54, 38, 28))
+MoE_crit(modelName=c("VVI", "VVE", "VVV"), n=120, d=8,
+         G=3, loglik=c(-4036.99, -3987.12, -3992.45))
 
 data(CO2data)
 model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ CO2data$GNP)
@@ -53,15 +52,15 @@ G     <- model$G
 name  <- model$modelName
 ll    <- max(model$loglik)
 n     <- length(CO2data$CO2)
-n.vec <- tabulate(model$classification)
+z     <- model$z
 
 # Compare BIC from MoE_crit to the BIC of the model
-(bic2 <- MoE_crit(modelName=name, loglik=ll, n=n, d=1, G=G, n.vec=n.vec,
+(bic2 <- MoE_crit(modelName=name, loglik=ll, n=n, d=1, G=G, z=z,
                   expert.pen=G * model$expert[[1]]$rank)["bic",])
 identical(bic2, unname(model$bic)) #TRUE
 
 # Make the same comparison with the known degrees of freedom
-(bic3 <- MoE_crit(modelName=name, loglik=ll, n=n, G=G, df=model$df, n.vec=n.vec)["bic",])
+(bic3 <- MoE_crit(modelName=name, loglik=ll, n=n, G=G, df=model$df, z=z)["bic",])
 identical(bic3, bic2)              #TRUE
 }
 \references{
