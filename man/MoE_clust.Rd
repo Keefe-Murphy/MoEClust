@@ -5,7 +5,7 @@
 \title{Mixtures of Experts: Model-Based Clustering with Covariates}
 \usage{
 MoE_clust(data, G = 1:9, modelNames = NULL, gating = NULL,
-  expert = NULL, control = MoE_control(...), ...)
+  expert = NULL, network.data = NULL, control = MoE_control(...), ...)
 }
 \arguments{
 \item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed. If a matrix or data frame, rows correspond to observations and columns correspond to variables.}
@@ -30,6 +30,8 @@ The help file for \code{\link[mclust]{mclustModelNames}} further describes the a
 
 \item{expert}{A formula for determining the model matrix for the multivariate WLS in the expert network when covariates are included in the component densities. Interactions etc. are permitted. The specification of the LHS of the formula is ignored.}
 
+\item{network.data}{An optional data frame in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called.}
+
 \item{control}{A list of control parameters for the EM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}.}
 
 \item{...}{An alternative means of passing control parameters via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here!}
@@ -52,6 +54,7 @@ A list (of class \code{"MoEClust"}) with the following named entries, mostly cor
 \item{\code{gating}}{The \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}, and the \code{gating} formula used is stored here as an attribute.}
 \item{\code{expert}}{The multivariate WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}, and the \code{expert} formula used is stored here is an attribute.}
 \item{\code{loglik}}{The vector of increasing log-likelihood values for every EM iteration under the optimal model.}
+\item{\code{df}}{The number of estimated parameters in the optimal model.}
 \item{\code{parameters}}{A list with the following components\cr
 \itemize{
 \item{\code{pro} - }{The mixing proportions: either a vector or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
@@ -63,6 +66,8 @@ A list (of class \code{"MoEClust"}) with the following named entries, mostly cor
 \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component.}
 \item{\code{classification}}{The vector of cluster labels for the chosen model corresponding to \code{z}, i.e. \code{max.col(z)}.}
 \item{\code{uncertainty}}{The uncertainty associated with the \code{classification}.}
+\item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any.}
+\item{\code{DF}}{A matrix of \emph{all} Degrees of Freedom values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated.}
 \item{\code{iters}}{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged.}
 }
 Dedicated \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}.
@@ -73,43 +78,45 @@ Fits Mixture of Experts models with \pkg{mclust}-family covariance structures. I
 \details{
 The function effectively allows 4 different types of Mixture of Experts model (as well as the different models in the mclust family, for each): i) the standard finite Gaussian mixture, ii) covariates only in the gating network, iii) covariates only in the expert network, iv) the full Mixture of Experts model with covariates entering both the mixing proportions and component densities. Note that having the same covariates in both networks is allowed.\cr
 
-While model selection in terms of choosing the optimal number of components and the \pkg{mclust} model type is performed within this function using one of the \code{criterion} options within \code{\link{MoE_control}}, choosing between multiple fits with different combinations of covariates can be done via \code{\link{MoE_compare}}.
+While model selection in terms of choosing the optimal number of components and the \pkg{mclust} model type is performed within \code{\link{MoE_clust}}, using one of the \code{criterion} options within \code{\link{MoE_control}}, choosing between multiple fits with different combinations of covariates or different initialisation settings can be done by supplying objects of class \code{"MoEClust"} to \code{\link{MoE_compare}}.
 }
 \note{
 The EM algorithm finishes on an extra M-step once the best model has been identified.
 
-Where \code{BIC}, \code{ICL}, \code{AIC} and \code{iters} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL} and \code{AIC} all inherit the class \code{"MoECriterion"}, for which a dedicated print function exists.
+Where \code{BIC}, \code{ICL}, \code{AIC}, \code{DF} and \code{iters} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL}, \code{AIC} and \code{DF} all inherit the class \code{"MoECriterion"}, for which a dedicated print function exists.
 }
 \examples{
 \dontrun{
 data(ais)
 hema  <- ais[,3:7]
+sex   <- ais$sex
+BMI   <- ais$BMI
 
 # Fit a standard finite mixture model
 m1    <- MoE_clust(hema, G=2:3)
 
 # Allow covariates to enter the mixing proportions
-m2    <- MoE_clust(hema, G=2:3, gating= ~ ais$sex + ais$BMI)
+m2    <- MoE_clust(hema, G=2:3, gating= ~ sex + BMI)
 
 # Allow covariates to enter the component densities
-m3    <- MoE_clust(hema, G=2:3, expert= ~ ais$sex)
+m3    <- MoE_clust(hema, G=2:3, expert= ~ sex)
 
 # Allow covariates to enter both the gating & expert network
-m4    <- MoE_clust(hema, G=2:3, gating= ~ ais$BMI, expert= ~ ais$sex)
+m4    <- MoE_clust(hema, G=2:3, gating= ~ BMI, expert= ~ sex)
 
-# Extract the model with highest BIC
-(comp <- MoE_compare(m1, m2, m3, m4))
+# Extract the model with highest ICL
+(comp <- MoE_compare(m1, m2, m3, m4, criterion="icl"))
 (best <- comp$optimal)
 (summ <- summary(best))
 
 # Visualise the results using the 'lattice' library
 # require("lattice")
 # z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
-# splom(~ hema | ais$sex, groups=z)
-# splom(~ hema | z, groups=ais$sex)}
+# splom(~ hema | sex, groups=z)
+# splom(~ hema | z, groups=sex)}
 }
 \seealso{
-\code{MoE_compare}, \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
+\code{\link{MoE_compare}}, \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
 }
 \author{
 Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}

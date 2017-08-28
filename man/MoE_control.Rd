@@ -36,9 +36,9 @@ A named list in which the names are the names of the arguments and the values ar
 Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
 }
 \details{
-\code{MoE_control} is provided for assigning values and defaults within \code{\link{MoE_clust}}.\cr
+\code{\link{MoE_control}} is provided for assigning values and defaults within \code{\link{MoE_clust}}.\cr
 
-While the \code{criterion} argument controls the choice of the optimal number of components and \pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates.
+While the \code{criterion} argument controls the choice of the optimal number of components and \pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
 }
 \examples{
 ctrl <- MoE_control(criterion="icl", itmax=10000, warn.it=12)

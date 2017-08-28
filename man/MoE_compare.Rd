@@ -11,7 +11,7 @@ MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L)
 
 \item{criterion}{The criterion used to determine the ranking. Defaults to \code{"bic"}.}
 
-\item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of \code{"MoEClust"} objects supplied via \code{...}.}
+\item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...}.}
 }
 \value{
 A list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(pick)}:
@@ -29,13 +29,17 @@ A list of class \code{"MoE_compare"}, for which a dedicated print function exist
 }
 }
 \description{
-Takes one or more MoEClust objects from \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC.
+Takes one or more sets of MoEClust models fitted by \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC, while respecting the internal ranking within each set of models.
 }
 \details{
-The purpose of this function is to conduct model selection on \code{"MoEClust"} objects, fit to the same data set, with different combinations of gating/expert network covariates. Model selection will have already been performed in terms of choosing the optimal number of components and \pkg{mclust} model type. The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object.
+The purpose of this function is to conduct model selection on \code{"MoEClust"} objects, fit to the same data set, with different combinations of gating/expert network covariates or different initialisation settings. \cr
+
+Model selection will have already been performed in terms of choosing the optimal number of components and \pkg{mclust} model type within each supplied set of results, but \code{\link{MoE_compare}} respects the internal ranking of models.\cr
+
+As such if two sets of results are supplied, the 1st, 2nd and 3rd best models could all belong to the first set of results, meaning a model deemed suboptimal according to one set of covariates could be superior to one deemed optimal under another set of covariates.
 }
 \note{
-The true ranking of the second and third best model, and so on, may not be as reported here: these may be merely models with different numbers of components &/or \pkg{mclust} model types. The true purpose of this function is to compare the models already selected for different combinations of gating and expert network covariates.
+The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.
 }
 \examples{
 data(CO2data)
@@ -47,7 +51,7 @@ m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
 m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
 m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
 m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
-(comp <- MoE_compare(m1, m2, m3, m4, m5, m6))
+(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=5))
 (best <- comp$optimal)
 (summ <- summary(best))
 }
