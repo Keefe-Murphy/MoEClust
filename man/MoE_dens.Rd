@@ -9,7 +9,7 @@ MoE_dens(modelName, data, mus, sigs, log.pis = 0, logarithm = TRUE)
 \arguments{
 \item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
 
-\item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (n) and columns correspond to variables (d). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of multivariate WLS residuals for each component.}
+\item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (n) and columns correspond to variables (d). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of (multivariate) WLS residuals for each component.}
 
 \item{mus}{The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means.}
 
@@ -42,8 +42,8 @@ Estep <- MoE_estep(Dens=Dens)
 
 # The z matrix will be close but not exactly the same as that from the model
 # as the EM algorithm finishes on an M-step, but the classification should be
-identical(max.col(Estep$z), model$classification)    #TRUE
-round(sum(Estep$z - model$z), options()$digits) == 0 #TRUE
+identical(max.col(Estep$z), unname(model$classification)) #TRUE
+round(sum(Estep$z - model$z), options()$digits) == 0      #TRUE
 }
 \seealso{
 \code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}
