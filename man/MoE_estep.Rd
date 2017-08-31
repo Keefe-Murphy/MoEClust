@@ -53,7 +53,7 @@ round(sum(Estep$z - model$z), options()$digits) == 0      #TRUE
 Estep2 <- MoE_estep(modelName=model$modelName, data=hema,
                     mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
                     log.pis=log(model$parameters$pro))
-identical(Estep2$loglik, ll)
+identical(Estep2$loglik, ll)                              #TRUE
 }
 \seealso{
 \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}, \code{\link[mclust]{mclustModelNames}}
