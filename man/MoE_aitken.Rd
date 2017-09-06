@@ -37,7 +37,7 @@ abs(a3$linf - a2$linf) < 1e-05 #TRUE
 (ll <- a3$linf)
 }
 \references{
-Boehning, D., Dietz, E., Schaub, R., Schlattmann, and Lindsay, B. (1994, June). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.
+Boehning, D., Dietz, E., Schaub, R., Schlattmann, P. and Lindsay, B.G. (1994). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.
 }
 \seealso{
 \code{\link{MoE_control}}

@@ -1,0 +1,140 @@
+---
+title: "MoEClust: Model-Based Clustering with Gating and Expert Covariates"
+author: "Keefe Murphy"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{MoEClust}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=7, fig.height = 5, fig.align = 'center', fig.show='hold',
+                      warning=FALSE, message=FALSE, progress=FALSE, collapse=TRUE, comments="#>")
+```
+
+## Introduction
+__MoEClust__ is an R package which fits finite Mixtures of Experts models with __mclust__ family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various covariance parameterisations in the __mclust__ family.
+
+The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `MoE_aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
+
+An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package.
+
+If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
+
+### Installing MoEClust
+__MoEClust__ will run in Windows, Mac OS X or Linux. To install it you first need to install [R](https://cran.r-project.org/). Installing [Rstudio](https://www.rstudio.com/) as a nice desktop environment for using R is also recommended.
+
+Once in R you can type at the R command prompt:
+```{r, eval=FALSE}
+install.packages('devtools')
+devtools::install_github('Keefe-Murphy/MoEClust')
+```
+to install the latest development version of the package from the __MoEClust__ [GitHub page](https://github.com/Keefe-Murphy/MoEClust). 
+
+To instead install the latest stable official release of the package from CRAN go to R and type:
+
+```{r, eval=FALSE}
+install.packages('MoEClust')
+```
+
+In either case, if you then type:
+```{r}
+library(MoEClust)
+```
+it will load in all the __MoEClust__ functions.
+
+The GitHub version contains a few more features but some of these may not yet be fully tested, and occasionally this version might be liable to break when it is in the process of being updated.
+
+## CO2 Data
+Load the CO2 data.
+
+```{r}
+data(CO2data)
+GNP   <- CO2data[,1]
+CO2   <- CO2data[,2]
+```
+
+Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither.
+
+```{r, results='hide'}
+m1    <- MoE_clust(CO2, G=1:2, verbose=FALSE)
+m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, verbose=FALSE)
+m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, verbose=FALSE)
+m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP, verbose=FALSE)
+m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE, verbose=FALSE)
+m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
+```
+
+Choose the best model among these and examine the results.
+
+```{r}
+(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=5))
+(best <- comp$optimal)
+(summ <- summary(best))
+```
+
+Visualise the results for the optimal model.
+
+```{r, echo=FALSE}
+res    <- comp$optimal
+plot(x=GNP, y=CO2, main=paste0("CO2 Data\n", res$modelName, ": ", res$G, " components  (incl. expert network covariate: GNP)"), type="n")
+text(GNP, CO2, CO2data$country, col=res$classification)
+for(k in seq_len(res$G)) {
+  expX <- res$expert[[k]]
+  abline(expX, col=k, lwd=2)
+  newX <- seq(0, 50, length.out=1000)
+  pred <- predict(expX, newdata=data.frame(GNP=newX), interval="confidence", type="response")
+  lines(newX, pred[,2], col=k, lty=2)
+  lines(newX, pred[,3], col=k, lty=2)
+}
+```
+
+## AIS Data
+Load the Australian Institute of Sports data.
+
+```{r}
+data(ais)
+hema  <- ais[,3:7]
+sex   <- ais$sex
+bmi   <- ais$BMI
+```
+
+Fit a mixture of experts model to the hematological variables within AIS data, with `sex` and `bmi` in the expert network. This time, allow the printing of messages to the screen.
+```{r}
+mod   <- MoE_clust(ais[,3:7], G=1:3, expert= ~ sex + bmi)
+```
+
+Convert `mod` from the `"MoEClust"` class to the `"Mclust"` class in order to visualise the results. Examine the `"BIC"` and `"classification"` options.
+
+```{r, fig.height=8.5}
+(mod2 <- as.Mclust(mod))
+plot(mod2, what="BIC")
+```
+
+```{r}
+plot(mod2, what="classification")
+```
+
+Instead create an `"Mclust"` object using the augmented data in the expert network, ie. the multivariate WLS residuals which actually produced the clustering, and examine the densities, and the clustering uncertainty.
+
+```{r}
+mod3  <- as.Mclust(mod, resid=TRUE)
+plot(mod3, what="density")
+```
+
+```{r}
+plot(mod3, what="uncertainty")
+```
+
+Produce further visualisations with the aid of the `lattice` library.
+```{r}
+require("lattice")
+z <- factor(mod$classification, labels=paste0("Cluster", seq_len(mod$G)))
+splom(~ hema | sex, groups=z)
+```
+
+```{r}
+splom(~ hema | z, groups=sex)
+```

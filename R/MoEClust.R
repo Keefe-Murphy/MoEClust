@@ -15,7 +15,7 @@
 #'
 #' Version: 0.1.0
 #'
-#' Date: 2017-08-09
+#' Date: 2017-09-06
 #'
 #' Licence: GPL (>=2)
 #'
@@ -28,4 +28,4 @@
 #' @name MoEClust
 NULL
 
-.onAttach       <- function(...) if(interactive()) packageStartupMessage(paste("___  ___      _____ _____ _           _   \n|  \\/  |     |  ___/  __ \\ |         | |  \n| .  . | ___ | |__ | /  \\/ |_   _ ___| |_ \n| |\\/| |/ _ \\|  __|| |   | | | | / __| __|\n| |  | | (_) | |___| \\__/\\ | |_| \\__ \\ |_ \n\\_|  |_/\\___/\\____/ \\____/_|\\__,_|___/\\__|           version 0.1.0\nType '?MoECLUST' to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote("MoEClust"),")")) ,"for citing the package in publications."))
+.onAttach       <- function(...) if(interactive()) packageStartupMessage(paste("___  ___      _____ _____ _           _   \n|  \\/  |     |  ___/  __ \\ |         | |  \n| .  . | ___ | |__ | /  \\/ |_   _ ___| |_ \n| |\\/| |/ _ \\|  __|| |   | | | | / __| __|\n| |  | | (_) | |___| \\__/\\ | |_| \\__ \\ |_ \n\\_|  |_/\\___/\\____/ \\____/_|\\__,_|___/\\__|           version 0.1.0\nType '?MoEClust' to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote("MoEClust"),")")) ,"for citing the package in publications."))

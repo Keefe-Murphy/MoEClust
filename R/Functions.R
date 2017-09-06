@@ -778,7 +778,7 @@
 #' }
 #' @export
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
-#' @references Boehning, D., Dietz, E., Schaub, R., Schlattmann, and Lindsay, B. (1994, June). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.
+#' @references Boehning, D., Dietz, E., Schaub, R., Schlattmann, P. and Lindsay, B. G. (1994). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.
 #'
 #' @seealso \code{\link{MoE_control}}
 #' @examples
@@ -959,7 +959,7 @@
 #' \dontrun{
 #' # Fit a mixture of experts model to the ais data
 #' data(ais)
-#' mod   <- MoE_clust(ais[,3:7], G=1:3, expert= ~ ais$sex)
+#' mod   <- MoE_clust(ais[,3:7], G=1:3, expert= ~ ais$sex + ais$BMI)
 #'
 #' # Convert to the "Mclust" class in order to visualise the results
 #' (mod2 <- as.Mclust(mod))

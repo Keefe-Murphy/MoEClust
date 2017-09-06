@@ -25,7 +25,7 @@ Type: Package
 
 Version: 0.1.0
 
-Date: 2017-08-09
+Date: 2017-09-06
 
 Licence: GPL (>=2)
 }
