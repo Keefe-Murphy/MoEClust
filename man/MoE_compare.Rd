@@ -2,21 +2,32 @@
 % Please edit documentation in R/Functions.R
 \name{MoE_compare}
 \alias{MoE_compare}
+\alias{print.MoECompare}
 \title{Choose the best MoEClust model}
 \usage{
-MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L)
+MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
+  optimal.only = FALSE)
+
+\method{print}{MoECompare}(x, index = seq_len(x$pick), ...)
 }
 \arguments{
-\item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single list of such objects can also be supplied.}
+\item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.}
 
 \item{criterion}{The criterion used to determine the ranking. Defaults to \code{"bic"}.}
 
-\item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...}.}
+\item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied.}
+
+\item{optimal.only}{Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}}
+
+\item{x}{An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.}
+
+\item{index}{The indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
 }
 \value{
 A list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(pick)}:
 \describe{
 \item{\code{optimal}}{The single optimal model (an object of class \code{"MoEClust"}) among those supplied, according to the chosen \code{criterion}.}
+\item{\code{pick}}{The final number of ranked models. May be different (i.e. less than) the supplied \code{pick} value.}
 \item{\code{MoENames}}{The names of the supplied \code{"MoEClust"} objects.}
 \item{\code{modelNames}}{The \code{\link[mclust]{mclustModelNames}}.}
 \item{\code{G}}{The optimal numbers of components.}
@@ -29,31 +40,34 @@ A list of class \code{"MoE_compare"}, for which a dedicated print function exist
 }
 }
 \description{
-Takes one or more sets of MoEClust models fitted by \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC, while respecting the internal ranking within each set of models.
+Takes one or more sets of MoEClust models fitted by \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC. It's possible to respect the internal ranking within each set of models, or to discard models within each set which were already deemed sub-optimal.
 }
 \details{
 The purpose of this function is to conduct model selection on \code{"MoEClust"} objects, fit to the same data set, with different combinations of gating/expert network covariates or different initialisation settings. \cr
 
-Model selection will have already been performed in terms of choosing the optimal number of components and \pkg{mclust} model type within each supplied set of results, but \code{\link{MoE_compare}} respects the internal ranking of models.\cr
+Model selection will have already been performed in terms of choosing the optimal number of components and \pkg{mclust} model type within each supplied set of results, but \code{\link{MoE_compare}} will respect the internal ranking of models when producing the final ranking if \code{optimal.only} is \code{FALSE}: otherwise only those models already deemed optimal within each \code{"MoEClust"} object will be ranked.\cr
 
-As such if two sets of results are supplied, the 1st, 2nd and 3rd best models could all belong to the first set of results, meaning a model deemed suboptimal according to one set of covariates could be superior to one deemed optimal under another set of covariates.
+As such if two sets of results are supplied when \code{optimal.only} is \code{FALSE}, the 1st, 2nd and 3rd best models could all belong to the first set of results, meaning a model deemed suboptimal according to one set of covariates could be superior to one deemed optimal under another set of covariates.
 }
 \note{
-The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.
+The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.\cr
+
+A dedicated \code{print} function exists for objects of class \code{"MoECompare"}.
 }
 \examples{
 data(CO2data)
-GNP   <- CO2data[,1]
-CO2   <- CO2data[,2]
-m1    <- MoE_clust(CO2, G=1:2)
-m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP)
-m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
-m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
-m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
-m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
-(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=5))
-(best <- comp$optimal)
-(summ <- summary(best))
+GNP    <- CO2data[,1]
+CO2    <- CO2data[,2]
+m1     <- MoE_clust(CO2, G=1:2)
+m2     <- MoE_clust(CO2, G=1:2, gating= ~ GNP)
+m3     <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
+m4     <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
+m5     <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
+m6     <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
+(comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6))
+(best  <- comp$optimal)
+(summ  <- summary(best))
+(comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE))
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}

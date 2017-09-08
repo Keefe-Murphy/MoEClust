@@ -34,6 +34,6 @@ data(ais, package="MoEClust")
 pairs(ais[,c(3:4, 10:13)], col=as.numeric(ais[,1]), main = "AIS data")
 }
 \references{
-Cook and Weisberg (1994), \emph{An Introduction to Regression Graphics}. John Wiley & Sons, New York.
+Cook, R. D. and Weisberg, S. (1994), \emph{An Introduction to Regression Graphics}. John Wiley & Sons, New York.
 }
 \keyword{datasets}

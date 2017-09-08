@@ -56,32 +56,48 @@ GNP   <- CO2data[,1]
 CO2   <- CO2data[,2]
 ```
 
-Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither.
+Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. Initialise the allocations randomly.
 
-```{r, results='hide'}
-m1    <- MoE_clust(CO2, G=1:2, verbose=FALSE)
-m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, verbose=FALSE)
-m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, verbose=FALSE)
-m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP, verbose=FALSE)
-m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE, verbose=FALSE)
-m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
+```{r, results='hide', eval=FALSE}
+m1    <- MoE_clust(CO2, G=1:2, verbose=FALSE, init.z="random")
+m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, verbose=FALSE, init.z="random")
+m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, verbose=FALSE, init.z="random")
+m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP, verbose=FALSE, init.z="random")
+m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE, verbose=FALSE, init.z="random")
+m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE, verbose=FALSE, init.z="random")
+```
+
+```{r, results='hide', include=FALSE}
+m1    <- MoE_clust(CO2, G=1:2, verbose=FALSE, init.z="random")
+m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, verbose=FALSE, init.z="random")
+m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP, verbose=FALSE, init.z="random")
+m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE, verbose=FALSE, init.z="random")
+m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE, verbose=FALSE, init.z="random")
+```
+
+```{r, include=FALSE}
+load(file="CO2Vignette.rda")
+m3    <- resbest$m3
 ```
 
 Choose the best model among these and examine the results.
 
 ```{r}
 (comp <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=5))
+
 (best <- comp$optimal)
+
 (summ <- summary(best))
 ```
 
 Visualise the results for the optimal model.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=8.5}
 res    <- comp$optimal
-plot(x=GNP, y=CO2, main=paste0("CO2 Data\n", res$modelName, ": ", res$G, " components  (incl. expert network covariate: GNP)"), type="n")
-text(GNP, CO2, CO2data$country, col=res$classification)
+plot(x=GNP, y=CO2, main=substitute(atop(paste('CO'[2], " Data"), paste(Mname, ": ", rG, " components  (incl. expert network covariate: GNP)")), list(Mname=res$modelName, rG=res$G)), ylab=expression('CO'[2]), type="n")
 for(k in seq_len(res$G)) {
+  ck    <- res$classification == k
+  text(GNP[ck], CO2[ck], CO2data$country[ck], col=k, cex=res$z[ck,k])
   expX <- res$expert[[k]]
   abline(expX, col=k, lwd=2)
   newX <- seq(0, 50, length.out=1000)
@@ -138,3 +154,6 @@ splom(~ hema | sex, groups=z)
 ```{r}
 splom(~ hema | z, groups=sex)
 ```
+
+## References
+C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97:611-631.
