@@ -4,7 +4,8 @@
 \alias{MoE_dens}
 \title{Density for Parameterised MVN Mixture of Experts Models}
 \usage{
-MoE_dens(modelName, data, mus, sigs, log.tau = 0, logarithm = TRUE)
+MoE_dens(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL,
+  logarithm = TRUE)
 }
 \arguments{
 \item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
@@ -16,6 +17,8 @@ MoE_dens(modelName, data, mus, sigs, log.tau = 0, logarithm = TRUE)
 \item{sigs}{A list of length G of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.}
 
 \item{log.tau}{If covariates enter the gating network, an n times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
+
+\item{Vinv}{An estimate of the reciprocal hypervolume of the data region. The default is determined by applying function \code{\link[mclust]{hypvol}} to the data. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.}
 
 \item{logarithm}{A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.}
 }
