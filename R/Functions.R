@@ -24,7 +24,7 @@
 #' @param x,object An object of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}.
 
 #'
-#' @importFrom mclust "emControl" "hc" "hclass" "hcVVV" "hypvol" "Mclust" "mclust.options" "mclustBIC" "mclustModelNames" "mclustVariance" "mstep" "mstepE" "mstepEEE" "mstepEEI" "mstepEEV" "mstepEII" "mstepEVE" "mstepEVI" "mstepEVV" "mstepV" "mstepVEE" "mstepVEI" "mstepVEV" "mstepVII" "mstepVVE" "mstepVVI" "mstepVVV" "nVarParams" "unmap"
+#' @importFrom mclust "emControl" "hc" "hclass" "hcVVV" "Mclust" "mclust.options" "mclustBIC" "mclustModelNames" "mclustVariance" "mstep" "mstepE" "mstepEEE" "mstepEEI" "mstepEEV" "mstepEII" "mstepEVE" "mstepEVI" "mstepEVV" "mstepV" "mstepVEE" "mstepVEI" "mstepVEV" "mstepVII" "mstepVVE" "mstepVVI" "mstepVVV" "nVarParams" "unmap"
 #' @importFrom nnet "multinom"
 #' @importFrom stats "as.formula" "binomial" "coef" "complete.cases" "glm" "kmeans" "lm" "model.frame" "predict" "residuals" "setNames" "update.formula"
 #' @return A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen optimal model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
@@ -129,9 +129,10 @@
     tol           <- control$tol[1]
     warnit        <- control$warn.it
     noise         <- control$noise.init
+    noise.meth    <- control$noise.meth
     verbose       <- control$verbose
     itwarn        <- warnit > 2
-    control       <- control[-c(1:3, length(control), length(control) - 1)]
+    control       <- control[which(names(control) %in% c("eps", "tol", "itmax", "equalPro"))]
     if(!multi     &&
        !all(is.character(modelNames)))            stop("'modelNames' must be a vector of character strings")
     if(gate.x     &&
@@ -169,7 +170,7 @@
               nomatch = 0)    == 0))              stop("Numeric noise must correspond to row indices of data")
        noise      <- as.logical(match(seq_len(n), noise, nomatch = 0))
      }
-     Vinv         <- hypvol(data, reciprocal  = TRUE)
+     Vinv         <- .noise_vol(X, noise.meth)
      nnoise       <- sum(as.numeric(noise))
      noisen       <- n - nnoise
      if(any(G      > noisen)) range.G <- range.G[range.G <= noisen]
@@ -779,6 +780,7 @@
 #' @param equalPro Logical variable indicating whether or not the mixing proportions are equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored.
 #' @param warn.it A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}. A warning will always be printed if one of more models fail to converge in \code{itmax[1]} iterations.
 #' @param noise.init A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation (see \code{\link[mclust]{hypvol}}).
+#' @param noise.meth The method use to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options \code{convexhull} and \code{ellipsoidhull} require loading the \code{geometry} and \code{cluster} libraries, respectively.
 #' @param verbose Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.
 #'
 #' @details \code{\link{MoE_control}} is provided for assigning values and defaults within \code{\link{MoE_clust}}.\cr
@@ -789,7 +791,7 @@
 #' @export
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #'
-#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{hypvol}}, \code{\link{MoE_compare}}
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
 #'
 #' @examples
 #' ctrl <- MoE_control(criterion="icl", itmax=10000, warn.it=12)
@@ -807,7 +809,8 @@
   MoE_control     <- function(criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"),
                               init.z = c("hc", "kmeans", "mclust", "random"), eps = .Machine$double.eps,
                               tol = c(1e-05, sqrt(.Machine$double.eps)), itmax = c(.Machine$integer.max,
-                              .Machine$integer.max), equalPro = FALSE, warn.it = 0, noise.init = NULL, verbose = interactive()) {
+                              .Machine$integer.max), equalPro = FALSE, warn.it = 0, noise.init = NULL,
+                              noise.meth = c("hypvol", "convexhull", "ellipsoidhull"), verbose = interactive()) {
     if(!is.character(criterion))                  stop("'criterion' must be a character vector of length 1")
     criterion     <- match.arg(criterion)
     if(!is.character(stopping))                   stop("'stopping' must be a character vector of length 1")
@@ -830,10 +833,16 @@
        !is.logical(equalPro))                     stop("'equalPro' must be a single logical indicator")
     if(length(warn.it)  > 1 ||
        !is.numeric(warn.it))                      stop("'warn.it' must be a numeric vector of length 1")
+    if(!is.null(noise.init)) {
+      if(!is.character(noise.meth))               stop("'noise.meth' must be a character vector of length 1")
+      noise.meth  <- match.arg(noise.meth)
+      has.lib     <- switch(noise.meth, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
+      if(!has.lib)                                stop(paste0("Use of the ", noise.meth, " 'noise.meth' option requires loading the ", switch(noise.meth, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"))
+    }
     if(length(verbose)  < 1 ||
        !is.logical(verbose))                      stop("'verbose' must be a single logical indicator")
-      list(criterion = criterion, stopping = stopping, init.z = init.z, eps = eps, tol = tol,
-           itmax = itmax, equalPro = equalPro, warn.it=warn.it, noise.init=noise.init, verbose = verbose)
+      list(criterion = criterion, stopping = stopping, init.z = init.z, eps = eps, tol = tol, itmax = itmax,
+           equalPro = equalPro, warn.it = warn.it, noise.init = noise.init, noise.meth = noise.meth, verbose = verbose)
   }
 
 #' Aitken Acceleration
@@ -1107,6 +1116,12 @@
 # Hidden/Print/Summary Functions
   .crits_names    <- function(x) {
     unlist(lapply(seq_along(x), function(i) setNames(x[[i]], paste0(names(x[i]), "|", names(x[[i]])))))
+  }
+
+#' @importFrom mclust "hypvol"
+  .noise_vol      <- function(x, method = c("hypvol", "convexhull", "ellipsoidhull")) {
+    ifelse(ncol(x) == 1, abs(diff(range(x))), switch(method, hypvol=hypvol(x, reciprocal = TRUE),
+    convexhull=1/geometry::convhulln(x, options=c("Pp", "FA"))$vol, ellipsoidhull=1/cluster::volume(cluster::ellipsoidhull(x))))
   }
 
   .pick_MoECrit   <- function(x, pick = 3L) {
