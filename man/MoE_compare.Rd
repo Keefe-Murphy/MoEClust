@@ -53,6 +53,8 @@ As such if two sets of results are supplied when \code{optimal.only} is \code{FA
 The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.\cr
 
 A dedicated \code{print} function exists for objects of class \code{"MoECompare"}.
+
+\code{\link{plot.MoEClust}} and \code{\link{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
 }
 \examples{
 data(CO2data)
@@ -70,7 +72,7 @@ m6     <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
 (comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE))
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}
+\code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
 }
 \author{
 Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}

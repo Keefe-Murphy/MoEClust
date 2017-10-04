@@ -1,10 +1,12 @@
 #' MoEClust: Finite Gaussian Mixtures of Experts: Model-Based Clustering with Covariates
 #'
-#' Fits finite Mixtures of Experts models with \pkg{mclust} family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various covariance parameterisations in the \pkg{mclust} family.
+#' Fits finite Mixtures of Experts models with \pkg{mclust} family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various covariance parameterisations in the \pkg{mclust} family. Also visualises mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 #' @section Usage:
 #' The most important function in the \pkg{MoEClust} package is: \code{\link{MoE_clust}}, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces.
 #'
 #' Other functions also exist, e.g. \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_dens}}, \code{\link{MoE_estep}}, \code{\link{MoE_compare}}, and \code{\link{MoE_aitken}}, which are all used within \code{\link{MoE_clust}} but are nonetheless made available for standalone use.
+#'
+#' A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network, and/or graphing model selection criteria values.
 #'
 #' An \code{as.Mclust} method is provided to coerce the output of class \code{"MoEClust"} from \code{\link{MoE_clust}} to the \code{"Mclust"} class, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package. As per \pkg{mclust}, \pkg{MoEClust} also facilitates modelling with an additional noise component.
 #'
@@ -15,7 +17,7 @@
 #'
 #' Version: 0.1.0
 #'
-#' Date: 2017-09-06
+#' Date: 2017-10-05
 #'
 #' Licence: GPL (>=2)
 #'

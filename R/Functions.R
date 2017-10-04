@@ -40,17 +40,17 @@
 #' \item{\code{bic}}{The BIC value corresponding to the optimal model. May not necessarily be the optimal BIC.}
 #' \item{\code{icl}}{The ICL value corresponding to the optimal model. May not necessarily be the optimal ICL.}
 #' \item{\code{aic}}{The AIC value corresponding to the optimal model. May not necessarily be the optimal AIC.}
-#' \item{\code{gating}}{An object of class \code{"MoE_gating"} and either \code{"multinom"} or \code{"glm"} (for single-component models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{gating$rank}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component, its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
-#' \item{\code{expert}}{An object of class \code{"MoE_expert"} and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * expert[[1]]$rank}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
+#' \item{\code{gating}}{An object of class \code{"MoE_gating"} and either \code{"multinom"} or \code{"glm"} (for single-component models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component, its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
+#' \item{\code{expert}}{An object of class \code{"MoE_expert"} and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * length(coef(expert[[1]]))}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
 #' \item{\code{loglik}}{The vector of increasing log-likelihood values for every EM iteration under the optimal model.}
 #' \item{\code{df}}{The number of estimated parameters in the optimal model.}
-#' \item{\code{hypvol}}{The hypervolume parameter for the noise component if required, otherwise set to \code{NA} (see \code{\link[mclust]{hypvol}}).}
+#' \item{\code{hypvol}}{The hypervolume parameter for the noise component if required, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
 #' \item{\code{parameters}}{A list with the following components:\cr
 #' \itemize{
 #' \item{\code{pro} - }{The mixing proportions: either a vector of length \code{G} or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
 #' \item{\code{mean} - }{The means of each component. If there is more than one component, this is a matrix whose \emph{k}-th column is the mean of the \emph{k}-th component of the mixture model.}
 #' \item{\code{variance} - }{A list of variance parameters of each component of the model. The components of this list depend on the model type specification. See the help file for \code{\link[mclust]{mclustVariance}} for details.}
-#' \item{\code{Vinv} - }{The inverse of the hypervolume parameter for the noise component if required, otherwise set to \code{NULL} (see \code{\link[mclust]{hypvol}}).}
+#' \item{\code{Vinv} - }{The inverse of the hypervolume parameter for the noise component if required, otherwise set to \code{NULL} (see \code{\link{MoE_control}}).}
 #' }}
 #' \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component. If there is a noise component, its values are found in the \emph{last} column.}
 #' \item{\code{classification}}{The vector of cluster labels for the chosen model corresponding to \code{z}, i.e. \code{max.col(z)}. Observations belonging the noise component will belong to component \code{0}.}
@@ -60,14 +60,14 @@
 #' \item{\code{DF}}{A matrix of \emph{all} Degrees of Freedom values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustBIC"}, for which a dedicated plotting function exists.}
 #' \item{\code{iters}}{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged.}
 #' }
-#' Dedicated \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link{as.Mclust}}.
+#' Dedicated \code{\link[=plot.MoEClust]{plot}}, \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link{as.Mclust}}.
 #' @details The function effectively allows 4 different types of Mixture of Experts model (as well as the different models in the mclust family, for each): i) the standard finite Gaussian mixture, ii) covariates only in the gating network, iii) covariates only in the expert network, iv) the full Mixture of Experts model with covariates entering both the mixing proportions and component densities. Note that having the same covariates in both networks is allowed.\cr
 #'
 #' While model selection in terms of choosing the optimal number of components and the \pkg{mclust} model type is performed within \code{\link{MoE_clust}}, using one of the \code{criterion} options within \code{\link{MoE_control}}, choosing between multiple fits with different combinations of covariates or different initialisation settings can be done by supplying objects of class \code{"MoEClust"} to \code{\link{MoE_compare}}.
 #' @note The EM algorithm finishes on an extra M-step once the best model has been identified.
 #'
 #' Where \code{BIC}, \code{ICL}, \code{AIC}, \code{DF} and \code{iters} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL}, \code{AIC} and \code{DF} all inherit the class \code{"MoECriterion"}, for which a dedicated print function exists.
-#' @seealso \code{\link{MoE_compare}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
+#' @seealso \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
 #' @export
 #' @references C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
@@ -267,11 +267,14 @@
     if(!missing(network.data) &&
        !is.data.frame(network.data))              stop("'network.data' must be a data.frame if supplied")
     if(is.null(network.data))  {
-     gate.covs    <- if(gate.x) model.frame(gating[-2]) else matrix(0, nrow=n, ncol=0)
-     expx.covs    <- if(exp.x)  model.frame(expert[-2]) else matrix(0, nrow=n, ncol=0)
-     network.data <- cbind(gate.covs, expx.covs)
-     network.data <- as.data.frame(if(ncol(network.data) > 0) network.data[!duplicated(names(network.data))] else network.data)
-    }
+      gate.covs   <- if(gate.x) model.frame(gating[-2]) else matrix(0, nrow=n, ncol=0)
+      expx.covs   <- if(exp.x)  model.frame(expert[-2]) else matrix(0, nrow=n, ncol=0)
+      netdat      <- cbind(gate.covs, expx.covs)
+      netdat      <- as.data.frame(if(ncol(netdat) > 0) netdat[!duplicated(names(netdat))] else netdat)
+      attr(netdat, "Gating")  <- gate.names    <- if(is.null(names(gate.covs)))     NA else names(gate.covs)
+      attr(netdat, "Expert")  <- expx.names    <- if(is.null(names(expx.covs)))     NA else names(expx.covs)
+      attr(netdat, "Both")    <- if(length(intersect(gate.names, expx.names)) == 0) NA else intersect(gate.names, expx.names)
+    } else netdat <- network.data
 
   # Loop over range of G values and initialise allocations
     for(g in range.G) {
@@ -299,16 +302,17 @@
         }
         z.init    <- z
       }
+      if(any(apply(z.init, 2, sum) < 2))          warning(paste0("For the ", g, " component models, a component was initialised with only 1 observation"), call.=FALSE)
 
     # Initialise gating network
       ltau        <- matrix(0, nrow=n, ncol=gN)
       if(gate.g)  {
-        g.init    <- multinom(gating, trace=FALSE, data=network.data)
+        g.init    <- multinom(gating, trace=FALSE, data=netdat)
        #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating)[,-1], family="multinomial", type.multinomial="grouped")
         tau       <- predict(g.init, type="probs")
        #tau       <- predict(g.init, type="response", newx=model.matrix(gating)[,-1], s="lambda.1se")[,,1]
         ltau      <- log(tau)
-        gate.pen  <- g.init$rank   + ifelse(noise.null, 0, 1)
+        gate.pen  <- length(g.init$coef) + ifelse(noise.null, 0, 1)
        #gate.pen  <- sum(lengths(coef(g.init, s="lambda.1se")[-1]))
       } else      {
         tau       <- if(equal.pro)  rep(1/gN, gN)     else 1
@@ -328,14 +332,14 @@
         if(isTRUE(verbose))      cat(paste0("\n\tModel: ", modtype, "\n"))
         x.df      <- ifelse(g  > 0, nVarParams(modtype, d, g), 0) + gate.pen
         if(g > 0)  {
-          Mstep     <- mstep(modtype, X, if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control, equalPro=equal.pro)
-          mus       <- Mstep$parameters$mean
-          vari      <- Mstep$parameters$variance
-          sigs      <- vari$sigma
+          Mstep   <- mstep(modtype, X, if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control, equalPro=equal.pro)
+          mus     <- Mstep$parameters$mean
+          vari    <- Mstep$parameters$variance
+          sigs    <- vari$sigma
         }
-        if(!gate.g)      {
-          tau     <- if(equal.pro) tau  else if(noise.null) Mstep$parameters$pro else colMeans(z.init)
-          ltau    <- if(equal.pro) ltau else matrix(log(tau), nrow=n, ncol=gN, byrow=TRUE)
+        if(all(!gate.g, !equal.pro)) {
+          tau     <- if(noise.null) Mstep$parameters$pro else colMeans(z.init)
+          ltau    <- .mat_byrow(log(tau), nrow=n, ncol=gN)
         }
         densme    <- capture.output(medensity  <- try(MoE_dens(modelName=modtype, data=x.dat, mus=mus, sigs=sigs, log.tau=ltau, Vinv=Vinv), silent=TRUE))
         if((ERR   <- (g  > 0 && attr(Mstep, "returnCode")  < 0) || inherits(medensity, "try-error"))) {
@@ -360,7 +364,7 @@
           if(exp.g)   {
             e.fit <- e.res    <- list()
             for(k in Gseq) {
-             fitE <- lm(expert,  weights=z[,k], data=network.data)
+             fitE <- lm(expert,  weights=z[,k], data=netdat)
             #fitE <- glmnet::cv.glmnet(y=X, x=model.matrix(expert), weights=z[,k])
              e.fit[[k]]       <- fitE
             #e.fit[[k]]       <- coef(fitE, s="lambda.1se")
@@ -370,7 +374,7 @@
             }
             res.x <- if(uni) as.matrix(do.call(base::c, e.res)) else do.call(rbind, e.res)
           }
-          x.df    <- ifelse(j == 2, ifelse(exp.g, g * e.fit[[1]]$rank, expert.pen) + x.df, x.df)
+          x.df    <- ifelse(j == 2, ifelse(exp.g, g * length(e.fit[[1]]$coef), expert.pen) + x.df, x.df)
 
         # M-step
           Mstep   <- if(exp.g) mstep(modtype, res.x, z.mat, control=control) else mstep(modtype, X, if(noise.null) z else z[,-gN, drop=FALSE], control=control)
@@ -380,7 +384,7 @@
 
         # Gating Network
           if(gate.g)  {
-            fitG  <- multinom(gating, trace=FALSE, data=network.data)
+            fitG  <- multinom(gating, trace=FALSE, data=netdat)
            #fitG  <- glmnet::cv.glmnet(y=z, x=model.matrix(gating)[,-1], family="multinomial", type.multinomial="grouped")
             tau   <- predict(fitG, type="probs")
            #tau   <- predict(fitG, type="response", newx=model.matrix(gating)[,-1], s="lambda.1se")[,,1]
@@ -389,7 +393,7 @@
           } else  {
             tau   <- if(equal.pro)             tau else if(noise.null) Mstep$parameters$pro else colMeans(z)
             tau   <- if(!exp.g || !noise.null) tau else tau * g
-            ltau  <- if(equal.pro)            ltau else matrix(log(tau), nrow=n, ncol=gN, byrow=TRUE)
+            ltau  <- if(equal.pro)            ltau else .mat_byrow(log(tau), nrow=n, ncol=gN)
           }
 
         # E-step & record log-likelihood
@@ -410,7 +414,7 @@
              dX   <- ifelse(is.numeric(ait$a) && ait$a < 0, 0, abs(diff(linf)))
              dX[is.nan(dX)]   <- Inf
             } else     {
-              dX  <- abs((ll[j] - ll[j - 1])/(1 + ll[j]))
+             dX   <- abs((ll[j] - ll[j - 1])/(1 + ll[j]))
             }
             stX   <- dX >= tol && j < max.it && g > 1
             if(itwarn && !m0X)  {
@@ -493,12 +497,12 @@
     net.msg       <- ifelse(any(exp.gate), paste0(" (incl. ", ifelse(all(exp.gate), "gating and expert", ifelse(exp.x, "expert", ifelse(bG, "gating", ""))), paste0(" network covariates", ifelse(noise.null, ")", ", and a noise component)"))), ifelse(noise.null, "", " (and a noise component)"))
     x.ll          <- x.ll[!is.na(x.ll)][if(G == 0 || (G == 1 && !exp.x)) 1:2 else if(G == 1 && exp.x) 1:3 else -c(1:2)]
 
-    x.fitG        <- if(bG)            x.fitG  else if(GN > 1) multinom(gating, trace=FALSE, data=network.data) else suppressWarnings(glm(z ~ 1, family=binomial(link=logit)))
-    x.tau         <- if(GN > 1 && !bG) x.fitG$fitted.values[1,]                                                 else x.tau
+    x.fitG        <- if(bG)            x.fitG  else if(GN > 1) multinom(gating, trace=FALSE, data=netdat) else suppressWarnings(glm(z ~ 1, family=binomial(link=logit)))
+    x.tau         <- if(GN > 1 && !bG) x.fitG$fitted.values[1,]                                           else x.tau
     if(!exp.x)    {
      x.fitE       <- list()
      for(k in seq_len(GN)) {
-      x.fitE[[k]] <- lm(expert, weights=z[,k], data=network.data)
+      x.fitE[[k]] <- lm(expert, weights=z[,k], data=netdat)
      }
     }
     x.fitE        <- setNames(x.fitE, paste0("Cluster", seq_len(G)))
@@ -575,7 +579,7 @@
     results       <- list(call = call, data = as.data.frame(X), modelName = best.mod, n = n, d = d, G = G, BIC = BICs, ICL = ICLs, AIC = AICs,
                           bic = bic.fin, icl = icl.fin, aic = aic.fin, gating = x.fitG, expert = x.fitE, loglik = x.ll, df = x.df, hypvol = ifelse(noise.null, NA, 1/Vinv),
                           parameters = list(pro = x.tau, mean = mean.fin, variance = vari.fin, Vinv = if(!noise.null) Vinv), z = z, classification = setNames(claX, seq_len(n)),
-                          uncertainty = setNames(uncertainty, seq_len(n)), net.covs = network.data, resid.data = if(exp.x) x.resE, DF = DF.x, iters = it.x)
+                          uncertainty = setNames(uncertainty, seq_len(n)), net.covs = netdat, resid.data = if(exp.x) x.resE, DF = DF.x, iters = it.x)
     class(results)            <- "MoEClust"
     attr(results, "Details")  <- paste0(best.mod, ": ", ifelse(G == 0, "only a noise component", paste0(G, " component", ifelse(G > 1, "s", ""), net.msg)))
     attr(results, "EqualPro") <- equal.pro
@@ -592,7 +596,7 @@
 #' @param mus The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means. In the presence of expert network covariates, all values should be equal to zero.
 #' @param sigs A list of length G of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.
 #' @param log.tau If covariates enter the gating network, an n times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.
-#' @param Vinv An estimate of the reciprocal hypervolume of the data region. The default is determined by applying function \code{\link[mclust]{hypvol}} to the data. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.
+#' @param Vinv An estimate of the reciprocal hypervolume of the data region. The default is determined by applying the function \code{\link[mclust]{hypvol}} to the data. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.
 #' @param logarithm A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.
 #'
 #' @note This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities.
@@ -651,14 +655,12 @@
         sigx      <- sqrt(sigs);
         densi     <- vapply(Gseq, function(k)     dnorm(data[[k]], mus[k], sigx[k],    log=TRUE), numeric(n))
       } )
-      check       <- is.infinite(densi)         & densi  > 0
-      if(any(check))        {
-        densi[which(check, arr.ind=TRUE)[1],]  <- rep(0, G)
-      }
+      test        <- is.infinite(densi) & densi > 0
+      densi[test] <- 0
     }
     densi         <- if(Vnul) densi else if(G   > 0) cbind(densi, log(Vinv)) else matrix(log(Vinv), nrow=n, ncol=G + !Vnul)
-    densi         <- densi  + if(is.matrix(log.tau) || missing(log.tau))                                      log.tau else
-                              if(length(log.tau)    == G + !Vnul) matrix(log.tau, nrow=n, ncol=G + !Vnul, byrow=TRUE) else stop(paste0("'log.tau' must be given for every component", ifelse(Vnul, "", ", incl. the noise component if 'Vinv' is supplied")))
+    densi         <- densi  + if(is.matrix(log.tau) || missing(log.tau))                              log.tau else
+                              if(length(log.tau)    == G + !Vnul) .mat_byrow(log.tau, nrow=n, ncol=G + !Vnul) else stop(paste0("'log.tau' must be given for every component", ifelse(Vnul, "", ", incl. the noise component if 'Vinv' is supplied")))
       if(logarithm)  densi    else exp(densi)
   }
 
@@ -728,7 +730,7 @@
 #'
 #' @details The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.\cr
 #'
-#' If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{model$gating$rank} and \code{G * model$expert[[1]]$rank}, respectively.
+#' If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
 #' @importFrom mclust "mclustModelNames" "nVarParams"
 #' @return A simplified array containing the BIC, AIC, degrees of freedom and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
 #' @note In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
@@ -753,7 +755,7 @@
 #'
 #' # Compare BIC from MoE_crit to the BIC of the model
 #' (bic2 <- MoE_crit(modelName=name, loglik=ll, n=n, d=1, G=G, z=z,
-#'                   expert.pen=G * model$expert[[1]]$rank)["bic",])
+#'                   expert.pen=G * length(coef(model$expert[[1]])))["bic",])
 #' identical(bic2, unname(model$bic)) #TRUE
 #'
 #' # Make the same comparison with the known degrees of freedom
@@ -778,7 +780,7 @@
 #' @param itmax A vector of length two giving integer limits on the number of EM iterations and on the number of iterations in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(.Machine$integer.max, .Machine$integer.max)} allowing termination to be completely governed by \code{tol}. If only one number is supplied, it is used as the iteration limit for the outer iteration only.
 #' @param equalPro Logical variable indicating whether or not the mixing proportions are equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored.
 #' @param warn.it A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}. A warning will always be printed if one of more models fail to converge in \code{itmax[1]} iterations.
-#' @param noise.init A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation (see \code{\link[mclust]{hypvol}}).
+#' @param noise.init A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation.
 #' @param noise.meth The method use to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options \code{convexhull} and \code{ellipsoidhull} require loading the \code{geometry} and \code{cluster} libraries, respectively.
 #' @param verbose Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.
 #'
@@ -920,10 +922,11 @@
 #' \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
 #' }
 #' @export
+#' @note \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
 #' @importFrom mclust "mclustModelNames"
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #'
-#' @seealso \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}
+#' @seealso \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
 #' @examples
 #' data(CO2data)
 #' GNP    <- CO2data[,1]
@@ -997,7 +1000,7 @@
     pick          <- min(pick, length(crits))
     max.crits     <- sort(crits, decreasing=TRUE)[seq_len(pick)]
     max.names     <- names(max.crits)
-    crit.names    <- gsub("\\|.*", "", max.names)
+    crit.names    <- gsub("\\|.*", "",          max.names)
     G             <- as.numeric(gsub(".*,", "", max.names))
     equalPro      <- sapply(MoEs, attr, "EqualPro")
     gating        <- unname(unlist(gating[crit.names]))
@@ -1036,14 +1039,14 @@
                           modelNames = modelNames, G = G, df = round(unname(dfxs[max.names]), 2), bic = round(unname(bics[max.names]), 2),
                           icl = round(unname(icls[max.names]), 2), aic = round(unname(aics[max.names]), 2), gating = gating, expert = expert,
                           equalPro = G == 1 | unname(equalPro[crit.names]), hypvol = unname(hypvol[crit.names]))
-    class(comp)   <- "MoECompare"
+    class(comp)   <- c("MoECompare", "MoEClust")
       comp
   }
 
 #' Convert MoEClust objects to the Mclust class
 #'
 #' Converts an object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} and converts it to an object of class \code{"Mclust"} as generated by fitting \code{\link[mclust]{Mclust}}, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package.
-#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}.
+#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}.
 #' @param resid Logical indicating whether to treat the data as the raw data (\code{FALSE}, the default) or the augmented data comprising the residuals from the expert network (\code{TRUE}). In the latter case, the mean and (co)variance paramters are taken to be the mean and (co)variance of the residuals. Only relevant if expert network covariates were supplied to \code{x}, otherwise coerced to \code{FALSE}.
 #' @param signif Significance level for outlier removal. Must be a single number in the interval [0, 1). Corresponds to the percentage of data to be considered extreme and therefore removed (half of \code{signif} at each endpoint, on a column-wise basis). The default, \code{0}, corresponds to no outlier removal. \strong{Only} invoke this argument as an aid to visualisation via \code{\link[mclust]{plot.Mclust}}.
 #' @param ... Further arguments to be passed to other methods.
@@ -1055,10 +1058,12 @@
 #' Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
 #'
 #' Also note that plots may be misleading for models of univariate data with more than 1 component, in the presence of expert covariates when \code{resid} is \code{TRUE} and the \code{what} argument is either \code{"classification"} or \code{"uncertainty"} within \code{\link[mclust]{plot.Mclust}}.
+#'
+#' Of course, the user is always encouraged to use the dedicated \code{\link[=plot.MoEClust]{plot}} function for objects of the \code{"MoEClust"} class instead.
 #' @importFrom mclust "as.densityMclust.Mclust" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "summary.Mclust"
 #' @importFrom stats "IQR" "quantile"
 #' @export
-#' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}
+#' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #' @references C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #'
@@ -1091,6 +1096,7 @@
        !is.logical(resid))                        stop("'resid' must be a single logical indicator")
     if(length(signif) > 1 || !is.numeric(signif) ||
        signif < 0 || signif >= 1)                 stop("'signif' must be a single number in the interval [0, 1)")
+    x             <- if(inherits(x, "MoECompare")) x$optimal else x
     gating        <- attr(x, "Gating")
     resid         <- resid  && attr(x, "Expert")
     x$loglik      <- x$loglik[length(x$loglik)]
@@ -1115,6 +1121,10 @@
 # Hidden/Print/Summary Functions
   .crits_names    <- function(x) {
     unlist(lapply(seq_along(x), function(i) setNames(x[[i]], paste0(names(x[i]), "|", names(x[[i]])))))
+  }
+
+  .mat_byrow      <- function(x, nrow, ncol) {
+    matrix(x, nrow=nrow, ncol=ncol, byrow=any(dim(as.matrix(x)) == 1))
   }
 
 #' @importFrom mclust "hypvol"
@@ -1319,16 +1329,3 @@
     message("Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network")
       invisible(x)
   }
-
-#' @method plot mclustAIC
-#' @export
-  plot.mclustAIC  <- function (x, ylab = "AIC", ...) {
-    plot.mclustBIC(x, ylab = ylab, ...)
-  }
-
-#' @method plot mclustDF
-#' @export
-  plot.mclustDF   <- function (x, ylab = "DF", ...)  {
-    plot.mclustBIC(x, ylab = ylab, ...)
-  }
-#

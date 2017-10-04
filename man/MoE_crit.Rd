@@ -33,7 +33,7 @@ Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Like
 \details{
 The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.\cr
 
-If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{model$gating$rank} and \code{G * model$expert[[1]]$rank}, respectively.
+If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
 }
 \note{
 In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
@@ -52,7 +52,7 @@ z     <- model$z
 
 # Compare BIC from MoE_crit to the BIC of the model
 (bic2 <- MoE_crit(modelName=name, loglik=ll, n=n, d=1, G=G, z=z,
-                  expert.pen=G * model$expert[[1]]$rank)["bic",])
+                  expert.pen=G * length(coef(model$expert[[1]])))["bic",])
 identical(bic2, unname(model$bic)) #TRUE
 
 # Make the same comparison with the known degrees of freedom
