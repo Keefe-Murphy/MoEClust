@@ -108,6 +108,31 @@ for(k in seq_len(res$G)) {
 }
 ```
 
+Visualise the density of the mixture distribution.
+```{r, echo=FALSE}
+res    <- comp$optimal
+G      <- res$G
+expert <- res$expert
+x.name <- names(res$net.covs)
+y.name <- names(res$data)
+x      <- as.matrix(res$net.covs)
+y      <- as.matrix(res$data)
+plot(x=x, y=y, main=substitute(atop(paste('CO'[2], " Data"), paste(Mname, ": ", rG, " components  (incl. expert network covariate: GNP)")), list(Mname=res$modelName, rG=G)), ylab=expression('CO'[2]), type="n")
+x.new  <- setNames(seq(par("usr")[1], par("usr")[2], length=1000), rep("GNP", 1000))
+y.new  <- setNames(seq(par("usr")[3], par("usr")[4], length=1000), rep("CO2", 1000))
+grid   <- expand.grid(x.new, y.new)
+getden <- function(x, y, res) {
+  sig  <- res$parameters$variance$modelName
+  den  <- do.call(cbind, lapply(seq_len(G), function(k) dnorm(y, predict(expert[[k]], newdata=setNames(data.frame(x), names(x)[1]), type="response"), sqrt(ifelse(sig == "V", res$parameters$variance$sigmasq[k], res$parameters$variance$sigmasq)))))
+  apply(matrix(res$parameters$pro, nrow=length(x), ncol=G, byrow=TRUE) * den, 1, sum)
+}
+mat    <- matrix(getden(grid[,1], grid[,2], res), length(x.new), length(y.new))
+image(x.new, y.new, mat, col=c("white", heat.colors(30)[30:1]), xlab="GNP", ylab=paste('CO'[2]), add=TRUE)
+box(lwd=1)
+contour(x.new, y.new, mat, add=TRUE, col="lightgray")
+points(GNP, CO2)
+```
+
 ## AIS Data
 Load the Australian Institute of Sports data.
 

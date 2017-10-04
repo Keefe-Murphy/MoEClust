@@ -23,7 +23,6 @@
 #' @param ... An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.
 #' @param x,object An object of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}.
 
-#'
 #' @importFrom mclust "emControl" "hc" "hclass" "hcVVV" "Mclust" "mclust.options" "mclustBIC" "mclustModelNames" "mclustVariance" "mstep" "mstepE" "mstepEEE" "mstepEEI" "mstepEEV" "mstepEII" "mstepEVE" "mstepEVI" "mstepEVV" "mstepV" "mstepVEE" "mstepVEI" "mstepVEV" "mstepVII" "mstepVVE" "mstepVVI" "mstepVVV" "nVarParams" "unmap"
 #' @importFrom nnet "multinom"
 #' @importFrom stats "as.formula" "binomial" "coef" "complete.cases" "glm" "kmeans" "lm" "model.frame" "predict" "residuals" "setNames" "update.formula"
@@ -271,7 +270,7 @@
      gate.covs    <- if(gate.x) model.frame(gating[-2]) else matrix(0, nrow=n, ncol=0)
      expx.covs    <- if(exp.x)  model.frame(expert[-2]) else matrix(0, nrow=n, ncol=0)
      network.data <- cbind(gate.covs, expx.covs)
-     network.data <- as.data.frame(network.data[!duplicated(names(network.data))])
+     network.data <- as.data.frame(if(ncol(network.data) > 0) network.data[!duplicated(names(network.data))] else network.data)
     }
 
   # Loop over range of G values and initialise allocations
@@ -576,7 +575,7 @@
     results       <- list(call = call, data = as.data.frame(X), modelName = best.mod, n = n, d = d, G = G, BIC = BICs, ICL = ICLs, AIC = AICs,
                           bic = bic.fin, icl = icl.fin, aic = aic.fin, gating = x.fitG, expert = x.fitE, loglik = x.ll, df = x.df, hypvol = ifelse(noise.null, NA, 1/Vinv),
                           parameters = list(pro = x.tau, mean = mean.fin, variance = vari.fin, Vinv = if(!noise.null) Vinv), z = z, classification = setNames(claX, seq_len(n)),
-                          uncertainty = setNames(uncertainty, seq_len(n)), net.covs = if(any(exp.x, gate.x)) network.data, resid.data = if(exp.x) x.resE, DF = DF.x, iters = it.x)
+                          uncertainty = setNames(uncertainty, seq_len(n)), net.covs = network.data, resid.data = if(exp.x) x.resE, DF = DF.x, iters = it.x)
     class(results)            <- "MoEClust"
     attr(results, "Details")  <- paste0(best.mod, ": ", ifelse(G == 0, "only a noise component", paste0(G, " component", ifelse(G > 1, "s", ""), net.msg)))
     attr(results, "EqualPro") <- equal.pro

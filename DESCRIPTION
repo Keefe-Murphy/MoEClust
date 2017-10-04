@@ -12,11 +12,15 @@ URL: https://cran.r-project.org/package=MoEClust
 BugReports: https://github.com/Keefe-Murphy/MoEClust
 LazyData: true
 Imports:
+    barcode,
+    grid,
+    lattice,
     matrixStats,
     mclust (>= 5.1),
     mvnfast,
     nnet,
-    stats
+    stats,
+    vcd
 Suggests:
     glmnet,
     cluster,
