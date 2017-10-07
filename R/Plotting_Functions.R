@@ -6,7 +6,7 @@
 #' @param scatter.type A vector of length 2 giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots of covariates against response, and never response vs. response or covariate vs. covariate.
 #' @param conditional A vector of length 2 giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).
 #' @param addEllipses Logical indicating whether to add ellipses with axes corresponding to the within-cluster covariances for the response data (defaults to \code{TRUE}).
-#' @param bg.col A vector of length 5 containing background colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively. Defaults to \code{c("ivory", "white", "snow", "snow", "cornsilk")}.
+#' @param bg.col A vector of length 5 containing background colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively. Defaults to \code{c("ivory", "white", "floralwhite", "floralwhite", "cornsilk")}.
 #' @param diagonal By default, the diagonal to the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{"off"} will place the diagonal running from the top right down to the bottom left.
 #' @param outer.margins A list of length 4 with units as components named bottom, left, top, and right, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).
 #' @param outer.labels The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.
@@ -18,7 +18,7 @@
 #' @param barcode.pars \code{NULL} is equivalent to \code{list(nint=0, ptsize=unit(0.25, "char"), ptpch=1, bcspace=NULL, use.points=FALSE)}. See \code{\link[barcode]{barcode}}.
 #' @param mosaic.pars \code{NULL}. Currently \code{shape, gp_labels, gp} and \code{gp_args} are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles.
 #' @param axis.pars \code{NULL} is equivalent to \code{list(n.ticks=5, fontsize=9)}.
-#' @param diag.pars \code{NULL} is equivalent to \code{list(fontsize=9, show.hist=TRUE, hist.color=hist.color)}, where \code{hist.color} is a vector of length 5, giving the colours for the MAP classification, response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"}, covariates of any kind are \code{"grey"}, and the MAP classification is \code{"gold"}.
+#' @param diag.pars \code{NULL} is equivalent to \code{list(fontsize=9, show.hist=TRUE, hist.color=hist.color)}, where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership.
 #' @param ... Catches unused arguments.
 #'
 #' @importFrom barcode "barcode"
@@ -29,7 +29,7 @@
 #' @return A generalised pairs plot.
 #' @note For \code{MoEClust} models with more than one associated covariate (entering either network), fitted lines produced in continuous covariate vs. continuous response scatter plots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
 #'
-#' \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots.
+#' \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots. Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #' @export
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #' @references Emerson, J.W., Green, W.A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The Generalized Pairs Plot. \emph{Journal of Computational and Graphical Statistics}, 22(1):79-91.
@@ -49,9 +49,9 @@
 #' # Size points in the response vs. response panels by their clustering uncertainty.
 #' # Also use different colours for response vs. covariate & covariate vs. response panels.
 #' MoE_gpairs(res, scatter.type=c("ci", "points"), conditional=c("stripplot", "barcode"),
-#'            diag.pars=list(hist.color=c("gold", "black", "cyan", "navy", "hotpink")),
+#'            diag.pars=list(hist.color=c("black", "cyan", "navy", "hotpink")),
 #'            bg.col=c("oldlace", "white", "seashell", "whitesmoke", "cornsilk"))
-MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"), addEllipses = TRUE, bg.col = c("ivory", "white", "snow", "snow", "cornsilk"),
+MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"), addEllipses = TRUE, bg.col = c("ivory", "white", "floralwhite", "floralwhite", "cornsilk"),
                                 diagonal = c("on", "off"), outer.margins = list(bottom=unit(2, "lines"), left=unit(2, "lines"), top=unit(2, "lines"), right=unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
                                 gap = 0.05, buffer = 0.02, scatter.pars = NULL, stripplot.pars = NULL, barcode.pars = NULL, mosaic.pars = NULL, axis.pars = NULL, diag.pars = NULL, ...) {
   UseMethod("MoE_gpairs")
@@ -59,7 +59,7 @@ MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", 
 
 #' @method MoE_gpairs MoEClust
 #' @export
-MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), scatter.type = c("ci", "points"), conditional = c("stripplot", "boxplot"), addEllipses = TRUE, bg.col = c("ivory", "white", "snow", "snow", "cornsilk"),
+MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"), addEllipses = TRUE, bg.col = c("ivory", "white", "floralwhite", "floralwhite", "cornsilk"),
                                 diagonal = c("on", "off"), outer.margins = list(bottom=unit(2, "lines"), left=unit(2, "lines"), top=unit(2, "lines"), right=unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
                                 gap = 0.05, buffer = 0.02, scatter.pars = NULL, stripplot.pars = NULL, barcode.pars = NULL, mosaic.pars = NULL, axis.pars = NULL, diag.pars = NULL, ...) {
 
@@ -67,7 +67,10 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   dat   <- res$data
   net   <- res$net.covs
   dcol  <- ncol(dat) + 1
-  class <- as.character(res$classification)
+  z     <- res$z
+  G     <- res$G
+  class <- factor(res$classification, levels=unique(res$classification), labels=seq_len(res$G))
+  class <- as.character(class)
   x     <- cbind(MAP=as.factor(class), dat, net)
   zc    <- function(x) length(unique(x)) <= 1
   saxzc <- sapply(x, zc)
@@ -78,8 +81,6 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   }
   N     <- ncol(x)
   Nseq  <- seq_len(N)
-  z     <- res$z
-  G     <- res$G
   both  <- attr(net, "Both")
   gate  <- setdiff(attr(net, "Gating"), both)
   if(G  == 1 && any(!is.na(gate)))                    warning("Gating covariates are plotted even though they cannot enter single-component models", call.=FALSE)
@@ -210,17 +211,16 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     diag.pars$show.hist <- TRUE
   }
   if(is.null(diag.pars$hist.color))  {
-   diag.pars$hist.color <- c("gold", "black", "grey", "grey", "grey")
+   diag.pars$hist.color <- c("black", "grey", "grey", "grey")
   } else {
-   diag.pars$hist.color <- if(length(diag.pars$hist.color) == 1) rep(diag.pars$hist.color, 5) else diag.pars$hist.color
-   if(length(diag.pars$hist.color) != 5)              stop("'diag.pars$hist.color' must be a vector of length 1 or 5")
+   diag.pars$hist.color <- if(length(diag.pars$hist.color) == 1) rep(diag.pars$hist.color, 4) else diag.pars$hist.color
+   if(length(diag.pars$hist.color) != 4)              stop("'diag.pars$hist.color' must be a vector of length 1 or 4")
   }
   hist.col              <- diag.pars$hist.color
-  diag.pars$hist.color  <- replace(Nseq,                 Nseq  <=  dcol,                     hist.col[2])
-  diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq  ==  1 & names(x)[1] == "MAP", hist.col[1])
-  diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% gate,                     hist.col[3])
-  diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% expx,                     hist.col[4])
-  diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% both,                     hist.col[5])
+  diag.pars$hist.color  <- replace(Nseq,                 Nseq  <=  dcol, hist.col[1])
+  diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% gate, hist.col[2])
+  diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% expx, hist.col[3])
+  diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% both, hist.col[4])
   if(is.null(stripplot.pars$pch))    {
     stripplot.pars$pch  <- symbols[class]
   }
@@ -288,11 +288,11 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
         ypos <- !ypos
       }
       if(i == j) {
-        .diag_panel(x=x[,i], varname=names(x)[i], diag.pars=diag.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, index=i, outer.rot=outer.rot)
+        .diag_panel(x=x[,i], varname=names(x)[i], diag.pars=diag.pars, hist.col=if(i == 1 && names(x)[i] == "MAP") list(unique(colors[class])) else diag.pars$hist.color, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, index=i, outer.rot=outer.rot)
       } else {
         if(is.factor(x[,i]) + is.factor(x[,j]) == 1) {
-          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg)
-          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg)
+          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(i == 1 || j == 1) unique(colors[class]) else if(i > dcol && j > dcol) "grey" else NULL)
+          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(i == 1 || j == 1) unique(colors[class]) else if(i > dcol && j > dcol) "grey" else NULL)
           if(i < j & upr.cond == "barcode") {
             pushViewport(viewport(gp=gpar(fill=bg)))
             if(is.factor(x[,i])) {
@@ -326,13 +326,13 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
             popViewport()
           }
         }
-        if(is.factor(x[,i]) + is.factor(x[,j]) == 0) {
+        if(!any(is.factor(x[,i]), is.factor(x[,j]))) {
           .scatter_panel(x=x[,j], y=x[,i], type=ifelse(j > dcol && i <= dcol, upr.exp, ifelse(j <= dcol && i <= dcol, ifelse(addEllipses, "ellipses", "points"), low.exp)),
                          scatter.pars=scatter.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, z=z, G=G, res=res, dimens=c(j - 1, i - 1), outer.rot=outer.rot,
                          bg=bg, uncertainty=if(response.type == "uncertainty" && (i <= dcol && j <= dcol)) uncertainty else NA)
         }
-        if(is.factor(x[,i]) + is.factor(x[,j]) == 2) {
-          .mosaic_panel(x=x[,j], y=x[,i], mosaic.pars=mosaic.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, outer.rot=outer.rot, bg=bg)
+        if(all(is.factor(x[,i]),  is.factor(x[,j]))) {
+          .mosaic_panel(x=x[,j], y=x[,i], mosaic.pars=mosaic.pars, mosaic.outer=if(j == 1) unique(colors[class]) else if(i == 1) rep(unique(colors[class]), each=nlevels(x[,j])) else mosaic.pars$gp$col, axis.pars=axis.pars, xpos=xpos, ypos=ypos, outer.rot=outer.rot, bg=bg)
         }
       }
       popViewport(1)
@@ -432,7 +432,9 @@ MoE_plotCrit.MoEClust   <- function(res, criterion = c("bic", "icl", "aic"), ...
 #' @importFrom mclust "plot.mclustBIC" "plot.mclustICL"
 #' @importFrom utils "menu"
 #' @importFrom vcd "strucplot"
-#' @note Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results.
+#' @note Caution is advised producing generalised pairs plots when the dimension of the data is large.
+#'
+#' Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results.
 #' @return The visualisation according to \code{"what"} of the results of a fitted \code{MoEClust} model.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
@@ -458,14 +460,15 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion"), ...) {
   what        <- match.arg(what, several.ok=TRUE)
   if(interactive()  && length(what) > 1) {
     title     <- "MoEClust Plots"
-    choice    <- menu(what, graphics=FALSE, title=title)
+    what.tmp  <- c(gpairs="Generalised Pairs Plot", gating="Gating Network", criterion="Model Selection Criteria")
+    choice    <- menu(what.tmp, graphics=FALSE, title=title)
     while(choice    != 0) {
-      switch(what[choice], criterion=MoE_plotCrit(x, ...), gpairs=MoE_gpairs(x, ...), MoE_plotGate(x, ...))
-      choice  <- menu(what, graphics=FALSE, title=title)
+      switch(what[choice], gpairs=MoE_gpairs(x, ...), gating=MoE_plotGate(x, ...), criterion=MoE_plotCrit(x, ...))
+      choice  <- menu(what.tmp, graphics=FALSE, title=title)
     }
   } else if(length(what)  > 1) {                      stop("'what' must be a single character string for non-interactive sessions")
   } else {
-    switch(what, criterion=MoE_plotCrit(x, ...), gpairs=MoE_gpairs(x, ...), MoE_plotGate(x, ...))
+    switch(what, gpairs=MoE_gpairs(x, ...), gating=MoE_plotGate(x, ...), criterion=MoE_plotCrit(x, ...))
   }
     invisible()
 }
@@ -527,7 +530,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion"), ...) {
 
 #' @importFrom grid "gpar" "grid.rect" "popViewport" "pushViewport" "viewport"
 #' @importFrom lattice "panel.bwplot" "panel.stripplot" "trellis.par.get" "trellis.par.set"
-.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, outer.rot, bg) {
+.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, outer.rot, bg, box.fill) {
   xlim         <- NULL
   ylim         <- NULL
   old.color    <- trellis.par.get("box.rectangle")$col
@@ -557,7 +560,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion"), ...) {
     .draw_axis(x=cont.var, y=cat.var, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=cat.labels, horiz=horiz, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
     popViewport(1)
     pushViewport(viewport(xscale=xlim, yscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5), clip=TRUE))
-    if(type == "boxplot")   panel.bwplot(cont.var, cat.var, horizontal=horiz, col="black", pch="|", gp=gpar(box.umbrella=list(col="black")))
+    if(type == "boxplot")   panel.bwplot(cont.var, cat.var, horizontal=horiz, col="black", pch="|", gp=gpar(box.umbrella=list(col="black")), fill=box.fill)
     if(type == "stripplot") panel.stripplot(cont.var, cat.var, horizontal=horiz, jitter.data=stripplot.pars$jitter, col=stripplot.pars$col, cex=stripplot.pars$size, pch=stripplot.pars$pch)
   } else {
     ylim       <- range(cont.var, na.rm=TRUE) + c(-buffer * (max(cont.var, na.rm=TRUE) - min(cont.var, na.rm=TRUE)), buffer * (max(cont.var, na.rm=TRUE) - min(cont.var, na.rm=TRUE)))
@@ -566,9 +569,8 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion"), ...) {
     .draw_axis(x=cat.var, y=cont.var, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=cat.labels, horiz=horiz, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
     popViewport(1)
     pushViewport(viewport(yscale=ylim, xscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5), clip=TRUE))
-    if(type == "boxplot")   panel.bwplot(cat.var, cont.var, horizontal=horiz, col="black", pch="|", gp=gpar(box.umbrella=list(col="black")))
-    if(type == "stripplot") panel.stripplot(cat.var, cont.var, horizontal=horiz, jitter.data=stripplot.pars$jitter,
-                                            col=stripplot.pars$col, cex=stripplot.pars$size, pch=stripplot.pars$pch)
+    if(type == "boxplot")   panel.bwplot(cat.var, cont.var, horizontal=horiz, col="black", pch="|", gp=gpar(box.umbrella=list(col="black")), fill=box.fill)
+    if(type == "stripplot") panel.stripplot(cat.var, cont.var, horizontal=horiz, jitter.data=stripplot.pars$jitter, col=stripplot.pars$col, cex=stripplot.pars$size, pch=stripplot.pars$pch)
   }
   popViewport(1)
   trellis.par.set(name="box.rectangle", value=list(col=old.color))
@@ -579,7 +581,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion"), ...) {
 
 #' @importFrom grid "gpar" "grid.rect" "grid.text" "popViewport" "pushViewport" "viewport"
 #' @importFrom lattice "panel.barchart" "panel.histogram"
-.diag_panel <- function(x, varname, diag.pars, axis.pars, xpos, ypos, buffer, index, outer.rot) {
+.diag_panel <- function(x, varname, diag.pars, hist.col, axis.pars, xpos, ypos, buffer, index, outer.rot) {
   x         <- x[!is.na(x)]
   xlim      <- range(as.numeric(x), na.rm=TRUE) + c(-buffer * (max(as.numeric(x), na.rm=TRUE) - min(as.numeric(x), na.rm=TRUE)), buffer * (max(as.numeric(x), na.rm=TRUE) - min(as.numeric(x), na.rm=TRUE)))
   ylim      <- xlim
@@ -595,11 +597,11 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion"), ...) {
   if(diag.pars$show.hist)  {
     if(!is.factor(x)) {
       pushViewport(viewport(xscale=xlim, yscale=c(0, 100), clip=TRUE))
-      panel.histogram(as.numeric(x), breaks=NULL, type="percent", col=diag.pars$hist.color[index])
+      panel.histogram(as.numeric(x), breaks=NULL, type="percent", col=if(index == 1) hist.col[[index]] else hist.col[index])
     } else {
       pushViewport(viewport(xscale=c(min(as.numeric(x), na.rm=TRUE) - 1, max(as.numeric(x), na.rm=TRUE) + 1), yscale=c(0, 100), clip=TRUE))
       tabx <- table(x)
-      panel.barchart(seq_along(tabx), 100 * tabx/sum(tabx), horizontal=FALSE, col=diag.pars$hist.color[index])
+      panel.barchart(seq_along(tabx), 100 * tabx/sum(tabx), horizontal=FALSE, col=if(index == 1) hist.col[[index]] else hist.col[index])
     }
     grid.text(varname, 0.5, 0.85, gp=gpar(fontsize=diag.pars$fontsize))
     popViewport(1)
@@ -607,8 +609,9 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion"), ...) {
 }
 
 #' @importFrom vcd "strucplot"
-.mosaic_panel <- function(x, y, mosaic.pars, axis.pars, xpos, ypos, outer.rot, bg) {
+.mosaic_panel <- function(x, y, mosaic.pars, mosaic.outer, axis.pars, xpos, ypos, outer.rot, bg) {
   mosaic.pars$gp$fill <- bg
+  mosaic.pars$gp$col  <- mosaic.outer
   if(!is.null(xpos)   && !is.null(ypos)) {
     strucplot(table(y, x), margins=c(0, 0, 0, 0), newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp,
               gp_args=mosaic.pars$gp_args, labeling_args=list(tl_labels=c(xpos, !ypos), gp_labels=mosaic.pars$gp_labels, varnames=c(FALSE, FALSE), rot_labels=rep(outer.rot, 2)))

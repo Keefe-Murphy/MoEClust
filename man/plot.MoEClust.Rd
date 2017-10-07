@@ -29,6 +29,8 @@ Plot results for fitted MoE_clust mixture models with gating &/or expert network
 For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}} and \code{\link[mclust]{plot.mclustBIC}}
 }
 \note{
+Caution is advised producing generalised pairs plots when the dimension of the data is large.
+
 Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results.
 }
 \examples{
