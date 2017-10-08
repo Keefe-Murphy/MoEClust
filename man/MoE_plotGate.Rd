@@ -25,7 +25,7 @@ Plots the gating network for fitted MoEClust models, i.e. the observation index 
 }
 \examples{
 data(ais)
-res <- MoE_clust(ais[,3:7], gating= ~ ais$sex, G=3, modelNames="VVE")
+res <- MoE_clust(ais[,3:7], gating= ~ ais$sex, G=3, modelNames="EEE")
 MoE_plotGate(res)
 }
 \seealso{

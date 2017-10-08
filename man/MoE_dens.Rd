@@ -34,7 +34,7 @@ This function is intended for joint use with \code{\link{MoE_estep}}, using the 
 \examples{
 data(ais)
 hema  <- ais[,3:7]
-model <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
+model <- MoE_clust(hema, G=3, gating= ~ ais$BMI + ais$sex, model="EEE")
 Dens  <- MoE_dens(modelName=model$modelName, data=hema,
                   mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
                   log.tau=log(model$parameters$pro))
@@ -45,8 +45,8 @@ Estep <- MoE_estep(Dens=Dens)
 
 # The z matrix will be close but not exactly the same as that from the model
 # as the EM algorithm finishes on an M-step, but the classification should be
-identical(max.col(Estep$z), unname(model$classification)) #TRUE
-round(sum(Estep$z - model$z), options()$digits) == 0      #TRUE
+identical(max.col(Estep$z), as.integer(unname(model$classification))) #TRUE
+round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
 }
 \seealso{
 \code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}

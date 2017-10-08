@@ -11,7 +11,7 @@ MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
 \method{print}{MoECompare}(x, index = seq_len(x$pick), ...)
 }
 \arguments{
-\item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.}
+\item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single \emph{named} list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.}
 
 \item{criterion}{The criterion used to determine the ranking. Defaults to \code{"bic"}.}
 
@@ -21,7 +21,7 @@ MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
 
 \item{x}{An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.}
 
-\item{index}{The indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
+\item{index}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
 }
 \value{
 A list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(pick)}:
@@ -58,18 +58,24 @@ A dedicated \code{print} function exists for objects of class \code{"MoECompare"
 }
 \examples{
 data(CO2data)
-GNP    <- CO2data[,1]
-CO2    <- CO2data[,2]
-m1     <- MoE_clust(CO2, G=1:2)
-m2     <- MoE_clust(CO2, G=1:2, gating= ~ GNP)
-m3     <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
-m4     <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
-m5     <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
-m6     <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
-(comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6))
-(best  <- comp$optimal)
-(summ  <- summary(best))
-(comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE))
+GNP   <- CO2data[,1]
+CO2   <- CO2data[,2]
+m1    <- MoE_clust(CO2, G=1:2)
+m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP)
+m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
+m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
+m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
+m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
+
+# Rank only the optimal models and examine the best model
+(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE))
+(best <- comp$optimal)
+(summ <- summary(best))
+
+# Examine all models visited, including those already deemed suboptimal
+# Only print models with expert covariates & more than one component
+comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=18)
+print(comp2, comp2$expert != "None" & comp2$G > 1)
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}

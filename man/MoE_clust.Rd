@@ -123,18 +123,23 @@ m4    <- MoE_clust(hema, G=2:3, gating= ~ BMI, expert= ~ sex)
 summary(best$gating)
 summary(best$expert)
 
+# Visualise the results, incl. the gating network and log-likelihood
+plot(best, what="gpairs")
+plot(best, what="gating")
+plot(best, what="loglik")
+
 # Visualise the results using the 'lattice' library
-# require("lattice")
-# z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
-# splom(~ hema | sex, groups=z)
-# splom(~ hema | z, groups=sex)
+require("lattice")
+z     <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
+splom(~ hema | sex, groups=z)
+splom(~ hema | z, groups=sex)
 
 # Convert results to the "Mclust" class for further visualisation
-plot(as.Mclust(best))
+plot(as.Mclust(best), what="density")
 
 # Produce similar plots for the multivariate WLS residuals in the expert network
 # i.e. the augmented data on which the clustering was actually performed
-plot(as.Mclust(best, resid=TRUE))}
+plot(as.Mclust(best, resid=TRUE), what="density")}
 }
 \references{
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.

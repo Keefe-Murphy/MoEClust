@@ -101,18 +101,23 @@
 #' summary(best$gating)
 #' summary(best$expert)
 #'
+#' # Visualise the results, incl. the gating network and log-likelihood
+#' plot(best, what="gpairs")
+#' plot(best, what="gating")
+#' plot(best, what="loglik")
+#'
 #' # Visualise the results using the 'lattice' library
-#' # require("lattice")
-#' # z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
-#' # splom(~ hema | sex, groups=z)
-#' # splom(~ hema | z, groups=sex)
+#' require("lattice")
+#' z     <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
+#' splom(~ hema | sex, groups=z)
+#' splom(~ hema | z, groups=sex)
 #'
 #' # Convert results to the "Mclust" class for further visualisation
-#' plot(as.Mclust(best))
+#' plot(as.Mclust(best), what="density")
 #'
 #' # Produce similar plots for the multivariate WLS residuals in the expert network
 #' # i.e. the augmented data on which the clustering was actually performed
-#' plot(as.Mclust(best, resid=TRUE))}
+#' plot(as.Mclust(best, resid=TRUE), what="density")}
   MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = NULL, expert = NULL, network.data = NULL, control = MoE_control(...), ...) {
 
   # Definitions and storage set-up
@@ -334,12 +339,11 @@
       # Initialise parameters from allocations
         if(isTRUE(verbose))      cat(paste0("\n\tModel: ", modtype, "\n"))
         x.df      <- ifelse(g  > 0, nVarParams(modtype, d, g), 0) + gate.pen
-        if(g > 0)  {
-          Mstep   <- mstep(modtype, X, if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control, equalPro=equal.pro)
-          mus     <- Mstep$parameters$mean
-          vari    <- Mstep$parameters$variance
-          sigs    <- vari$sigma
-        }
+        Mstep     <- mstep(modtype, X, if(noise.null || g == 0) z.init else z.init[,-gN, drop=FALSE], control=control, equalPro=equal.pro)
+        mus       <- Mstep$parameters$mean
+        vari      <- Mstep$parameters$variance
+        sigs      <- vari$sigma
+
         if(all(!gate.g, !equal.pro)) {
           tau     <- if(noise.null) Mstep$parameters$pro else colMeans(z.init)
           ltau    <- .mat_byrow(log(tau), nrow=n, ncol=gN)
@@ -377,7 +381,6 @@
             }
             res.x <- if(uni) as.matrix(do.call(base::c, e.res)) else do.call(rbind, e.res)
           }
-          x.df    <- ifelse(j == 2, ifelse(exp.g, g * length(coef(e.fit[[1]])), expert.pen) + x.df, x.df)
 
         # M-step
           Mstep   <- if(exp.g) mstep(modtype, res.x, z.mat, control=control) else mstep(modtype, X, if(noise.null) z else z[,-gN, drop=FALSE], control=control)
@@ -431,7 +434,9 @@
         } # while (j)
 
       # Store values corresponding to the maximum BIC/ICL/AIC so far
-        if(isTRUE(verbose))      cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, "\n"))
+        j2        <- max(1, j  - 2)
+        x.df      <- ifelse(exp.g, g * length(coef(fitE)), expert.pen) + x.df
+        if(isTRUE(verbose))      cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j2, "\n"))
         ll[j]     <- ifelse(g <= 1, ll[j], switch(stopx, aitken=max(ll[j], ifelse(is.finite(linf[2]), linf[2], linf[1])), ll[j]))
         choose    <- MoE_crit(modelName=modtype, loglik=ll[j], n=n, G=g, z=z, df=x.df)
         bics      <- choose["bic",]
@@ -459,7 +464,7 @@
         ICLs[h,modtype]       <- ifelse(ERR, -Inf, icls)
         AICs[h,modtype]       <- ifelse(ERR, -Inf, aics)
         DF.x[h,modtype]       <- ifelse(ERR, -Inf, x.df)
-        it.x[h,modtype]       <- ifelse(ERR,  Inf, j)
+        it.x[h,modtype]       <- ifelse(ERR,  Inf, j2)
       } # for (modtype)
 
     # Pull out mclust model corresponding to highest BIC/ICL/AIC
@@ -493,12 +498,13 @@
     bic.fin       <- BICs[best.ind]
     icl.fin       <- ICLs[best.ind]
     aic.fin       <- AICs[best.ind]
-    uncertainty   <- if(GN > 1) 1 - apply(z, 1, max) else rep(0, n)
+    uncertainty   <- if(GN > 1) 1 - apply(z, 1, max)         else rep(0, n)
     exp.x         <- exp.x & G != 0
     bG            <- gate.G[which(range.G == G)]
     exp.gate      <- c(exp.x, bG)
     net.msg       <- ifelse(any(exp.gate), paste0(" (incl. ", ifelse(all(exp.gate), "gating and expert", ifelse(exp.x, "expert", ifelse(bG, "gating", ""))), paste0(" network covariates", ifelse(noise.null, ")", ", and a noise component)"))), ifelse(noise.null, "", " (and a noise component)"))
-    x.ll          <- x.ll[!is.na(x.ll)][if(G == 0 || (G == 1 && !exp.x)) 1:2 else if(G == 1 && exp.x) 1:3 else -c(1:2)]
+    x.ll          <- x.ll[if(G == 0 || (G == 1 && !exp.x)) 2 else if(G == 1 && exp.x) seq_len(3)[-1]      else -c(1:2)]
+    x.ll          <- x.ll[!is.na(x.ll)]
 
     x.fitG        <- if(bG)            x.fitG  else if(GN > 1) multinom(gating, trace=FALSE, data=netdat) else suppressWarnings(glm(z ~ 1, family=binomial(link=logit)))
     x.tau         <- if(GN > 1 && !bG) x.fitG$fitted.values[1,]                                           else x.tau
@@ -515,7 +521,7 @@
     class(x.fitG) <- c("MoE_gating", class(x.fitG))
     class(x.fitE) <- c("MoE_expert", class(x.fitE))
     if(g > 0) {
-      extraM      <- mstep(best.mod, X, if(noise.null) z else z[,-GN, drop=FALSE], control=control)
+      extraM      <- mstep(best.mod, X, if(noise.null) z     else z[,-GN, drop=FALSE], control=control)
       mean.fin    <- extraM$parameters$mean
       vari.fin    <- if(exp.x) x.sig else extraM$parameters$variance
     } else    {
@@ -616,7 +622,7 @@
 #' @examples
 #' data(ais)
 #' hema  <- ais[,3:7]
-#' model <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
+#' model <- MoE_clust(hema, G=3, gating= ~ ais$BMI + ais$sex, model="EEE")
 #' Dens  <- MoE_dens(modelName=model$modelName, data=hema,
 #'                   mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
 #'                   log.tau=log(model$parameters$pro))
@@ -627,8 +633,8 @@
 #'
 #' # The z matrix will be close but not exactly the same as that from the model
 #' # as the EM algorithm finishes on an M-step, but the classification should be
-#' identical(max.col(Estep$z), unname(model$classification)) #TRUE
-#' round(sum(Estep$z - model$z), options()$digits) == 0      #TRUE
+#' identical(max.col(Estep$z), as.integer(unname(model$classification))) #TRUE
+#' round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
   MoE_dens        <- function(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL, logarithm = TRUE) {
     G             <- tryCatch(ifelse(is.matrix(mus), ncol(mus), length(mus)), error=function(e) 0)
     Vnul          <- is.null(Vinv)
@@ -689,10 +695,10 @@
 #' @examples
 #' data(ais)
 #' hema   <- ais[,3:7]
-#' model  <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
-#' Dens  <- MoE_dens(modelName=model$modelName, data=hema,
-#'                   mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
-#'                   log.tau=log(model$parameters$pro))
+#' model  <- MoE_clust(hema, G=3, gating= ~ ais$BMI + ais$sex, model="EEE")
+#' Dens   <- MoE_dens(modelName=model$modelName, data=hema,
+#'                    mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
+#'                    log.tau=log(model$parameters$pro))
 #'
 #' # Construct the z matrix and compute the log-likelihood
 #' Estep  <- MoE_estep(Dens=Dens)
@@ -700,14 +706,14 @@
 #'
 #' # The z matrix will be close but not exactly the same as that from the model
 #' # as the EM algorithm finishes on an M-step, but the classification should be
-#' identical(max.col(Estep$z), unname(model$classification)) #TRUE
-#' round(sum(Estep$z - model$z), options()$digits) == 0      #TRUE
+#' identical(max.col(Estep$z), as.integer(unname(model$classification))) #TRUE
+#' round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
 #'
 #' # Call MoE_estep directly
 #' Estep2 <- MoE_estep(modelName=model$modelName, data=hema,
 #'                     mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
 #'                     log.tau=log(model$parameters$pro))
-#' identical(Estep2$loglik, ll)                              #TRUE
+#' identical(Estep2$loglik, ll)                                          #TRUE
   MoE_estep       <- function(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL, Dens = NULL) {
     if(missing(Dens)) {
       Dens        <- do.call(MoE_dens, as.list(match.call())[-1])
@@ -799,7 +805,7 @@
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link{MoE_qclass}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
 #'
 #' @examples
-#' ctrl <- MoE_control(criterion="icl", itmax=10000, warn.it=12)
+#' ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=12, init.z="random")
 #'
 #' data(CO2data)
 #' res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=ctrl)
@@ -816,12 +822,15 @@
                               tol = c(1e-05, sqrt(.Machine$double.eps)), itmax = c(.Machine$integer.max,
                               .Machine$integer.max), equalPro = FALSE, warn.it = 0, noise.init = NULL,
                               noise.meth = c("hypvol", "convexhull", "ellipsoidhull"), verbose = interactive()) {
-    if(!is.character(criterion))                  stop("'criterion' must be a character vector of length 1")
+    if(!missing(criterion) && (length(criterion) > 1 ||
+       !is.character(criterion)))                 stop("'criterion' must be a single character string")
     criterion     <- match.arg(criterion)
-    if(!is.character(stopping))                   stop("'stopping' must be a character vector of length 1")
+    if(!missing(stopping)  && (length(stopping)  > 1 ||
+       !is.character(stopping)))                  stop("'stopping' must be a single character string")
     stopping      <- match.arg(stopping)
     miss.init     <- missing(init.z)
-    if(!is.character(init.z))                     stop("'init.z' must be a character vector of length 1")
+    if(!missing(init.z)    && (length(init.z)    > 1 ||
+       !is.character(init.z)))                    stop("'init.z' must be a single character string")
     init.z        <- match.arg(init.z)
     if(length(eps) > 2)                           stop("'eps' can be of length at most 2")
     if(any(eps     < 0))                          stop("'eps' is negative")
@@ -840,10 +849,11 @@
     if(length(warn.it)  > 1 ||
        !is.numeric(warn.it))                      stop("'warn.it' must be a numeric vector of length 1")
     if(!is.null(noise.init)) {
-      if(!is.character(noise.meth))               stop("'noise.meth' must be a character vector of length 1")
-      noise.meth  <- match.arg(noise.meth)
-      has.lib     <- switch(noise.meth, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
-      if(!has.lib)                                stop(paste0("Use of the ", noise.meth, " 'noise.meth' option requires loading the ", switch(noise.meth, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"))
+     if(!missing(noise.meth) & (length(noise.meth) > 1 ||
+        !is.character(noise.meth)))               stop("'noise.meth' must be a single character string")
+     noise.meth   <- match.arg(noise.meth)
+     has.lib      <- switch(noise.meth, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
+     if(!has.lib)                                 stop(paste0("Use of the ", noise.meth, " 'noise.meth' option requires loading the ", switch(noise.meth, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"))
     }
     if(length(verbose)  < 1 ||
        !is.logical(verbose))                      stop("'verbose' must be a single logical indicator")
@@ -896,12 +906,12 @@
 #' Choose the best MoEClust model
 #'
 #' Takes one or more sets of MoEClust models fitted by \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC. It's possible to respect the internal ranking within each set of models, or to discard models within each set which were already deemed sub-optimal.
-#' @param ... One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.
+#' @param ... One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single \emph{named} list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.
 #' @param criterion The criterion used to determine the ranking. Defaults to \code{"bic"}.
 #' @param pick The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied.
 #' @param optimal.only Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}
 #' @param x An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.
-#' @param index The indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.
+#' @param index A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.
 #'
 #' @note The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.\cr
 #'
@@ -934,21 +944,28 @@
 #' @seealso \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
 #' @examples
 #' data(CO2data)
-#' GNP    <- CO2data[,1]
-#' CO2    <- CO2data[,2]
-#' m1     <- MoE_clust(CO2, G=1:2)
-#' m2     <- MoE_clust(CO2, G=1:2, gating= ~ GNP)
-#' m3     <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
-#' m4     <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
-#' m5     <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
-#' m6     <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
-#' (comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6))
-#' (best  <- comp$optimal)
-#' (summ  <- summary(best))
-#' (comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE))
+#' GNP   <- CO2data[,1]
+#' CO2   <- CO2data[,2]
+#' m1    <- MoE_clust(CO2, G=1:2)
+#' m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP)
+#' m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
+#' m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP)
+#' m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE)
+#' m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
+#'
+#' # Rank only the optimal models and examine the best model
+#' (comp <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE))
+#' (best <- comp$optimal)
+#' (summ <- summary(best))
+#'
+#' # Examine all models visited, including those already deemed suboptimal
+#' # Only print models with expert covariates & more than one component
+#' comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=18)
+#' print(comp2, comp2$expert != "None" & comp2$G > 1)
   MoE_compare     <- function(..., criterion = c("bic", "icl", "aic"), pick = 3L, optimal.only = FALSE) {
     crit.miss     <- missing(criterion)
-    if(!is.character(criterion))                  stop("'criterion' must be a character string")
+    if(!missing(criterion) && (length(criterion) > 1 ||
+       !is.character(criterion)))                 stop("'criterion' must be a single character string")
     criterion     <- match.arg(criterion)
     num.miss      <- missing(pick)
     opt.miss      <- missing(optimal.only)
@@ -966,6 +983,7 @@
     if(len.call   == 1 && is.list(...) && !inherits(..., "MoEClust")) {
       mod.names   <- names(...)
       MoEs        <- unique(...)
+      if(is.null(mod.names))                      stop("When supplying models as a list, every element of the list must be named")
     } else {
       mod.names   <- unique(sapply(call, deparse))
       MoEs        <- unique(list(...))
@@ -1011,15 +1029,14 @@
     gating        <- unname(unlist(gating[crit.names]))
     expert        <- unname(unlist(expert[crit.names]))
     modelNames    <- gsub(",.*", "", gsub(".*\\|", "", max.names))
-    best.model    <- tryCatch(get(crit.names[1]), error=function(e) MoEs[[crit.names[1]]])
+    best.model    <- MoEs[[crit.names[1]]]
     if(best.model$modelName    != modelNames[1] || best.model$G != G[1]) {
       cat("Re-fitting optimal model due to mismatched 'criterion'...\n\n")
       old.call    <- best.model$call
       old.call    <- c(as.list(old.call)[1], list(criterion=criterion), as.list(old.call)[-1])
       old.call    <- as.call(old.call[!duplicated(names(old.call))])
-      best.call   <- c(list(data=best.model$data, modelNames=modelNames[1], G=G[1], verbose=FALSE, network.data=best.model$net.covs), as.list(old.call[-1]))
-      best.call   <- best.call[!duplicated(names(best.call))]
-      best.mod    <- try(do.call(MoE_clust, best.call), silent=TRUE)
+      best.call   <- c(list(data=best.model$data, modelNames=modelNames[1], G=G[1],  verbose=FALSE, network.data=best.model$net.covs), as.list(old.call[-1]))
+      best.mod    <- try(do.call(MoE_clust, best.call[!duplicated(names(best.call))]), silent=TRUE)
       if(!inherits(best.model, "try-error")) {
         best.model$call                <- old.call
         best.model$modelName           <- best.mod$modelName
@@ -1057,10 +1074,10 @@
 #' @param ... Further arguments to be passed to other methods.
 #'
 #' @return An object of class \code{"Mclust"}. See \code{methods(class="Mclust")} for a list of functions which can be applied to this class.
-#' @details The \code{signif} argument is intended only to aid visualisation via \code{\link[mclust]{plot.Mclust}}, as plots therein can be sensitive to outliers, particularly with regard to axis limits. This is especially true when \code{resid} is \code{TRUE} in the presence of expert network covariates.
-#' @note Of course, the user is always encouraged to use the dedicated \code{\link[=plot.MoEClust]{plot}} function for objects of the \code{"MoEClust"} class instead, but calling \code{plot} after converting via \code{\link{as.Mclust}} can be particularly useful for univariate mixtures.
+#' @details Of course, the user is always encouraged to use the dedicated \code{\link[=plot.MoEClust]{plot}} function for objects of the \code{"MoEClust"} class instead, but calling \code{plot} after converting via \code{\link{as.Mclust}} can be particularly useful for univariate mixtures.
 #'
-#' Of the functions which can be applied to the result of the conversion, \code{\link[mclust]{logLik.Mclust}} shouldn't be trusted in the presence of either expert network covariates, or (for more models with more than 1 component) gating network covariates.
+#' The \code{signif} argument is intended only to aid visualisation via \code{\link[mclust]{plot.Mclust}}, as plots therein can be sensitive to outliers, particularly with regard to axis limits. This is especially true when \code{resid} is \code{TRUE} in the presence of expert network covariates.
+#' @note Of the functions which can be applied to the result of the conversion, \code{\link[mclust]{logLik.Mclust}} shouldn't be trusted in the presence of either expert network covariates, or (for more models with more than 1 component) gating network covariates.
 #'
 #' Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
 #'
@@ -1076,20 +1093,19 @@
 #' \dontrun{
 #' # Fit a mixture of experts model to the ais data
 #' data(ais)
-#' mod   <- MoE_clust(ais[,3:7], G=1:3, expert= ~ ais$sex + ais$BMI)
+#' mod <- MoE_clust(ais[,3:7], G=3, expert= ~ ais$sex)
 #'
-#' # Convert to the "Mclust" class in order to visualise the results
-#' (mod2 <- as.Mclust(mod))
-#'
-#' # Plot the BIC and produce a similar plot for the ICL criterion
-#' plot(mod2, what="BIC")
-#' plot(mod$ICL)
-#'
-#' # Examine the classification
-#' plot(mod2, what="classification")
+#' # Convert to the "Mclust" class and examine the classification
+#' plot(as.Mclust(mod), what="classification")
 #'
 #' # Examine the density using the augmented data in the expert network
-#' plot(as.Mclust(mod, resid=TRUE), what="density")}
+#' plot(as.Mclust(mod, resid=TRUE), what="density")
+#'
+#' # While we could have just used plot.MoEClust above,
+#' # plot.Mclust is especially useful for univariate data
+#' data(CO2data)
+#' res <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP)
+#' plot(as.Mclust(res))}
   as.Mclust       <- function (x, resid = FALSE, signif = 0, ...) {
     UseMethod("as.Mclust")
   }
@@ -1190,9 +1206,10 @@
       return(list(crits = setNames(x.val, vapply(seq_len(pick), function(p, b=x.ind[p,]) paste0(b[2], ",", b[1]), character(1L))), pick = pick))
   }
 
+#' @importFrom stats "IQR" "quantile"
   .trim_out       <- function(x, signif = 0.01, na.rm = TRUE, ...) {
-    qnt           <- quantile(x, probs=c(signif, 2 - signif)/2, na.rm = na.rm, ...)
-    H             <- 1.5    * IQR(x, na.rm = na.rm)
+    qnt           <- quantile(x, probs=c(signif, 2 - signif)/2, na.rm=na.rm, ...)
+    H             <- 1.5    * IQR(x, na.rm=na.rm)
     y             <- x
     li.qnt        <- qnt[1] - H
     ui.qnt        <- qnt[2] + H

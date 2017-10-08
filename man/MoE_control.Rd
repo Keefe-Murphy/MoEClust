@@ -49,7 +49,7 @@ While the \code{criterion} argument controls the choice of the optimal number of
 When initialising using the \code{"hc"} option for the \code{init.z} argument, the \code{"EII"} model is used for high-dimensional data, otherwise \code{"VVV"} is used.
 }
 \examples{
-ctrl <- MoE_control(criterion="icl", itmax=10000, warn.it=12)
+ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=12, init.z="random")
 
 data(CO2data)
 res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=ctrl)

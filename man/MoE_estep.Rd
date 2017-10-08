@@ -38,10 +38,10 @@ This softmax function is intended for joint use with \code{\link{MoE_dens}}, usi
 \examples{
 data(ais)
 hema   <- ais[,3:7]
-model  <- MoE_clust(hema, G=2, gating= ~ ais$BMI + ais$sex, model="EVE")
-Dens  <- MoE_dens(modelName=model$modelName, data=hema,
-                  mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
-                  log.tau=log(model$parameters$pro))
+model  <- MoE_clust(hema, G=3, gating= ~ ais$BMI + ais$sex, model="EEE")
+Dens   <- MoE_dens(modelName=model$modelName, data=hema,
+                   mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
+                   log.tau=log(model$parameters$pro))
 
 # Construct the z matrix and compute the log-likelihood
 Estep  <- MoE_estep(Dens=Dens)
@@ -49,14 +49,14 @@ Estep  <- MoE_estep(Dens=Dens)
 
 # The z matrix will be close but not exactly the same as that from the model
 # as the EM algorithm finishes on an M-step, but the classification should be
-identical(max.col(Estep$z), unname(model$classification)) #TRUE
-round(sum(Estep$z - model$z), options()$digits) == 0      #TRUE
+identical(max.col(Estep$z), as.integer(unname(model$classification))) #TRUE
+round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
 
 # Call MoE_estep directly
 Estep2 <- MoE_estep(modelName=model$modelName, data=hema,
                     mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
                     log.tau=log(model$parameters$pro))
-identical(Estep2$loglik, ll)                              #TRUE
+identical(Estep2$loglik, ll)                                          #TRUE
 }
 \seealso{
 \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}, \code{\link[mclust]{mclustModelNames}}
