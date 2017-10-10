@@ -20,12 +20,12 @@ MoE_crit(modelName, loglik, n, d, G, gating.pen = G - 1, expert.pen = G * d,
 
 \item{z}{The \code{n} times \code{G} responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component.. If supplied the ICL is also computed and returned, otherwise only the BIC and AIC.}
 
-\item{df}{An alternative way to specify the degrees of freedom exactly. If supplied, the arguments \code{d, gating.pen} and \code{expert.pen}, which are used to calculate the degrees of freedom, will be ignored. The number of parameters used in the estimation of the noise component, if any, should also be included.}
+\item{df}{An alternative way to specify the number of estimated parameters exactly. If supplied, the arguments \code{d, gating.pen} and \code{expert.pen}, which are used to calculate the number of parameters, will be ignored. The number of parameters used in the estimation of the noise component, if any, should also be included.}
 
 \item{delta}{Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.}
 }
 \value{
-A simplified array containing the BIC, AIC, degrees of freedom and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
+A simplified array containing the BIC, AIC, number of estimated parameters (\code{df}) and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
 }
 \description{
 Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Likelihood), and AIC (Akaike Information Criterion) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
@@ -55,7 +55,7 @@ z     <- model$z
                   expert.pen=G * length(coef(model$expert[[1]])))["bic",])
 identical(bic2, unname(model$bic)) #TRUE
 
-# Make the same comparison with the known degrees of freedom
+# Make the same comparison with the known number of estimated parameters
 (bic3 <- MoE_crit(modelName=name, loglik=ll, n=n, G=G, df=model$df, z=z)["bic",])
 identical(bic3, bic2)              #TRUE
 }

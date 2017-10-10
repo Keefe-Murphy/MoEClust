@@ -6,11 +6,12 @@
 \usage{
 MoE_gpairs(res, response.type = c("points", "uncertainty", "density"),
   scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
-  addEllipses = c("outer", "yes", "no", "inner"), bg.col = c("ivory",
-  "white", "floralwhite", "floralwhite", "cornsilk"), diagonal = c("on",
-  "off"), outer.margins = list(bottom = unit(2, "lines"), left = unit(2,
-  "lines"), top = unit(2, "lines"), right = unit(2, "lines")),
-  outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.02,
+  addEllipses = c("outer", "yes", "no", "inner"), border.col = c("purple",
+  "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white",
+  "whitesmoke", "whitesmoke", "cornsilk"), diagonal = c("on", "off"),
+  outer.margins = list(bottom = unit(2, "lines"), left = unit(2, "lines"), top
+  = unit(2, "lines"), right = unit(2, "lines")), outer.labels = NULL,
+  outer.rot = c(0, 90), gap = 0.05, buffer = 0.02,
   scatter.pars = list(...), stripplot.pars = list(...),
   barcode.pars = list(...), mosaic.pars = list(...),
   axis.pars = list(...), diag.pars = list(...), ...)
@@ -20,13 +21,15 @@ MoE_gpairs(res, response.type = c("points", "uncertainty", "density"),
 
 \item{response.type}{The type of plot desired for the scatter plots comparing continuous response variables. Defaults to \code{"points"}, but points can also be sized according to their associated clustering \code{"uncertainty"}, or the bivariate \code{"density"} can be displayed.}
 
-\item{scatter.type}{A vector of length 2 giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots of covariates against response, and never response vs. response or covariate vs. covariate, but note that lines &/or confidence intervals will still be drawn even for continuous covariates included only in the gating network.}
+\item{scatter.type}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots of covariates against response, and never response vs. response or covariate vs. covariate, but note that lines &/or confidence intervals will still be drawn even for continuous covariates included only in the gating network.}
 
-\item{conditional}{A vector of length 2 giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).}
+\item{conditional}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"barcode"} and \code{"violin"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).}
 
-\item{addEllipses}{Controls whether to add ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent. Ellipses are only ever drawn for multivariate data.}
+\item{addEllipses}{Controls whether to add ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lcol}). Ellipses are only ever drawn for multivariate data.}
 
-\item{bg.col}{A vector of length 5 containing background colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively. Defaults to \code{c("ivory", "white", "floralwhite", "floralwhite", "cornsilk")}.}
+\item{border.col}{A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, respponse vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively. Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.}
+
+\item{bg.col}{A vector of length 5 (or 1) containing \emph{background} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively. Defaults to \code{c("cornsilk", "white", "whitesmoke", "whitesmoke", "cornsilk")}.}
 
 \item{diagonal}{By default, the diagonal to the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{"off"} will place the diagonal running from the top right down to the bottom left.}
 
@@ -34,13 +37,13 @@ MoE_gpairs(res, response.type = c("points", "uncertainty", "density"),
 
 \item{outer.labels}{The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.}
 
-\item{outer.rot}{A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels.}
+\item{outer.rot}{A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels. Defaults to \code{c(0, 90)}.}
 
 \item{gap}{The gap between the tiles; defaulting to 0.05 of the width of a tile.}
 
 \item{buffer}{The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to 2 percent of range currently.}
 
-\item{scatter.pars}{A list supplying select parameters for the continuous vs. continuous scatter plots. \code{NULL} is equivalent to \code{list(pch=res$classification, size=unit(0.25, "char"), col=res$classification, lcol=res$classification, border.col="black")}, where \code{lcol} gives the colour of the fitted lines when \code{scatter.type} is one of \code{"ci"} or \code{"lm"}. Note that \code{scatter.pars$size} will be overridden when \code{response.type} is \code{"uncertainty"}.}
+\item{scatter.pars}{A list supplying select parameters for the continuous vs. continuous scatter plots. \code{NULL} is equivalent to \code{list(pch=res$classification, size=unit(0.25, "char"), col=res$classification, lcol=res$classification)}, where \code{lcol} gives the colour of the fitted lines when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"} or \code{"inner"}. Note that \code{scatter.pars$size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}.}
 
 \item{stripplot.pars}{A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"stripplot"}. \code{NULL} is equivalent to \code{list(pch=res$classification, size=unit(0.5, "char"), col=res$classification, jitter=TRUE)}.}
 
@@ -52,7 +55,7 @@ MoE_gpairs(res, response.type = c("points", "uncertainty", "density"),
 
 \item{diag.pars}{\code{NULL} is equivalent to \code{list(fontsize=9, show.hist=TRUE, hist.color=hist.color)}, where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership.}
 
-\item{...}{Catches unused arguments, or arguments to be passed to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}.}
+\item{...}{Catches unused arguments. Alternatively, arguments can be passed directly here to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}, though caution is advised when doing so, especially for non-unique argument names.}
 }
 \value{
 A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
@@ -73,21 +76,21 @@ BMI   <- ais$BMI
 res   <- MoE_clust(ais[,3:7], G=3, gating= ~ BMI, expert= ~ sex, modelNames="VVE")
 MoE_gpairs(res)
 
-# Produce the same plot with a barchart in the lower triangle.
+# Produce the same plot with a violin plot in the lower triangle.
 # Add confidence intervals to the scatter plots.
 # Size points in the response vs. response panels by their clustering uncertainty.
 # Use different colours for histograms of covariates in the gating/expert/both networks.
 # Also use different colours for response vs. covariate & covariate vs. response panels.
-MoE_gpairs(res, conditional=c("stripplot", "barcode"),
+MoE_gpairs(res, conditional=c("stripplot", "violin"),
            scatter.type=c("ci", "points"), response.type="uncertainty",
-           hist.color=c("black", "cyan", "navy", "hotpink"),
-           bg.col=c("oldlace", "white", "seashell", "whitesmoke", "cornsilk"))
+           hist.color=c("black", "cyan", "hotpink", "chartreuse"),
+           bg.col=c("floralwhite", "white", "mintcream", "mintcream", "floralwhite"))
 }
 \references{
 Emerson, J.W., Green, W.A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The Generalized Pairs Plot. \emph{Journal of Computational and Graphical Statistics}, 22(1):79-91.
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[vcd]{strucplot}}, \code{\link[barcode]{barcode}}
+\code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}, \code{\link[barcode]{barcode}}
 }
 \author{
 Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}

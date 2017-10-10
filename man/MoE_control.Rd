@@ -9,7 +9,7 @@ MoE_control(criterion = c("bic", "icl", "aic"), stopping = c("aitken",
   eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps)),
   itmax = c(.Machine$integer.max, .Machine$integer.max), equalPro = FALSE,
   warn.it = 0, noise.init = NULL, noise.meth = c("hypvol", "convexhull",
-  "ellipsoidhull"), verbose = interactive())
+  "ellipsoidhull"), hc.meth = NULL, verbose = interactive())
 }
 \arguments{
 \item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.}
@@ -31,6 +31,8 @@ MoE_control(criterion = c("bic", "icl", "aic"), stopping = c("aitken",
 \item{noise.init}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation.}
 
 \item{noise.meth}{The method use to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options \code{convexhull} and \code{ellipsoidhull} require loading the \code{geometry} and \code{cluster} libraries, respectively.}
+
+\item{hc.meth}{A character string indicating the model to be used when hierarchical clustering (see \code{\link[mclust]{hc}} is employed for initialisation according to \code{init.z}. Defaults to \code{"EII"} for high-dimensional data, or \code{"VVV"} otherwise.}
 
 \item{verbose}{Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.}
 }
