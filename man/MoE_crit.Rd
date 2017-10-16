@@ -20,7 +20,7 @@ MoE_crit(modelName, loglik, n, d, G, gating.pen = G - 1, expert.pen = G * d,
 
 \item{z}{The \code{n} times \code{G} responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component.. If supplied the ICL is also computed and returned, otherwise only the BIC and AIC.}
 
-\item{df}{An alternative way to specify the number of estimated parameters exactly. If supplied, the arguments \code{d, gating.pen} and \code{expert.pen}, which are used to calculate the number of parameters, will be ignored. The number of parameters used in the estimation of the noise component, if any, should also be included.}
+\item{df}{An alternative way to specify the number of estimated parameters (or 'used' degrees of freedom) exactly. If supplied, the arguments \code{d, gating.pen} and \code{expert.pen}, which are used to calculate the number of parameters, will be ignored. The number of parameters used in the estimation of the noise component, if any, should also be included.}
 
 \item{delta}{Dirichlet hyperparameter for the prior on the mixing proportions. Defaults to 0.5. Only relevant for the ICL computation.}
 }
