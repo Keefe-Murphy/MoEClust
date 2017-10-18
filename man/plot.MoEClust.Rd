@@ -51,7 +51,7 @@ plot(res, what="loglik")
 plot(res, what="gpairs")
 
 # Modify the gpairs plot by passing arguments to MoE_gpairs()
-plot(res, what="gpairs", response.type="uncertainty",
+plot(res, what="gpairs", response.type="density",
      scatter.type="ci", jitter=FALSE)
 }
 \seealso{
