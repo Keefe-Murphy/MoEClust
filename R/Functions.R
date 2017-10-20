@@ -56,7 +56,7 @@
 #' \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component. If there is a noise component, its values are found in the \emph{last} column.}
 #' \item{\code{classification}}{The vector of cluster labels for the chosen model corresponding to \code{z}, i.e. \code{max.col(z)}. Observations belonging the noise component will belong to component \code{0}.}
 #' \item{\code{uncertainty}}{The uncertainty associated with the \code{classification}.}
-#' \item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any. Will be missing in the absence of gating or expert network covariates.}
+#' \item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any. Will be missing in the absence of gating or expert network covariates, and supplied gating covariates will be exluded if the optimal model has only one component.}
 #' \item{\code{resid.data}}{In the presence of expert network covariates, this is the augmented data (as a data frame) actually used in the clustering at convergence consisting of the \code{(n * G) * d} matrix of (multivariate) WLS residuals. Will be missing in the absence of expert network covariates.}
 #' \item{\code{DF}}{A matrix of giving numbers of estimated parameters (i.e. the number of 'used' degrees of freedom) for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. Subtract these numbers from \code{n} to get the degrees of freedom. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustBIC"}, for which a dedicated plotting function exists.}
 #' \item{\code{iters}}{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged.}
@@ -268,7 +268,8 @@
       }
       Nseq        <- seq_len(n)
     } else expert <- stats::as.formula(X ~ 1)
-    if(init.z == "mclust"     &&
+    one.G         <- all(G == 1)
+    if(init.z == "mclust"     && !one.G &&
        !any(gate.x, exp.x))                       stop("Can't initialise using 'mclust' when there are no gating or expert covariates: try another 'init.z' method")
 
   # Tell network formulas where to look for variables
@@ -289,11 +290,13 @@
     multv         <- d  + nct  > 1
     if(!multv)     {
       init.z      <- ifelse(miss.init, "quantile", init.z)
-    }
+    } else if(init.z   == "quantile" && !one.G)   stop("Quantile-based initialisation of the allocations is only permitted for univariate data without continuous expert network covariates")
     if(init.z     == "hc")       {
       if(miss.hc)  {
         hcName    <- ifelse(highd, "EII", "VVV")
-      } else if(init.z == "hc")  {
+      } else if(init.z == "hc"  && !one.G) {
+        if(multv  &&
+           is.element(hcName,  c("E",     "V")))  stop("'hc.meth' can only be 'E' or 'V' for univariate data without continuous expert network covariates")
         if(highd  && !is.element(hcName, c("EII",
                                 "VII",  "EEE")))  warning("Consider a diagonal 'EII' or 'VII' model (or equal volume 'EEE' model) for 'hc.meth' for initialising allocations for high-dimensional data", call.=FALSE)
         if(!multv && !is.element(hcName, c("VVV",
@@ -419,8 +422,8 @@
           }
 
         # E-step & record log-likelihood
-          densme  <- capture.output(medensity  <- try(MoE_dens(modelName=modtype, data=if(exp.g) e.res else x.dat, mus=mus, sigs=sigs, log.tau=ltau, Vinv=Vinv), silent=TRUE))
-          if((ERR <- attr(Mstep, "returnCode")  < 0 || inherits(medensity, "try-error"))) {
+          densme  <- utils::capture.output(medensity <- try(MoE_dens(modelName=modtype, data=if(exp.g) e.res else x.dat, mus=mus, sigs=sigs, log.tau=ltau, Vinv=Vinv), silent=TRUE))
+          if((ERR <- attr(Mstep, "returnCode")  < 0  || inherits(medensity, "try-error"))) {
             ll    <- c(ll, NA)
             break
           } else  {
@@ -547,6 +550,13 @@
     if(multi && verbose)         cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
                                      paste0(G, " component", ifelse(G > 1, "s", ""))), ifelse(any(exp.gate) || (!noise.null && G != 0), paste0("\n\t\t\t   ", net.msg), ""), "\n\t\t",
                                      switch(criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
+    if(G == 1)     {
+      exp.names   <- attr(netdat, "Expert")
+      netdat      <- netdat[,gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", attr(netdat, "Expert")))]
+      attr(netdat, "Gating")  <-
+      attr(netdat, "Both")    <- NA
+      attr(netdat, "Expert")  <- exp.names
+    }
     if(all(x.ll   != cummax(x.ll)))               warning("Log-likelihoods are not strictly increasing", call.=FALSE)
     if(any(it.x[!is.na(it.x)] == max.it))         warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")"), call.=FALSE)
     class(BICs)   <- c("MoECriterion", "mclustBIC")
@@ -789,7 +799,7 @@
     double.ll     <- 2 * loglik
     bic.x         <- double.ll  - df * log(n)
     aic.x         <- double.ll  - df * 2
-      return(c(bic = bic.x, icl = if(!missing(z)) bic.x + 2 * sum((z == apply(z, 1, max)) * log(z), na.rm = TRUE), aic = aic.x, df = df))
+      return(c(bic = bic.x, icl = if(!missing(z)) bic.x + 2 * sum(log(apply(z, 1, max)), na.rm = TRUE), aic = aic.x, df = df))
   }, vectorize.args = c("modelName", "loglik"), SIMPLIFY="array")
 
 #' Set control values for use with MoEClust
@@ -797,7 +807,7 @@
 #' Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
 #' @param criterion When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.
 #' @param stopping The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{MoE_aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.
-#' @param init.z The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data, or quantile-based clustering as per \code{\link{MoE_qclass}} for univariate data. The \code{"quantile"} option is only available for univariate data. Other options include \code{kmeans}, \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.
+#' @param init.z The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data, or quantile-based clustering as per \code{\link{MoE_qclass}} for univariate data (unless there are continuous expert network covariates, in which case the defaults is again \code{\link[mclust]{hc}}). The \code{"quantile"} option is only available for univariate data without continuous expert network covariates. Other options include \code{kmeans}, \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.
 #' @param eps A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of eps allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.
 #' @param tol A vector of length two giving relative convergence tolerances for the log-likelihood and for parameter convergence in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(1e-05,sqrt(.Machine$double.eps))}. If only one number is supplied, it is used as the tolerance for the outer iterations and the tolerance for the inner iterations is as in the default.
 #' @param itmax A vector of length two giving integer limits on the number of EM iterations and on the number of iterations in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(.Machine$integer.max, .Machine$integer.max)} allowing termination to be completely governed by \code{tol}. If only one number is supplied, it is used as the iteration limit for the outer iteration only.
@@ -1144,8 +1154,9 @@
     x$parameters$mean[]   <- if(resid)  0                                         else x$parameters$mean
     x$classification      <- if(resid)  unname(rep(x$classification, x$G))        else unname(x$classification)
     x$data                <- if(resid)  as.matrix(x$resid.data)                   else as.matrix(x$data)
+    rownames(x$data)      <- if(resid)  seq_len(x$n * x$g)                        else rownames(x$data)
     x$data        <- if(signif > 0)     apply(x$data, 2, .trim_out, signif)       else x$data
-    x$z           <- if(resid)          do.call(rbind, replicate(x$G, list(x$z))) else x$z
+    x$z           <- if(resid)          do.call(rbind, replicate(x$G, list(x$z))) else x$z # FIX THIS LINE
     dimnames(x$z) <- NULL
     x$uncertainty <- unname(x$uncertainty)
     x             <- x[-which(is.element(names(x), c("ICL", "icl", "AIC", "aic", "gating", "expert", "net.covs", "resid.data", "DF", "iters")))]
