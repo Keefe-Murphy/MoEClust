@@ -244,7 +244,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(scatter.pars$lcol))     {
     scatter.pars$lcol   <- colors[Gseq]
   }
-  scatter.pars$ecol     <- unique(scatter.pars$col)[uni.c]
+  scatter.pars$ecol     <- unique(scatter.pars$col)[match(Gseq, uni.c)]
   if(is.null(density.pars$grid.size)) {
     density.pars$grid.size   <- c(100, 100)
   } else if(length(density.pars$grid.size)  != 2 || !all(is.numeric(density.pars$grid.size)) ||
@@ -324,9 +324,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     mosaic.pars$gp_args <- list()
   }
   noise.cols <- scatter.pars$col
-  noise.col  <- unique(noise.cols)[if(noise)   c(uni.c, G + 1)    else uni.c]
-  stripplot.pars$col    <- if(miss.stripcol)   noise.cols         else stripplot.pars$col
-  noise.cols <- if(noise)  c(noise.col[noisy], noise.col[-noisy]) else noise.col
+  noise.col  <- unique(noise.cols)[if(noise)  c(uni.c, G + 1)    else uni.c]
+  noise.cols <- if(noise) c(noise.col[noisy], noise.col[-noisy]) else noise.col
   grid.newpage()
   vp.main    <- viewport(x=outer.margins$bottom, y=outer.margins$left,
                          width=unit(1,  "npc") - outer.margins$right - outer.margins$left,
@@ -365,8 +364,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
         .diag_panel(x=x[,i], varname=names(x)[i], diag.pars=diag.pars, hist.col=if(i == 1 && names(x)[i] == "MAP") list(noise.cols) else diag.pars$hist.color, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, index=i, outer.rot=outer.rot)
       } else {
         if(is.factor(x[,i]) + is.factor(x[,j]) == 1) {
-          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if((i == 1 || j == 1) && names(x)[1] == "MAP") noise.cols else if(i > dcol && j > dcol) "grey" else NULL, border=border)
-          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if((i == 1 || j == 1) && names(x)[1] == "MAP") noise.cols else if(i > dcol && j > dcol) "grey" else NULL, border=border)
+          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if((i == 1 || j == 1) && names(x)[1] == "MAP") noise.cols else if(i > dcol && j > dcol) "grey" else "white", border=border, col.ind=i <= dcol)
+          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if((i == 1 || j == 1) && names(x)[1] == "MAP") noise.cols else if(i > dcol && j > dcol) "grey" else "white", border=border, col.ind=FALSE)
           if(i < j & upr.cond == "barcode") {
             pushViewport(viewport(gp=gpar(fill=bg)))
             if(is.factor(x[,i])) {
@@ -677,7 +676,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
 
 #' @importFrom grid "gpar" "grid.rect" "popViewport" "pushViewport" "viewport"
 #' @importFrom lattice "panel.bwplot" "panel.stripplot" "trellis.par.get" "trellis.par.set"
-.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, outer.rot, bg, box.fill, border) {
+.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, outer.rot, bg, box.fill, border, col.ind) {
   xlim         <- NULL
   ylim         <- NULL
   old.color    <- trellis.par.get("box.rectangle")$col
@@ -698,6 +697,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
     cat.var    <- k + 1 - as.numeric(y)
     cont.var   <- x
     horiz      <- TRUE
+    stripplot.pars$col <- if(col.ind) unique(stripplot.pars$col)[match(unique(y), levels(y))][as.numeric(y)] else stripplot.pars$col
   }
   grid.rect(gp=gpar(fill=bg, col=border))
   if(horiz) {

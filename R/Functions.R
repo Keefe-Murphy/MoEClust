@@ -311,13 +311,54 @@
       h           <- which(range.G == g)
       equal.pro   <- equal.tau[h]
       gate.g      <- gate.G[h]
-      exp.g       <- exp.x && g > 0
+      exp.g       <- exp.init <- exp.x && g > 0
       Gseq        <- seq_len(g)
       gN          <- g + !noise.null
       z           <- matrix(0, n, gN)
-      z.tmp       <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(hc(X[!noise,], modelName=hcName, minclus=g), g)),
-                     kmeans=kmeans(X[!noise,], g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(X[!noise,], g),
-                     mclust=Mclust(X[!noise,], g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
+
+      # Initialise Expert Network & Allocations
+      if(exp.g)   {
+        z.mat     <- z.alloc  <- matrix(0, nrow=n * g, ncol=g)
+        muX       <- if(uni)  rep(0, g) else matrix(0, nrow=d, ncol=g)
+        XI        <- cbind(X, netdat[,net.cts])[!noise,, drop=FALSE]
+        z.tmp     <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(tryCatch(hc(XI, modelName=hcName, minclus=g), error=function(e) stop("Error in hierarchical clustering initialisation")), g)),
+                           kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
+                           mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
+        tmp.z     <- matrix(NA, nrow=ifelse(noisen == 0, n, noisen), ncol=g)
+        mahala    <- res.G    <- list()
+        netnoise  <- netdat[!noise,, drop=FALSE]
+        while(!identical(tmp.z, z.tmp))    {
+          tmp.z   <- z.tmp
+          for(k in Gseq) {
+            sub   <- z.tmp[,k] == 1
+            exp   <- tryCatch(stats::lm(expert, data=netnoise, subset=sub), error=function(e) {
+                     try(stats::lm(stats::as.formula(paste("X", paste(names(netnoise[,!apply(netnoise[sub,, drop=FALSE], 2, function(x) all(x == x[1], na.rm=TRUE)), drop=FALSE]), collapse="+"), sep="~")), data=netnoise, subset=sub), silent=TRUE) })
+            if(inherits(exp, "try-error")) {
+              exp.init        <- FALSE
+              break
+            }
+            res   <- as.matrix((X - tryCatch(stats::predict(exp, newdata=netdat), error=function(e) stats::predict(exp, newdata=.drop_levels(exp, netdat))))[!noise,, drop=FALSE])
+            res.G[[k]]        <- res
+            mahala[[k]]       <- .MoE_mahala(exp, res, uni)
+          }
+          if(!exp.init) {
+            break
+          } else if(g   > 1)   {
+            maha  <- do.call(cbind, mahala)
+            maha[is.na(maha)] <- Inf
+            z.tmp <- maha == apply(maha, 1, min)
+          }
+        }
+        G.res     <- if(uni) as.matrix(do.call(base::c, res.G)) else do.call(rbind, res.G)
+      } else {
+        XI        <- X[!noise,, drop=FALSE]
+        z.tmp     <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(tryCatch(hc(XI, modelName=hcName, minclus=g), error=function(e) stop("Error in hierarchical clustering initialisation")), g)),
+                           kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
+                           mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
+        exp.pen   <- g * d
+      }
+
+      # Account for Noise Component
       if(noise.null) {
         z         <- z.init   <- z.tmp
       } else   {
@@ -328,6 +369,9 @@
           z[]     <- 1
         }
         z.init    <- z
+      }
+      if(exp.init) {
+        for(k in Gseq) z.alloc[(k - 1) * n + Nseq,k] <- z.init[,k]
       }
       if(any(apply(z.init, 2, sum) < 2))          warning(paste0("For the ", g, " component models, a component was initialised with only 1 observation"), call.=FALSE)
 
@@ -346,10 +390,6 @@
         ltau[,]   <- if(equal.pro)       log(tau)     else 0
         gate.pen  <- ifelse(equal.pro, 0, gN - 1) + ifelse(noise.null, 0, 1)
       }
-      if(exp.g)   {
-        z.mat     <- matrix(0, nrow=n * g, ncol=g)
-        muX       <- if(uni) rep(0, g)  else matrix(0, nrow=d, ncol=g)
-      } else expert.pen       <- g * d
 
     # Loop over the mclust model type(s)
       for(modtype in if(g > 1)   mfg    else if(g == 1) mf1 else mf0)    {
@@ -358,17 +398,25 @@
       # Initialise parameters from allocations
         if(isTRUE(verbose))      cat(paste0("\n\tModel: ", modtype, "\n"))
         x.df      <- ifelse(g  > 0, nVarParams(modtype, d, g), 0) + gate.pen
-        Mstep     <- mstep(modtype, X, if(noise.null || g == 0) z.init else z.init[,-gN, drop=FALSE], control=control, equalPro=equal.pro)
-        mus       <- Mstep$parameters$mean
+        if(exp.init)   {
+         Mstep    <- try(mstep(modtype, G.res, z.alloc, control=control), silent=TRUE)
+         exp.init <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
+         mus      <- muX
+        }
+        if(!exp.init)  {
+         Mstep    <- mstep(modtype, X, if(noise.null || g == 0) z.init else z.init[,-gN, drop=FALSE], control=control)
+         mus      <- Mstep$parameters$mean
+        }
         vari      <- Mstep$parameters$variance
         sigs      <- vari$sigma
 
         if(all(!gate.g, !equal.pro)) {
-          tau     <- if(noise.null) Mstep$parameters$pro else colMeans(z.init)
+          tau     <- if(noise.null)   Mstep$parameters$pro else colMeans(z.init)
+          tau     <- if(!exp.init || !noise.null)      tau else tau * g
           ltau    <- .mat_byrow(log(tau), nrow=n, ncol=gN)
         }
-        densme    <- capture.output(medensity  <- try(MoE_dens(modelName=modtype, data=x.dat, mus=mus, sigs=sigs, log.tau=ltau, Vinv=Vinv), silent=TRUE))
-        if((ERR   <- (g  > 0 && attr(Mstep, "returnCode")  < 0) || inherits(medensity, "try-error"))) {
+        densme    <- utils::capture.output(medensity     <- try(MoE_dens(modelName=modtype, data=if(exp.init) res.G else x.dat, mus=mus, sigs=sigs, log.tau=ltau, Vinv=Vinv), silent=TRUE))
+        if((ERR   <- (g  > 0 && attr(Mstep, "returnCode") < 0) || inherits(medensity, "try-error"))) {
           ll      <- NA
           j       <- 1
           if(isTRUE(verbose))    cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, "\n"))
@@ -552,7 +600,7 @@
                                      switch(criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
     if(G == 1)     {
       exp.names   <- attr(netdat, "Expert")
-      netdat      <- netdat[,gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", attr(netdat, "Expert")))]
+      netdat      <- netdat[,setdiff(gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", attr(netdat, "Gating")[!is.na(attr(netdat, "Gating"))])), colnames(netdat))]
       attr(netdat, "Gating")  <-
       attr(netdat, "Both")    <- NA
       attr(netdat, "Expert")  <- exp.names
@@ -1218,6 +1266,22 @@
 
   .mat_byrow      <- function(x, nrow, ncol) {
     matrix(x, nrow=nrow, ncol=ncol, byrow=any(dim(as.matrix(x)) == 1))
+  }
+
+  .MoE_mahala     <- function(fit, resids, uni) {
+    if(uni)  {
+      resids * resids * 1/summary(fit)$sigma
+    } else   {
+      covar       <- stats::estVar(fit)
+      inv.cov     <- try(base::solve(covar), silent=TRUE)
+      if(inherits(inv.cov, "try-error"))        {
+        covsvd    <- svd(covar)
+        posi      <- covsvd$d > max(sqrt(.Machine$double.eps) * covsvd$d[1L], 0)
+        inv.cov   <- if(all(posi)) covsvd$v %*% (t(covsvd$u)/covsvd$d) else if(any(posi))
+          covsvd$v[,posi, drop=FALSE] %*% (t(covsvd$u[,posi, drop=FALSE])/covsvd$d[posi]) else array(0, dim(covar)[2L:1L])
+      }
+      rowSums(resids %*% inv.cov * resids)
+    }
   }
 
 #' @importFrom mclust "hypvol"
