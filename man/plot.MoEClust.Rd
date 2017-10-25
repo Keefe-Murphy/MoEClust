@@ -54,6 +54,9 @@ plot(res, what="gpairs")
 plot(res, what="gpairs", response.type="density",
      scatter.type="ci", jitter=FALSE)
 }
+\references{
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+}
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
 }

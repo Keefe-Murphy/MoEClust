@@ -32,6 +32,9 @@ Date: 2017-10-05
 Licence: GPL (>=2)
 }
 
+\references{
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+}
 \author{
 Keefe Murphy [aut, cre]
 

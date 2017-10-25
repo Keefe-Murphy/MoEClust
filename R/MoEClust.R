@@ -26,6 +26,8 @@
 #'
 #' Maintainer: Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #'
+#' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+#'
 #' @docType package
 #' @name MoEClust
 NULL

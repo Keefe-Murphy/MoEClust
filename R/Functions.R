@@ -70,7 +70,9 @@
 #' Where \code{BIC}, \code{ICL}, \code{AIC}, \code{DF} and \code{iters} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL}, \code{AIC} and \code{DF} all inherit the class \code{"MoECriterion"}, for which a dedicated print function exists.
 #' @seealso \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
 #' @export
-#' @references C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
+#' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+#'
+#' C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #'
 #' @examples
@@ -129,6 +131,10 @@
     criterion     <- control$criterion
     equal.pro     <- control$equalPro
     init.z        <- control$init.z
+    exp.init      <- control$exp.init
+    do.joint      <- exp.init$joint
+    do.mahala     <- exp.init$mahalanobis
+    max.init      <- exp.init$max.init
     max.it        <- control$itmax[1]
     stopx         <- control$stopping
     tol           <- control$tol[1]
@@ -311,24 +317,31 @@
       h           <- which(range.G == g)
       equal.pro   <- equal.tau[h]
       gate.g      <- gate.G[h]
-      exp.g       <- exp.init <- exp.x && g > 0
+      exp.g       <- exp.x && g > 0
+      exp.init    <- exp.g && do.mahala
       Gseq        <- seq_len(g)
       gN          <- g + !noise.null
       z           <- matrix(0, n, gN)
 
       # Initialise Expert Network & Allocations
-      if(exp.g)   {
+      XI        <- if(exp.g  && do.joint) cbind(X, netdat[,net.cts])[!noise,, drop=FALSE] else X[!noise,, drop=FALSE]
+      z.tmp     <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(tryCatch(hc(XI, modelName=hcName, minclus=g), error=function(e) stop("Error in hierarchical clustering initialisation")), g)),
+                                          kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
+                                          mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
+      if(exp.g)    {
         z.mat     <- z.alloc  <- matrix(0, nrow=n * g, ncol=g)
         muX       <- if(uni)  rep(0, g) else matrix(0, nrow=d, ncol=g)
-        XI        <- cbind(X, netdat[,net.cts])[!noise,, drop=FALSE]
-        z.tmp     <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(tryCatch(hc(XI, modelName=hcName, minclus=g), error=function(e) stop("Error in hierarchical clustering initialisation")), g)),
-                           kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
-                           mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
+      } else {
+        exp.pen   <- g * d
+      }
+      if(exp.init) {
         tmp.z     <- matrix(NA, nrow=ifelse(noisen == 0, n, noisen), ncol=g)
         mahala    <- res.G    <- list()
         netnoise  <- netdat[!noise,, drop=FALSE]
-        while(!identical(tmp.z, z.tmp))    {
+        ix        <- 0
+        while(!identical(tmp.z, z.tmp) && ix <= max.init) {
           tmp.z   <- z.tmp
+          ix      <- ix  + 1
           for(k in Gseq) {
             sub   <- z.tmp[,k] == 1
             exp   <- tryCatch(stats::lm(expert, data=netnoise, subset=sub), error=function(e) {
@@ -350,15 +363,10 @@
           }
         }
         G.res     <- if(uni) as.matrix(do.call(base::c, res.G)) else do.call(rbind, res.G)
-      } else {
-        XI        <- X[!noise,, drop=FALSE]
-        z.tmp     <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(tryCatch(hc(XI, modelName=hcName, minclus=g), error=function(e) stop("Error in hierarchical clustering initialisation")), g)),
-                           kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
-                           mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
-        exp.pen   <- g * d
       }
 
       # Account for Noise Component
+      z.tmp       <- 0 + z.tmp
       if(noise.null) {
         z         <- z.init   <- z.tmp
       } else   {
@@ -373,27 +381,31 @@
       if(exp.init) {
         for(k in Gseq) z.alloc[(k - 1) * n + Nseq,k] <- z.init[,k]
       }
-      if(any(apply(z.init, 2, sum) < 2))          warning(paste0("For the ", g, " component models, a component was initialised with only 1 observation"), call.=FALSE)
+      col.z       <- colSums(z.init)
+      emptyinit   <- FALSE
+      if(any(col.z < 1)) {                        warning(paste0("For the ", g, " component models, one or more components was empty after initialisation"), call.=FALSE)
+        emptyinit <- TRUE
+      } else if(any(col.z < 2))                   warning(paste0("For the ", g, " component models, one or more components was initialised with only 1 observation"), call.=FALSE)
 
     # Initialise gating network
-      ltau        <- matrix(0, nrow=n, ncol=gN)
       if(gate.g)  {
         g.init    <- multinom(gating, trace=FALSE, data=netdat)
        #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating)[,-1], family="multinomial", type.multinomial="grouped")
         tau       <- stats::predict(g.init, type="probs")
        #tau       <- predict(g.init, type="response", newx=model.matrix(gating)[,-1], s="lambda.1se")[,,1]
         ltau      <- log(tau)
-        gate.pen  <- length(stats::coef(g.init)) + ifelse(noise.null, 0, 1)
+        gate.pen  <- length(stats::coef(g.init))  + ifelse(noise.null, 0, 1)
        #gate.pen  <- sum(lengths(coef(g.init, s="lambda.1se")[-1]))
       } else      {
-        tau       <- if(equal.pro)  rep(1/gN, gN)     else 1
-        ltau[,]   <- if(equal.pro)       log(tau)     else 0
+        tau       <- if(equal.pro)  rep(1/gN, gN) else colMeans(z.init)
+        ltau      <- .mat_byrow(log(tau), nrow=n, ncol=gN)
         gate.pen  <- ifelse(equal.pro, 0, gN - 1) + ifelse(noise.null, 0, 1)
       }
+      ltau.init   <- ltau
 
     # Loop over the mclust model type(s)
       for(modtype in if(g > 1)   mfg    else if(g == 1) mf1 else mf0)    {
-        m0W       <- m0X      <- FALSE
+        m0W       <- m0X      <- ERR <- FALSE
 
       # Initialise parameters from allocations
         if(isTRUE(verbose))      cat(paste0("\n\tModel: ", modtype, "\n"))
@@ -404,19 +416,17 @@
          mus      <- muX
         }
         if(!exp.init)  {
-         Mstep    <- mstep(modtype, X, if(noise.null || g == 0) z.init else z.init[,-gN, drop=FALSE], control=control)
-         mus      <- Mstep$parameters$mean
+         Mstep    <- try(mstep(modtype, X, if(noise.null || g == 0) z.init else z.init[,-gN, drop=FALSE], control=control), silent=TRUE)
+         ERR      <- inherits(Mstep, "try-error")        || attr(Mstep, "returnCode")  < 0
+         if(!ERR)    mus      <- Mstep$parameters$mean
         }
-        vari      <- Mstep$parameters$variance
-        sigs      <- vari$sigma
+        if(!ERR)       {
+          vari    <- Mstep$parameters$variance
+          sigs    <- vari$sigma
+        }
 
-        if(all(!gate.g, !equal.pro)) {
-          tau     <- if(noise.null)   Mstep$parameters$pro else colMeans(z.init)
-          tau     <- if(!exp.init || !noise.null)      tau else tau * g
-          ltau    <- .mat_byrow(log(tau), nrow=n, ncol=gN)
-        }
-        densme    <- utils::capture.output(medensity     <- try(MoE_dens(modelName=modtype, data=if(exp.init) res.G else x.dat, mus=mus, sigs=sigs, log.tau=ltau, Vinv=Vinv), silent=TRUE))
-        if((ERR   <- (g  > 0 && attr(Mstep, "returnCode") < 0) || inherits(medensity, "try-error"))) {
+        densme    <- utils::capture.output(medensity     <- try(MoE_dens(modelName=modtype, data=if(exp.init) res.G else x.dat, mus=mus, sigs=sigs, log.tau=ltau.init, Vinv=Vinv), silent=TRUE))
+        if((ERR   <- ERR || (g  > 0 && attr(Mstep, "returnCode") < 0) || inherits(medensity, "try-error"))) {
           ll      <- NA
           j       <- 1
           if(isTRUE(verbose))    cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, "\n"))
@@ -465,7 +475,7 @@
            #gate.pen          <- sum(lengths(coef(g.init, s="lambda.1se")[-1]))
           } else  {
             tau   <- if(equal.pro)             tau else if(noise.null) Mstep$parameters$pro else colMeans(z)
-            tau   <- if(!exp.g || !noise.null) tau else tau * g
+            tau   <- if(!exp.g || !noise.null) tau else tau/sum(tau)
             ltau  <- if(equal.pro)            ltau else .mat_byrow(log(tau), nrow=n, ncol=gN)
           }
 
@@ -502,8 +512,8 @@
 
       # Store values corresponding to the maximum BIC/ICL/AIC so far
         j2        <- max(1, j  - 2)
-        x.df      <- ifelse(exp.g, g * length(stats::coef(fitE)), exp.pen) + x.df
         if(isTRUE(verbose))      cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j2, "\n"))
+        x.df      <- ifelse(exp.g, g * length(stats::coef(fitE)), exp.pen) + x.df
         ll[j]     <- ifelse(g <= 1, ll[j], switch(stopx, aitken=max(ll[j], ifelse(is.finite(linf[2]), linf[2], linf[1])), ll[j]))
         choose    <- MoE_crit(modelName=modtype, loglik=ll[j], n=n, G=g, z=z, df=x.df)
         bics      <- choose["bic",]
@@ -600,10 +610,12 @@
                                      switch(criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
     if(G == 1)     {
       exp.names   <- attr(netdat, "Expert")
+      if(attr(x.fitG, "Formula") != "None") tmpnet                    <- netdat
       netdat      <- netdat[,setdiff(gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", attr(netdat, "Gating")[!is.na(attr(netdat, "Gating"))])), colnames(netdat))]
       attr(netdat, "Gating")  <-
       attr(netdat, "Both")    <- NA
       attr(netdat, "Expert")  <- exp.names
+      if(attr(x.fitG, "Formula") != "None") attr(netdat, "Discarded") <- tmpnet
     }
     if(all(x.ll   != cummax(x.ll)))               warning("Log-likelihoods are not strictly increasing", call.=FALSE)
     if(any(it.x[!is.na(it.x)] == max.it))         warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")"), call.=FALSE)
@@ -718,21 +730,21 @@
     dat1          <- data[[1]]
     n             <- ifelse(is.matrix(dat1), nrow(dat1), length(dat1))
     d             <- ifelse(is.matrix(dat1), ncol(dat1), 1)
-    sq_mat        <- if(d > 50) function(x)  diag(sqrt(diag(x)))   else sqrt
+    sq_mat        <- if(d > 50) function(x)  diag(sqrt(diag(x)))     else sqrt
     if(G > 0) {
-      switch(EXPR=modelName, EVE=, VVE=, EEV=, EVV=, VVV = {
+      switch(EXPR=modelName, EVE=, VEE=, VVE=, EEV=, VEV=, EVV=, VVV = {
         idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigs[,,k],         log=TRUE, isChol=FALSE), numeric(n)), silent=TRUE))
-      }, EEE=, VEE=, VEV  = {
-        sigx      <- .chol(sigs[,,1]) ;
-        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
-      }, VII=, VEI=, VVI  = {
+      }, VII=, VEI=, EVI=, VVI = {
         idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sq_mat(sigs[,,k]), log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
-      }, EII=, EEI=, EVI  = {
+      }, EII=, EEI = {
         sigx      <- sq_mat(sigs[,,1]);
         idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
-      }, E= {
+      }, EEE= {
+        sigx      <- .chol(sigs[,,1]) ;
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
+      }, E=   {
         densi     <- vapply(Gseq, function(k)       stats::dnorm(data[[k]], mus[k], sqrt(sigs), log=TRUE), numeric(n))
-      }, V= {
+      }, V=   {
         sigx      <- sqrt(sigs);
         densi     <- vapply(Gseq, function(k)       stats::dnorm(data[[k]], mus[k], sigx[k],    log=TRUE), numeric(n))
       } )
@@ -855,6 +867,12 @@
 #' Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
 #' @param criterion When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.
 #' @param stopping The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{MoE_aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.
+#' @param exp.init A list supplying select parameters to control the initialisation routine in the presence of expert network covariates (otherwise ignored):
+#' \itemize{
+#' \item{\code{"joint"} - }{A logical indicating whether the initial partition is obtained on the joint distribution of the response and (continuous only) covariates (defaults to \code{TRUE}) or just the response variables (\code{FALSE}). Only relevant when \code{init.z} is not \code{"random"}. This may render the \code{"quantile"} option to \code{init.z} for univariate data unusable.}
+#' \item{\code{"mahalanobis"} - }{A logical indicating whether to iteratively reallocate observations during the initialisation phase to the component corresponding to the expert network regression to which its residual is closest in terms of Mahalanobis distance (defaults to \code{TRUE}). This will ensure that each component can be well modelled by a single expert prior to running the EM algorithm.}
+#' \item{\code{"max.init"} - }{The maximum number of iterations for the Mahalanobis distance-based reallocation procedure when \code{exp.init$mahalanobis} is \code{TRUE}. Defaults to \code{100}.}
+#' }
 #' @param init.z The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data, or quantile-based clustering as per \code{\link{MoE_qclass}} for univariate data (unless there are continuous expert network covariates, in which case the defaults is again \code{\link[mclust]{hc}}). The \code{"quantile"} option is only available for univariate data without continuous expert network covariates. Other options include \code{kmeans}, \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.
 #' @param eps A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of eps allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.
 #' @param tol A vector of length two giving relative convergence tolerances for the log-likelihood and for parameter convergence in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), respectively. The default is \code{c(1e-05,sqrt(.Machine$double.eps))}. If only one number is supplied, it is used as the tolerance for the outer iterations and the tolerance for the inner iterations is as in the default.
@@ -865,6 +883,7 @@
 #' @param noise.meth The method use to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options \code{convexhull} and \code{ellipsoidhull} require loading the \code{geometry} and \code{cluster} libraries, respectively.
 #' @param hc.meth A character string indicating the model to be used when hierarchical clustering (see \code{\link[mclust]{hc}} is employed for initialisation according to \code{init.z}. Defaults to \code{"EII"} for high-dimensional data, or \code{"VVV"} otherwise.
 #' @param verbose Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.
+#' @param ... Catches unused arguments.
 #'
 #' @details \code{\link{MoE_control}} is provided for assigning values and defaults within \code{\link{MoE_clust}}.\cr
 #'
@@ -890,17 +909,30 @@
 #' # when any of {modelNames, gating, expert} are not supplied
 #' \dontrun{
 #' res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)}
-  MoE_control     <- function(criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"),
-                              init.z = c("hc", "quantile", "kmeans", "mclust", "random"), eps = .Machine$double.eps,
-                              tol = c(1e-05, sqrt(.Machine$double.eps)), itmax = c(.Machine$integer.max,
-                              .Machine$integer.max), equalPro = FALSE, warn.it = 0, noise.init = NULL,
-                              noise.meth = c("hypvol", "convexhull", "ellipsoidhull"), hc.meth = NULL, verbose = interactive()) {
+  MoE_control     <- function(criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), exp.init = list(...),
+                              init.z = c("hc", "quantile", "kmeans", "mclust", "random"), eps = .Machine$double.eps,  tol = c(1e-05, sqrt(.Machine$double.eps)),
+                              itmax = c(.Machine$integer.max, .Machine$integer.max), equalPro = FALSE, warn.it = 0, noise.init = NULL,
+                              noise.meth = c("hypvol", "convexhull", "ellipsoidhull"), hc.meth = NULL, verbose = interactive(), ...) {
     if(!missing(criterion) && (length(criterion) > 1 ||
        !is.character(criterion)))                 stop("'criterion' must be a single character string")
     criterion     <- match.arg(criterion)
     if(!missing(stopping)  && (length(stopping)  > 1 ||
        !is.character(stopping)))                  stop("'stopping' must be a single character string")
     stopping      <- match.arg(stopping)
+    if(is.null(exp.init$joint)) {
+      exp.init$joint       <- TRUE
+    } else if(length(exp.init$joint)       > 1 ||
+              !is.logical(exp.init$joint))        stop("'exp.init$joint' must be a single logical indicator")
+    if(is.null(exp.init$mahalanobis))      {
+      exp.init$mahalanobis <- TRUE
+    } else if(length(exp.init$mahalanobis) > 1 ||
+              !is.logical(exp.init$mahalanobis))  stop("'exp.init$mahalanobis' must be a single logical indicator")
+    if(is.null(exp.init$max.init))         {
+      exp.init$max.init    <- 100
+    } else if(isTRUE(exp.init$mahalanobis)     &&
+             (length(exp.init$max.init)    > 1 ||
+             ((!is.numeric(exp.init$max.init)  ||
+              exp.init$max.init    <= 0))))       stop("'exp.init$max.init' must be a single strictly positive integer when 'exp.init$mahalanobis' is TRUE")
     miss.init     <- missing(init.z)
     miss.hc       <- missing(hc.meth)
     if(!missing(init.z)    && (length(init.z)    > 1 ||
@@ -933,8 +965,8 @@
        mclust.options("hcModelNames"))))          stop("Invalid 'hc.meth' selected for initialisation by agglomerative hierarchical clustering")
     if(length(verbose)  < 1 ||
        !is.logical(verbose))                      stop("'verbose' must be a single logical indicator")
-      list(criterion = criterion, stopping = stopping, init.z = init.z, eps = eps, tol = tol, itmax = itmax, equalPro = equalPro, warn.it = warn.it,
-           noise.init = noise.init, noise.meth = noise.meth, hc.meth = hc.meth, verbose = verbose, miss.init = miss.init, miss.hc = miss.hc)
+      list(criterion = criterion, stopping = stopping, exp.init = exp.init, init.z = init.z, eps = eps, tol = tol, itmax = itmax, equalPro = equalPro,
+           warn.it = warn.it, noise.init = noise.init, noise.meth = noise.meth, hc.meth = hc.meth, verbose = verbose, miss.init = miss.init, miss.hc = miss.hc)
   }
 
 #' Aitken Acceleration
@@ -1013,6 +1045,7 @@
 #' \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
 #' }
 #' @export
+#' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
 #' @note \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
 #' @importFrom mclust "mclustModelNames"
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
@@ -1107,11 +1140,12 @@
     modelNames    <- gsub(",.*", "", gsub(".*\\|", "", max.names))
     best.model    <- MoEs[[crit.names[1]]]
     if(best.model$modelName    != modelNames[1] || best.model$G != G[1]) {
+      best.model$net.covs      <- if(best.model$G == 1) attr(best.model$net.covs, "Discarded") else best.model$net.covs
       cat("Re-fitting optimal model due to mismatched 'criterion'...\n\n")
       old.call    <- best.model$call
       old.call    <- c(as.list(old.call)[1], list(criterion=criterion), as.list(old.call)[-1])
       old.call    <- as.call(old.call[!duplicated(names(old.call))])
-      best.call   <- c(list(data=best.model$data, modelNames=modelNames[1], G=G[1],  verbose=FALSE, network.data=best.model$net.covs), as.list(old.call[-1]))
+      best.call   <- c(list(data=best.model$data, modelNames=modelNames[1], G=G[1], verbose=FALSE, network.data=best.model$net.covs), as.list(old.call[-1]))
       best.mod    <- try(do.call(MoE_clust, best.call[!duplicated(names(best.call))]), silent=TRUE)
       if(!inherits(best.model, "try-error")) {
         best.model$call                <- old.call
@@ -1262,6 +1296,21 @@
 
   .crits_names    <- function(x) {
     unlist(lapply(seq_along(x), function(i) stats::setNames(x[[i]], paste0(names(x[i]), "|", names(x[[i]])))))
+  }
+
+  .drop_levels    <- function(fit, newdata) {
+    factors       <- gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", gsub("[-^0-9]|as.factor|\\(|\\)", "", names(unlist(fit$xlevels)))))
+    factorLevels  <- unname(unlist(fit$xlevels))
+    modelFactors  <- cbind.data.frame(factors, factorLevels)
+    predictors    <- names(newdata[names(newdata) %in% factors])
+    for(i in seq_along(predictors))  {
+      ind          <- newdata[,predictors[i]]      %in% modelFactors[modelFactors$factors == predictors[i],]$factorLevels
+      if(any(!ind)) {
+        newdata[!ind,predictors[i]] <-  NA
+        newdata[,predictors[i]]     <- factor(newdata[,predictors[i]], levels=modelFactors[modelFactors$factors == predictors[i],]$factorLevels)
+      }
+    }
+    newdata
   }
 
   .mat_byrow      <- function(x, nrow, ncol) {

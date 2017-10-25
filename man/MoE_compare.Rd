@@ -77,6 +77,9 @@ m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE)
 comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=18)
 print(comp2, comp2$expert != "None" & comp2$G > 1)
 }
+\references{
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+}
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
 }

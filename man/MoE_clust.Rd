@@ -142,6 +142,8 @@ plot(as.Mclust(best), what="density")
 plot(as.Mclust(best, resid=TRUE), what="density")}
 }
 \references{
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 }
 \seealso{
