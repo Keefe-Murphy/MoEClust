@@ -21,7 +21,7 @@
 #' @param network.data An optional data frame in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called.
 #' @param control A list of control parameters for the EM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}.
 #' @param ... An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.
-#' @param x,object An object of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}.
+#' @param x,object,digits Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 2).
 
 #' @importFrom matrixStats "rowLogSumExps"
 #' @importFrom mclust "emControl" "hc" "hclass" "hcE" "hcEEE" "hcEII" "hcV" "hcVII" "hcVVV" "Mclust" "mclust.options" "mclustBIC" "mclustModelNames" "mclustVariance" "mstep" "mstepE" "mstepEEE" "mstepEEI" "mstepEEV" "mstepEII" "mstepEVE" "mstepEVI" "mstepEVV" "mstepV" "mstepVEE" "mstepVEI" "mstepVEV" "mstepVII" "mstepVVE" "mstepVVI" "mstepVVV" "nVarParams" "unmap"
@@ -116,11 +116,7 @@
 #' splom(~ hema | z, groups=sex)
 #'
 #' # Convert results to the "Mclust" class for further visualisation
-#' plot(as.Mclust(best), what="density")
-#'
-#' # Produce similar plots for the multivariate WLS residuals in the expert network
-#' # i.e. the augmented data on which the clustering was actually performed
-#' plot(as.Mclust(best, resid=TRUE), what="density")}
+#' plot(as.Mclust(best), what="density")}
   MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = NULL, expert = NULL, network.data = NULL, control = MoE_control(...), ...) {
 
   # Definitions and storage set-up
@@ -198,6 +194,13 @@
     Gany          <- ifelse(noise.null, any(G > 1), any(G[G > 0] > 1))
     allg0         <- all(G == 0)
     anyg0         <- any(G == 0)
+    if(allg0)      {
+      Vinv        <- ifelse(noise.null, .noise_vol(X, noise.meth), Vinv)
+      noise.null  <- FALSE
+      noise       <- rep(TRUE, n)
+      nnoise      <- n
+      noisen      <- 0
+    }
     if((uni <- d  == 1))       {
       mfg         <- c("E", "V")
       mf1         <- mf0      <- "E"
@@ -240,7 +243,7 @@
     crit.tx       <- crit.gx  <- -sqrt(.Machine$double.xmax)
 
   # Define the gating formula
-    if(allg0)                  {  if(verbose)     message("Can't include gating network covariates in a noise-only model")
+    if(allg0 && gate.x)        {  if(verbose)     message("Can't include gating network covariates in a noise-only model")
       gate.x      <- FALSE
     }
     gate.G        <- ifelse((range.G   + !noise.null) > 1, gate.x, FALSE)
@@ -262,7 +265,7 @@
     equal.tau     <- ifelse((range.G + !noise.null) == 1, TRUE, equal.pro)
 
   # Define the expert formula
-    if(allg0)                  {  if(verbose)     message("Can't include expert network covariates in a noise-only model")
+    if(allg0 && gate.x)        {  if(verbose)     message("Can't include expert network covariates in a noise-only model")
       exp.x       <- FALSE
     }
     if(exp.x)     {
@@ -292,8 +295,9 @@
     } else netdat <- network.data
     net.cts       <- !sapply(netdat, is.factor)
     nct           <- sum(net.cts)
-    highd         <- d  + nct >= n
-    multv         <- d  + nct  > 1
+    init.var      <- ifelse(do.joint && !allg0, d + nct, d)
+    highd         <- init.var >= n
+    multv         <- init.var  > 1
     if(!multv)     {
       init.z      <- ifelse(miss.init, "quantile", init.z)
     } else if(init.z   == "quantile" && !one.G)   stop("Quantile-based initialisation of the allocations is only permitted for univariate data without continuous expert network covariates")
@@ -323,7 +327,7 @@
       gN          <- g + !noise.null
       z           <- matrix(0, n, gN)
 
-      # Initialise Expert Network & Allocations
+    # Initialise Expert Network & Allocations
       XI        <- if(exp.g  && do.joint) cbind(X, netdat[,net.cts])[!noise,, drop=FALSE] else X[!noise,, drop=FALSE]
       z.tmp     <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(tryCatch(hc(XI, modelName=hcName, minclus=g), error=function(e) stop("Error in hierarchical clustering initialisation")), g)),
                                           kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
@@ -415,15 +419,15 @@
          exp.init <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
          mus      <- muX
         }
-        if(!exp.init)  {
-         Mstep    <- try(mstep(modtype, X, if(noise.null || g == 0) z.init else z.init[,-gN, drop=FALSE], control=control), silent=TRUE)
+        if(g > 0  && !exp.init) {
+         Mstep    <- try(mstep(modtype, X, if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control), silent=TRUE)
          ERR      <- inherits(Mstep, "try-error")        || attr(Mstep, "returnCode")  < 0
-         if(!ERR)    mus      <- Mstep$parameters$mean
         }
-        if(!ERR)       {
+        if(g > 0  && !ERR)      {
+          mus     <- Mstep$parameters$mean
           vari    <- Mstep$parameters$variance
           sigs    <- vari$sigma
-        }
+        } else mus            <- matrix(NA, nrow=n, ncol=0)
 
         densme    <- utils::capture.output(medensity     <- try(MoE_dens(modelName=modtype, data=if(exp.init) res.G else x.dat, mus=mus, sigs=sigs, log.tau=ltau.init, Vinv=Vinv), silent=TRUE))
         if((ERR   <- ERR || (g  > 0 && attr(Mstep, "returnCode") < 0) || inherits(medensity, "try-error"))) {
@@ -605,10 +609,10 @@
       mean.fin    <- vari.fin <- NULL
     }
 
-    if(multi && verbose)         cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
+    if(multi      && verbose)    cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
                                      paste0(G, " component", ifelse(G > 1, "s", ""))), ifelse(any(exp.gate) || (!noise.null && G != 0), paste0("\n\t\t\t   ", net.msg), ""), "\n\t\t",
                                      switch(criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
-    if(G == 1)     {
+    if(G == 1     && gate.x)   {
       exp.names   <- attr(netdat, "Expert")
       if(attr(x.fitG, "Formula") != "None") tmpnet                    <- netdat
       netdat      <- netdat[,setdiff(gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", attr(netdat, "Gating")[!is.na(attr(netdat, "Gating"))])), colnames(netdat))]
@@ -897,7 +901,7 @@
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link{MoE_qclass}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
 #'
 #' @examples
-#' ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=12, init.z="random")
+#' ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random")
 #'
 #' data(CO2data)
 #' res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=ctrl)
@@ -954,10 +958,10 @@
        !is.logical(equalPro))                     stop("'equalPro' must be a single logical indicator")
     if(length(warn.it)  > 1 ||
        !is.numeric(warn.it))                      stop("'warn.it' must be a numeric vector of length 1")
+    noise.meth    <- match.arg(noise.meth)
     if(!is.null(noise.init)) {
      if(!missing(noise.meth) & (length(noise.meth) > 1 ||
         !is.character(noise.meth)))               stop("'noise.meth' must be a single character string")
-     noise.meth   <- match.arg(noise.meth)
      has.lib      <- switch(noise.meth, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
      if(!has.lib)                                 stop(paste0("Use of the ", noise.meth, " 'noise.meth' option requires loading the ", switch(noise.meth, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"))
     }
@@ -1202,7 +1206,7 @@
 #' \dontrun{
 #' # Fit a mixture of experts model to the ais data
 #' data(ais)
-#' mod <- MoE_clust(ais[,3:7], G=3, expert= ~ ais$sex)
+#' mod <- MoE_clust(ais[,3:7], G=2, expert= ~ ais$sex, gating= ~ ais$BMI)
 #'
 #' # Convert to the "Mclust" class and examine the classification
 #' plot(as.Mclust(mod), what="classification")
@@ -1236,7 +1240,7 @@
     x$parameters$mean[]   <- if(resid)  0                                         else x$parameters$mean
     x$classification      <- if(resid)  unname(rep(x$classification, x$G))        else unname(x$classification)
     x$data                <- if(resid)  as.matrix(x$resid.data)                   else as.matrix(x$data)
-    rownames(x$data)      <- if(resid)  seq_len(x$n * x$g)                        else rownames(x$data)
+    rownames(x$data)      <- if(resid)  seq_len(x$n * x$G)                        else rownames(x$data)
     x$data        <- if(signif > 0)     apply(x$data, 2, .trim_out, signif)       else x$data
     x$z           <- if(resid)          do.call(rbind, replicate(x$G, list(x$z))) else x$z # FIX THIS LINE
     dimnames(x$z) <- NULL
@@ -1370,8 +1374,10 @@
 #' @importFrom mclust "mclustModelNames"
 #' @rdname MoE_clust
 #' @export
-  print.MoEClust  <- function(x, ...) {
+  print.MoEClust  <- function(x, digits = 2, ...) {
     cat("Call:\t");  print(x$call); cat("\n")
+    if(length(digits)  > 1 || !is.numeric(digits) ||
+       digits     <= 0)                           stop("Invalid 'digits'")
     name          <- x$modelName
     G             <- x$G
     equalP        <- G < 1 || attr(x, "EqualPro")
@@ -1380,13 +1386,13 @@
     gate.x        <- !attr(x, "Gating")
     exp.x         <- !attr(x, "Expert")
     net.x         <- !c(gate.x, exp.x)
-    crit          <- round(unname(c(x$bic, x$icl, x$aic)), options()$digits)
+    crit          <- round(unname(c(x$bic, x$icl, x$aic)), digits)
     Vinv          <- x$parameters$Vinv
     cat(paste0("Best Model: ",  mclustModelNames(name)$type, " (", name, "), with ",
                ifelse(G == 0, "only a noise component", paste0(G, " component", ifelse(G > 1, "s", ""))),
                ifelse(is.null(Vinv) || G == 0, "\n", " (and a noise component)\n"),
                ifelse(!equalP, "",   paste0("Equal Mixing Proportions\n")),
-               ifelse(is.null(Vinv),  "", paste0("Hypervolume of Noise Component: ", round(Vinv, options()$digits), "\n")),
+               ifelse(is.null(Vinv),  "", paste0("Hypervolume of Noise Component: ", round(Vinv, digits), "\n")),
                "BIC = ", crit[1], " | ICL = ", crit[2], " | AIC = ", crit[3],
                ifelse(any(net.x),    paste0("\nIncluding ", ifelse(all(net.x), "gating and expert", ifelse(!gate.x, "gating", ifelse(!exp.x, "expert", ""))), " network covariates:\n"), "\nNo covariates\n"),
                ifelse(gate.x,  "",   paste0("\tGating: ",   gating, ifelse(exp.x, "", "\n"))),
@@ -1411,8 +1417,11 @@
 #' @method print summary_MoEClust
 #' @importFrom mclust "mclustModelNames"
 #' @export
-  print.summary_MoEClust  <- function(x, ...) {
-    tmp           <- data.frame(log.likelihood = x$loglik, n = x$n, d = x$d, df = x$df, BIC = x$bic, ICL = x$icl, AIC = x$aic)
+  print.summary_MoEClust  <- function(x, digits = 2, ...) {
+    if(length(digits)  > 1 || !is.numeric(digits) ||
+       digits     <= 0)                           stop("Invalid 'digits'")
+    tmp           <- data.frame(log.likelihood = round(x$loglik, digits), n = x$n, d = x$d, df = x$df,
+                                BIC = round(x$bic, digits), ICL = round(x$icl, digits), AIC = round(x$aic, digits))
     tmp           <- if(is.null(x$Vinv)) tmp else cbind(tmp, HypVol = 1/x$Vinv)
     rownames(tmp) <- NULL
     name          <- x$modelName

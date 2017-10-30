@@ -65,9 +65,9 @@ MoE_gpairs(res, response.type = c("points", "uncertainty", "density"),
 
 \item{axis.pars}{\code{NULL} is equivalent to \code{list(n.ticks=5, axis.fontsize=9)}. The argument \code{n.ticks} will be overwritten for categorical variables with fewer than 5 levels.}
 
-\item{diag.pars}{\code{NULL} is equivalent to \code{list(diag.fontsize=9, show.hist=TRUE, hist.color=hist.color)}, where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership.}
+\item{diag.pars}{\code{NULL} is equivalent to \code{list(diag.fontsize=9, show.hist=TRUE, hist.color=hist.color, show.counts=TRUE)}, where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.}
 
-\item{...}{Catches unused arguments. Alternatively, arguments can be passed directly here to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}, though caution is advised when doing so, especially for non-unique argument names.}
+\item{...}{Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}.}
 }
 \value{
 A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
@@ -85,7 +85,7 @@ data(ais)
 sex   <- ais$sex
 BMI   <- ais$BMI
 
-res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex, modelNames="VVE")
+res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex, modelNames="EVE")
 MoE_gpairs(res)
 
 # Produce the same plot, but with a violin plot in the lower triangle.

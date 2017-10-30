@@ -9,7 +9,7 @@
 MoE_clust(data, G = 1:9, modelNames = NULL, gating = NULL,
   expert = NULL, network.data = NULL, control = MoE_control(...), ...)
 
-\method{print}{MoEClust}(x, ...)
+\method{print}{MoEClust}(x, digits = 2, ...)
 
 \method{summary}{MoEClust}(object, ...)
 }
@@ -42,7 +42,7 @@ For zero-component models with a noise component only the \code{"E"} and \code{"
 
 \item{...}{An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.}
 
-\item{x, object}{An object of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}.}
+\item{x, object, digits}{Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 2).}
 }
 \value{
 A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen optimal model (as determined by the \code{criterion} within \code{\link{MoE_control}}):\cr
@@ -135,11 +135,7 @@ splom(~ hema | sex, groups=z)
 splom(~ hema | z, groups=sex)
 
 # Convert results to the "Mclust" class for further visualisation
-plot(as.Mclust(best), what="density")
-
-# Produce similar plots for the multivariate WLS residuals in the expert network
-# i.e. the augmented data on which the clustering was actually performed
-plot(as.Mclust(best, resid=TRUE), what="density")}
+plot(as.Mclust(best), what="density")}
 }
 \references{
 K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.

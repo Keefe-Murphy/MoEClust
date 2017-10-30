@@ -37,7 +37,7 @@ Also note that plots may be misleading for models of univariate data with more t
 \dontrun{
 # Fit a mixture of experts model to the ais data
 data(ais)
-mod <- MoE_clust(ais[,3:7], G=3, expert= ~ ais$sex)
+mod <- MoE_clust(ais[,3:7], G=2, expert= ~ ais$sex, gating= ~ ais$BMI)
 
 # Convert to the "Mclust" class and examine the classification
 plot(as.Mclust(mod), what="classification")

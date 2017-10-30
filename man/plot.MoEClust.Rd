@@ -39,7 +39,7 @@ Other types of plots are available by first calling \code{\link{as.Mclust}} on t
 data(ais)
 sex <- ais$sex
 BMI <- ais$BMI
-res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex, G=3, modelNames="VVE")
+res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex, G=2, modelNames="EVE")
 
 # Plot the gating network
 plot(res, what="gating")
@@ -52,7 +52,7 @@ plot(res, what="gpairs")
 
 # Modify the gpairs plot by passing arguments to MoE_gpairs()
 plot(res, what="gpairs", response.type="density",
-     scatter.type="ci", jitter=FALSE)
+     scatter.type="ci", jitter=FALSE, show.counts=FALSE)
 }
 \references{
 K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.

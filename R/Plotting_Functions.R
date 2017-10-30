@@ -27,11 +27,11 @@
 #' @param barcode.pars A list supplying select parameters for continuous vs. categorical panels  when one of the entries of \code{conditional} is \code{"boxplot"}. \code{NULL} is equivalent to \code{list(nint=0, ptsize=unit(0.25, "char"), ptpch=1, bcspace=NULL, use.points=FALSE)}. See the help file for \code{barcode::barcode}.
 #' @param mosaic.pars A list supplying select parameters for categorical vs. categorical panels. \code{NULL}. Currently \code{shade, gp_labels, gp} and \code{gp_args} are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles.
 #' @param axis.pars \code{NULL} is equivalent to \code{list(n.ticks=5, axis.fontsize=9)}. The argument \code{n.ticks} will be overwritten for categorical variables with fewer than 5 levels.
-#' @param diag.pars \code{NULL} is equivalent to \code{list(diag.fontsize=9, show.hist=TRUE, hist.color=hist.color)}, where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership.
+#' @param diag.pars \code{NULL} is equivalent to \code{list(diag.fontsize=9, show.hist=TRUE, hist.color=hist.color, show.counts=TRUE)}, where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
 #' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}.
 #'
 #' @importFrom grid "convertHeight" "convertWidth" "gpar" "grid.lines" "grid.newpage" "grid.points" "grid.polygon" "grid.rect" "grid.segments" "grid.text" "grid.xaxis" "grid.yaxis" "popViewport" "pushViewport" "unit" "upViewport" "viewport"
-#' @importFrom lattice "current.panel.limits" "panel.abline" "panel.barchart" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.stripplot" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
+#' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom vcd "strucplot"
 #'
 #' @return A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
@@ -49,7 +49,7 @@
 #' sex   <- ais$sex
 #' BMI   <- ais$BMI
 #'
-#' res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex, modelNames="VVE")
+#' res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex, modelNames="EVE")
 #' MoE_gpairs(res)
 #'
 #' # Produce the same plot, but with a violin plot in the lower triangle.
@@ -90,9 +90,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   both  <- attr(net, "Both")
   gate  <- setdiff(attr(net, "Gating"), both)
   expx  <- setdiff(attr(net, "Expert"), both)
-  if(G  == 1) subset$show.map <- FALSE
   if(is.null(subset$show.map)) {
-    subset$show.map <- TRUE
+    subset$show.map <- (G + !is.null(res$parameters$Vinv)) > 1
   } else if(length(subset$show.map) > 1  ||
             !is.logical(subset$show.map))             stop("'subset$show.map' should be a single logical indicator")
   if(is.null(subset$data.ind)) {
@@ -107,16 +106,16 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     !all(subset$cov.ind     %in% seq_len(ncol(net)))) stop("Invalid 'subset$cov.ind'")
   subset$data.ind  <- sort(unique(subset$data.ind))
   subset$cov.ind   <- sort(unique(subset$cov.ind))
-  if(length(c(subset$data.ind,
-     subset$cov.ind)) + subset$show.map  <= 1)        stop("Not enough columns to plot based on arguments supplied to 'subset'!")
+  if((length(c(subset$data.ind,
+     subset$cov.ind)) + subset$show.map) <= 1)        stop("Not enough columns to plot based on arguments supplied to 'subset'!")
   dat   <- dat[,subset$data.ind, drop=FALSE]
   net   <- net[,subset$cov.ind,  drop=FALSE]
   dcol  <- ncol(dat)  + subset$show.map
-  z     <- if(resid) do.call(rbind, replicate(G, list(res$z))) else res$z # FIX THIS LINE
+  z     <- if(resid) do.call(rbind, replicate(G, list(res$z))) else res$z
   class <- if(resid) stats::setNames(rep(res$classification, G), seq_len(nrow(dat))) else res$classification
   uni.c <- unique(class[class > 0])
   class <- factor(class)
-  x     <- cbind(dat, if(resid) do.call(rbind, replicate(G, net, simplify=FALSE)) else net)
+  x     <- if(ncol(net) == 0) as.data.frame(dat) else cbind(dat, if(resid) do.call(rbind, replicate(G, net, simplify=FALSE)) else net)
   x     <- if(subset$show.map) cbind(MAP  = class, x) else x
   clust <- as.character(class)
   zc    <- function(x) length(unique(x)) <= 1
@@ -185,6 +184,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(!missing(addEllipses) && (length(addEllipses) > 1 ||
      !is.character(addEllipses)))                     stop("'addEllipses' must be a single character string")
   addEllipses  <- match.arg(addEllipses)
+  addEllipses  <- ifelse(G == 0, "no", addEllipses)
   drawEllipses <- addEllipses   != "no"
   colEllipses  <- addEllipses   != "yes" && drawEllipses
   upr.exp  <- scatter.type[1]
@@ -224,9 +224,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     !all(is.numeric(outer.rot)) ||
      any(outer.rot       < 0))                        stop("Invalid 'outer.rot': must be a strictly non-negative numeric vector of length 2")
   class                 <- as.integer(levels(class))[class]
-  noisy                 <- which(class == 0)
-  class[noisy]          <- G + 1
-  noisy                 <- which(unique(class) == G + 1)
+  class[which(class     == 0)]  <- G  + 1
+  x[,1]                 <- if(names(x)[1] == "MAP") factor(class) else x[,1]
   if(length(gap)        != 1    || (!is.numeric(gap)    ||
      gap    < 0))                                     stop("'gap' must be single strictly non-negative number")
   if(length(buffer)     != 1    || (!is.numeric(buffer) ||
@@ -247,7 +246,6 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(scatter.pars$lci.col))  {
     scatter.pars$lci.col     <- colors[Gseq]
   }
-  scatter.pars$ecol     <- unique(scatter.pars$col)[match(Gseq, uni.c)]
   if(is.null(density.pars$grid.size)) {
     density.pars$grid.size   <- c(100, 100)
   } else if(length(density.pars$grid.size)  != 2 || !all(is.numeric(density.pars$grid.size)) ||
@@ -290,6 +288,10 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% gate, hist.col[2])
   diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% expx, hist.col[3])
   diag.pars$hist.color  <- replace(diag.pars$hist.color, Nseq %in% both, hist.col[4])
+  if(is.null(diag.pars$show.counts)) {
+    diag.pars$show.counts  <- TRUE
+  } else if(length(diag.pars$show.counts) > 1 ||
+            !is.logical(diag.pars$show.counts))       stop("'diag.pars$show.counts' must be a single logical indicator")
   if(is.null(stripplot.pars$strip.pch)) {
     stripplot.pars$pch  <- symbols[class]
   } else stripplot.pars$pch       <- stripplot.pars$strip.pch
@@ -327,8 +329,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     mosaic.pars$shade   <- NULL
   }
   noise.cols <- scatter.pars$col
-  noise.col  <- unique(noise.cols)[if(noise)  c(uni.c, G + 1)    else uni.c]
-  noise.cols <- if(noise) c(noise.col[noisy], noise.col[-noisy]) else noise.col
+  scatter.pars$ecol     <- unique(noise.cols[class != G + 1])[match(Gseq, uni.c)]
+  noise.cols <- unique(noise.cols)[match(if(noise) c(Gseq, G + 1) else Gseq, unique(class))]
   grid.newpage()
   vp.main    <- viewport(x=outer.margins$bottom, y=outer.margins$left,
                          width=unit(1,  "npc") - outer.margins$right - outer.margins$left,
@@ -543,7 +545,7 @@ MoE_plotLogLik.MoEClust <- function(res, type = "l", xlab = "Iteration", ylab = 
 #'
 #' @details For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}} and \code{\link{MoE_plotLogLik}}.
 #' @importFrom grid "convertHeight" "convertWidth" "gpar" "grid.lines" "grid.newpage" "grid.points" "grid.polygon" "grid.rect" "grid.segments" "grid.text" "grid.xaxis" "grid.yaxis" "popViewport" "pushViewport" "unit" "upViewport" "viewport"
-#' @importFrom lattice "current.panel.limits" "panel.abline" "panel.barchart" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.stripplot" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
+#' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom mclust "plot.mclustBIC" "plot.mclustICL"
 #' @importFrom vcd "strucplot"
 #' @note Caution is advised producing generalised pairs plots when the dimension of the data is large.
@@ -559,7 +561,7 @@ MoE_plotLogLik.MoEClust <- function(res, type = "l", xlab = "Iteration", ylab = 
 #' data(ais)
 #' sex <- ais$sex
 #' BMI <- ais$BMI
-#' res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex, G=3, modelNames="VVE")
+#' res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex, G=2, modelNames="EVE")
 #'
 #' # Plot the gating network
 #' plot(res, what="gating")
@@ -572,7 +574,7 @@ MoE_plotLogLik.MoEClust <- function(res, type = "l", xlab = "Iteration", ylab = 
 #'
 #' # Modify the gpairs plot by passing arguments to MoE_gpairs()
 #' plot(res, what="gpairs", response.type="density",
-#'      scatter.type="ci", jitter=FALSE)
+#'      scatter.type="ci", jitter=FALSE, show.counts=FALSE)
 plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), ...) {
   if(!missing(what) && !all(is.character(what)))      stop("'what' must be a character string")
   what        <- match.arg(what, several.ok=TRUE)
@@ -701,7 +703,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
     cat.var    <- k + 1 - as.numeric(y)
     cont.var   <- x
     horiz      <- TRUE
-    stripplot.pars$col <- if(col.ind) unique(stripplot.pars$col)[match(unique(y), levels(y))][as.numeric(y)] else stripplot.pars$col
+    stripplot.pars$col <- if(col.ind) unique(stripplot.pars$col)[match(levels(y), unique(y))][as.numeric(y)] else stripplot.pars$col
   }
   grid.rect(gp=gpar(fill=bg, col=border))
   if(horiz) {
@@ -789,7 +791,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
 }
 
 #' @importFrom grid "gpar" "grid.rect" "grid.text" "popViewport" "pushViewport" "viewport"
-#' @importFrom lattice "panel.barchart" "panel.histogram"
+#' @importFrom lattice "panel.histogram"
 .diag_panel <- function(x, varname, diag.pars, hist.col, axis.pars, xpos, ypos, buffer, index, outer.rot) {
   x         <- x[!is.na(x)]
   xlim      <- range(as.numeric(x), na.rm=TRUE) + c(-buffer * (max(as.numeric(x), na.rm=TRUE) - min(as.numeric(x), na.rm=TRUE)), buffer * (max(as.numeric(x), na.rm=TRUE) - min(as.numeric(x), na.rm=TRUE)))
@@ -811,9 +813,10 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
     } else {
       pushViewport(viewport(xscale=c(min(as.numeric(x), na.rm=TRUE) - 1, max(as.numeric(x), na.rm=TRUE) + 1), yscale=c(0, 100), clip=TRUE))
       tabx <- table(x)
-      panel.barchart(seq_along(tabx), 100 * tabx/sum(tabx), horizontal=FALSE, col=if(index == 1) hist.col[[index]] else hist.col[index])
+      show.counts    <- if(isTRUE(diag.pars$show.counts)) as.numeric(tabx) else FALSE
+      .barchart_panel(seq_along(tabx), 100 * tabx/sum(tabx), horizontal=FALSE, col=if(index == 1) hist.col[[index]] else hist.col[index], show.counts=show.counts, fontsize=diag.pars$fontsize)
     }
-    grid.text(varname, 0.5, 0.85, gp=gpar(fontsize=diag.pars$fontsize))
+    grid.text(varname, 0.5, 0.9, gp=gpar(fontsize=diag.pars$fontsize))
     popViewport(1)
   }
 }
@@ -985,6 +988,132 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
   popViewport(1)
   if(!horizontal) popViewport(1)
 }
+
+#' @importFrom lattice "current.panel.limits" "panel.abline" "panel.rect" "panel.text" "trellis.par.get"
+.barchart_panel <- function(x, y, box.ratio = 1, box.width = box.ratio/(1 + box.ratio),
+                            horizontal = TRUE, origin = NULL, reference = TRUE, stack = FALSE,
+                            groups = NULL, col = if(is.null(groups)) plot.polygon$col else superpose.polygon$col,
+                            border = if(is.null(groups)) plot.polygon$border else superpose.polygon$border,
+                            lty = if(is.null(groups)) plot.polygon$lty else superpose.polygon$lty,
+                            lwd = if(is.null(groups)) plot.polygon$lwd else superpose.polygon$lwd,
+                            show.counts = FALSE, ..., fontsize = 9, identifier = "barchart") {
+  plot.polygon      <- trellis.par.get("plot.polygon")
+  superpose.polygon <- trellis.par.get("superpose.polygon")
+  reference.line    <- trellis.par.get("reference.line")
+  keep          <- (function(x, y, groups, subscripts, ...) {
+    !is.na(x) & !is.na(y) & if(is.null(groups)) TRUE else !is.na(groups[subscripts]) })(x=x, y=y, groups=groups, ...)
+  if(!any(keep))   return()
+  x             <- as.numeric(x[keep])
+  y             <- as.numeric(y[keep])
+  if(!is.null(groups))    {
+    groupSub    <- function(groups, subscripts, ...) groups[subscripts[keep]]
+    if(!is.factor(groups)) groups <- factor(groups)
+    nvals       <- nlevels(groups)
+    groups      <- as.numeric(groupSub(groups, ...))
+  }
+  if(horizontal) {
+    if(is.null(groups))   {
+      if(is.null(origin)) {
+        origin  <- current.panel.limits()$xlim[1]
+        reference   <- FALSE
+      }
+      height    <- box.width
+      if(reference)  panel.abline(v=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
+      panel.rect(x=rep(origin, length(y)), y=y, height=rep(height, length(y)), width=x - origin, border=border, col=col, lty=lty, lwd=lwd, just=c("left", "centre"), identifier=identifier)
+    } else if(stack)      {
+      if(!is.null(origin) && origin != 0)             warning("'origin' forced to 0 for stacked bars")
+      col       <- rep(col,    length.out=nvals)
+      border    <- rep(border, length.out=nvals)
+      lty       <- rep(lty,    length.out=nvals)
+      lwd       <- rep(lwd,    length.out=nvals)
+      height    <- box.width
+      if(reference) panel.abline(v=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
+      for(i in unique(y)) {
+        ok      <- y == i
+        ord     <- sort.list(groups[ok])
+        pos     <- x[ok][ord] > 0
+        nok     <- sum(pos, na.rm=TRUE)
+        if(nok   > 0) panel.rect(x=cumsum(c(0, x[ok][ord][pos][-nok])), y=rep(i, nok), col=col[groups[ok][ord][pos]], border=border[groups[ok][ord][pos]], lty=lty[groups[ok][ord][pos]],
+                                 lwd=lwd[groups[ok][ord][pos]], height=rep(height, nok), width=x[ok][ord][pos], just=c("left", "centre"), identifier=paste(identifier, "pos", i, sep="."))
+        neg     <- x[ok][ord] < 0
+        nok     <- sum(neg, na.rm=TRUE)
+        if(nok   > 0) panel.rect(x=cumsum(c(0, x[ok][ord][neg][-nok])), y=rep(i, nok), col=col[groups[ok][ord][neg]], border=border[groups[ok][ord][neg]], lty=lty[groups[ok][ord][neg]],
+                                 lwd=lwd[groups[ok][ord][neg]], height=rep(height, nok), width=x[ok][ord][neg], just=c("left", "centre"), identifier=paste(identifier, "neg", i, sep="."))
+      }
+    } else {
+      if(is.null(origin)) {
+        origin  <- current.panel.limits()$xlim[1]
+        reference   <- FALSE
+      }
+      col       <- rep(col,    length.out=nvals)
+      border    <- rep(border, length.out=nvals)
+      lty       <- rep(lty,    length.out=nvals)
+      lwd       <- rep(lwd,    length.out=nvals)
+      height    <- box.width/nvals
+      if(reference) panel.abline(v=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
+      for(i in unique(y)) {
+        ok      <- y == i
+        nok     <- sum(ok, na.rm=TRUE)
+        panel.rect(x=rep(origin, nok), y=(i + height * (groups[ok] - (nvals + 1)/2)), col=col[groups[ok]], border=border[groups[ok]], lty=lty[groups[ok]],
+                   lwd=lwd[groups[ok]], height=rep(height, nok), width=x[ok] - origin, just=c("left", "centre"), identifier=paste(identifier, "y", i, sep="."))
+      }
+    }
+  } else {
+    if(is.null(groups))   {
+      if(is.null(origin)) {
+        origin  <- current.panel.limits()$ylim[1]
+        reference   <- FALSE
+      }
+      width     <- box.width
+      y.fix     <- y - origin
+      fix.y     <- ifelse(!identical(show.counts, FALSE), 80, 90)
+      y.fix     <- if(max(y.fix) > fix.y) (y.fix * fix.y)/max(y.fix) else y.fix
+      if(reference) panel.abline(h=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
+      panel.rect(x=x, y=rep(origin, length(x)), col=col, border=border, lty=lty, lwd=lwd, width=rep(width, length(x)), height=y.fix, just=c("centre", "bottom"), identifier=identifier)
+      if(!identical(show.counts, FALSE)) {
+        panel.text(x=x, y=y.fix, label=show.counts, adj=c(0.5, -0.5), identifier=identifier, gp=gpar(fontsize=fontsize), cex=0.8)
+      }
+    } else if(stack) {
+      if(!is.null(origin) && origin != 0)             warning("'origin' forced to 0 for stacked bars")
+      col       <- rep(col,    length.out=nvals)
+      border    <- rep(border, length.out=nvals)
+      lty       <- rep(lty,    length.out=nvals)
+      lwd       <- rep(lwd,    length.out=nvals)
+      width     <- box.width
+      if(reference) panel.abline(h=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
+      for(i in unique(x)) {
+        ok      <- x == i
+        ord     <- sort.list(groups[ok])
+        pos     <- y[ok][ord] > 0
+        nok     <- sum(pos, na.rm=TRUE)
+        if(nok   > 0) panel.rect(x=rep(i, nok), y=cumsum(c(0, y[ok][ord][pos][-nok])), col=col[groups[ok][ord][pos]], border=border[groups[ok][ord][pos]], lty=lty[groups[ok][ord][pos]],
+                                 lwd=lwd[groups[ok][ord][pos]], width=rep(width, nok), height=y[ok][ord][pos], just=c("centre", "bottom"), identifier=paste(identifier, "pos", i, sep="."))
+        neg     <- y[ok][ord] < 0
+        nok     <- sum(neg, na.rm=TRUE)
+        if(nok   > 0) panel.rect(x=rep(i, nok), y=cumsum(c(0, y[ok][ord][neg][-nok])), col=col[groups[ok][ord][neg]], border=border[groups[ok][ord][neg]], lty=lty[groups[ok][ord][neg]],
+                                 lwd=lwd[groups[ok][ord][neg]], width=rep(width, nok), height=y[ok][ord][neg], just=c("centre", "bottom"), identifier=paste(identifier, "neg", i, sep="."))
+      }
+    } else {
+      if(is.null(origin)) {
+        origin  <- current.panel.limits()$ylim[1]
+        reference   <- FALSE
+      }
+      col       <- rep(col,    length.out=nvals)
+      border    <- rep(border, length.out=nvals)
+      lty       <- rep(lty,    length.out=nvals)
+      lwd       <- rep(lwd,    length.out=nvals)
+      width     <- box.width/nvals
+      if(reference) panel.abline(h=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
+      for(i in unique(x)) {
+        ok      <- x == i
+        nok     <- sum(ok, na.rm=TRUE)
+        panel.rect(x=(i + width * (groups[ok] - (nvals + 1)/2)), y=rep(origin, nok), col=col[groups[ok]], border=border[groups[ok]], lty=lty[groups[ok]],
+                   lwd=lwd[groups[ok]], width=rep(width, nok), height=y[ok] - origin, just=c("centre", "bottom"), identifier=paste(identifier, "x", i, sep="."))
+      }
+    }
+  }
+}
+
 
 #' @importFrom grid "grid.segments" "unit"
 .barcode_panel  <- function(x, horizontal = TRUE, xlim = NULL, labelloc = TRUE, axisloc = TRUE, labelouter = FALSE,
