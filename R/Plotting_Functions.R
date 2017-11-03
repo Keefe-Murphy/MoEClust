@@ -440,7 +440,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
 #'
 #' @examples
 #' data(ais)
-#' res <- MoE_clust(ais[,3:7], gating= ~ ais$sex, G=3, modelNames="EEE")
+#' sex <- ais$sex
+#' res <- MoE_clust(ais[,3:7], gating= ~ sex, G=3, modelNames="EEE")
 #' MoE_plotGate(res)
 MoE_plotGate  <- function(res, type = "l", xlab = "Observation", ylab = expression(tau[g]), ylim = c(0, 1), ...) {
   UseMethod("MoE_plotGate")
@@ -472,7 +473,7 @@ MoE_plotGate.MoEClust   <- function(res, type = "l", xlab = "Observation", ylab 
 #' @examples
 #' \dontrun{
 #' data(ais)
-#' res <- MoE_clust(ais[,3:7], expert= ~ ais$sex)
+#' res <- MoE_clust(ais[,3:7], expert= ~ sex, network.data=ais)
 #' MoE_plotCrit(res)}
 MoE_plotCrit <- function(res, criterion = c("bic", "icl", "aic"), ...) {
   UseMethod("MoE_plotCrit")
@@ -507,7 +508,8 @@ MoE_plotCrit.MoEClust   <- function(res, criterion = c("bic", "icl", "aic"), ...
 #'
 #' @examples
 #' data(ais)
-#' res <- MoE_clust(ais[,3:7], gating= ~ ais$BMI, expert= ~ ais$sex, G=2, modelNames="EVE")
+#' res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex,
+#'                  G=2, modelNames="EVE", network.data=ais)
 #' MoE_plotLogLik(res)
 MoE_plotLogLik          <- function(res, type = "l", xlab = "Iteration", ylab = "Log-Likelihood", xaxt = "n", ...) {
   UseMethod("MoE_plotLogLik")

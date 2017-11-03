@@ -132,10 +132,7 @@ plot(best, what="loglik")
 require("lattice")
 z     <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
 splom(~ hema | sex, groups=z)
-splom(~ hema | z, groups=sex)
-
-# Convert results to the "Mclust" class for further visualisation
-plot(as.Mclust(best), what="density")}
+splom(~ hema | z, groups=sex)}
 }
 \references{
 K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.

@@ -34,7 +34,7 @@ This function is intended for joint use with \code{\link{MoE_estep}}, using the 
 \examples{
 data(ais)
 hema  <- ais[,3:7]
-model <- MoE_clust(hema, G=3, gating= ~ ais$BMI + ais$sex, model="EEE")
+model <- MoE_clust(hema, G=3, gating= ~ BMI + sex, model="EEE", network.data=ais)
 Dens  <- MoE_dens(modelName=model$modelName, data=hema,
                   mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
                   log.tau=log(model$parameters$pro))

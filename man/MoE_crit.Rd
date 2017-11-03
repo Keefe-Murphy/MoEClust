@@ -43,7 +43,8 @@ MoE_crit(modelName=c("VVI", "VVE", "VVV"), n=120, d=8,
          G=3, loglik=c(-4036.99, -3987.12, -3992.45))
 
 data(CO2data)
-model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ CO2data$GNP)
+GNP   <- CO2data$GNP
+model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ GNP)
 G     <- model$G
 name  <- model$modelName
 ll    <- max(model$loglik)

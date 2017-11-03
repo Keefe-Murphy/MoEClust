@@ -25,7 +25,7 @@ Plots the BIC, ICL, or AIC values of a fitted \code{MoEClust} object.
 \examples{
 \dontrun{
 data(ais)
-res <- MoE_clust(ais[,3:7], expert= ~ ais$sex)
+res <- MoE_clust(ais[,3:7], expert= ~ sex, network.data=ais)
 MoE_plotCrit(res)}
 }
 \seealso{

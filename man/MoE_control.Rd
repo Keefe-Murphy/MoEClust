@@ -64,15 +64,16 @@ When initialising using the \code{"hc"} option for the \code{init.z} argument, t
 ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random")
 
 data(CO2data)
-res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=ctrl)
+GNP  <- CO2data$GNP
+res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl)
 
 # Alternatively, specify control arguments directly
-res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, stopping="relative")
+res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
 
 # Supplying ctrl without naming it as control throws an error,
 # when any of {modelNames, gating, expert} are not supplied
 \dontrun{
-res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)}
+res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl)}
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link{MoE_qclass}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}

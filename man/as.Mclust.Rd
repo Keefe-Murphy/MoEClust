@@ -37,7 +37,8 @@ Also note that plots may be misleading for models of univariate data with more t
 \dontrun{
 # Fit a mixture of experts model to the ais data
 data(ais)
-mod <- MoE_clust(ais[,3:7], G=2, expert= ~ ais$sex, gating= ~ ais$BMI)
+mod <- MoE_clust(ais[,3:7], G=2, expert= ~ sex,
+                 gating= ~ BMI, network.data=ais)
 
 # Convert to the "Mclust" class and examine the classification
 plot(as.Mclust(mod), what="classification")
@@ -48,7 +49,7 @@ plot(as.Mclust(mod, resid=TRUE), what="density")
 # While we could have just used plot.MoEClust above,
 # plot.Mclust is especially useful for univariate data
 data(CO2data)
-res <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP)
+res <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, network.data=CO2data)
 plot(as.Mclust(res))}
 }
 \references{

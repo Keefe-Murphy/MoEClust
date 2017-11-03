@@ -113,10 +113,7 @@
 #' require("lattice")
 #' z     <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
 #' splom(~ hema | sex, groups=z)
-#' splom(~ hema | z, groups=sex)
-#'
-#' # Convert results to the "Mclust" class for further visualisation
-#' plot(as.Mclust(best), what="density")}
+#' splom(~ hema | z, groups=sex)}
   MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = NULL, expert = NULL, network.data = NULL, control = MoE_control(...), ...) {
 
   # Definitions and storage set-up
@@ -248,6 +245,7 @@
     }
     gate.G        <- ifelse((range.G   + !noise.null) > 1, gate.x, FALSE)
     if(gate.x)    {
+      gate.names  <- as.character(attr(stats::terms(gating), "variables")[-c(1:2)])
       gating      <- tryCatch(stats::update.formula(stats::as.formula(gating), z ~ .),
                               error=function(e)   stop("Invalid 'gating' network formula supplied"))
       environment(gating)     <- environment()
@@ -269,6 +267,7 @@
       exp.x       <- FALSE
     }
     if(exp.x)     {
+      expx.names  <- as.character(attr(stats::terms(expert), "variables")[-c(1:2)])
       expert      <- tryCatch(stats::update.formula(stats::as.formula(expert), X ~ .),
                               error=function(e)   stop("Invalid 'expert' network formula supplied"))
       environment(expert)     <- environment()
@@ -282,19 +281,29 @@
        !any(gate.x, exp.x))                       stop("Can't initialise using 'mclust' when there are no gating or expert covariates: try another 'init.z' method")
 
   # Tell network formulas where to look for variables
-    if(!missing(network.data) &&
-       !is.data.frame(network.data))              stop("'network.data' must be a data.frame if supplied")
-    if(is.null(network.data))  {
-      gate.covs   <- if(gate.x) stats::model.frame(gating[-2]) else matrix(0, nrow=n, ncol=0)
-      expx.covs   <- if(exp.x)  stats::model.frame(expert[-2]) else matrix(0, nrow=n, ncol=0)
+    gate.names    <- if(gate.x) gate.names else NA
+    expx.names    <- if(exp.x)  expx.names else NA
+    netnames      <- unique(c(gate.names, expx.names))
+    netnames      <- netnames[!is.na(netnames)]
+    if(!missing(network.data)) {
+      netdat      <- network.data
+      if(!is.data.frame(netdat))                  stop("'network.data' must be a data.frame if supplied")
+      if(!all(netnames %in% colnames(netdat)))    stop("Supplied covariates not found in supplied 'network.data'")
+      expx.covs   <- if(exp.x)   netdat[,expx.names, drop=FALSE] else matrix(0, nrow=n, ncol=0)
+    } else {
+      if(any(grepl("\\$", netnames)))             stop("Don't supply covariates to gating or expert networks using the $ operator: use the 'network.data' argument instead")
+      gate.covs   <- if(gate.x)  stats::model.frame(gating[-2])  else matrix(0, nrow=n, ncol=0)
+      expx.covs   <- if(exp.x)   stats::model.frame(expert[-2])  else matrix(0, nrow=n, ncol=0)
       netdat      <- cbind(gate.covs, expx.covs)
-      netdat      <- data.frame(if(ncol(netdat) > 0) netdat[!duplicated(names(netdat))] else netdat, stringsAsFactors=TRUE)
-      attr(netdat, "Gating")  <- gate.names    <- if(is.null(names(gate.covs)))      NA else names(gate.covs)
-      attr(netdat, "Expert")  <- expx.names    <- if(is.null(names(expx.covs)))      NA else names(expx.covs)
-      attr(netdat, "Both")    <- if(length(intersect(gate.names, expx.names)) == 0)  NA else intersect(gate.names, expx.names)
-    } else netdat <- network.data
-    net.cts       <- !sapply(netdat, is.factor)
-    nct           <- sum(net.cts)
+      netnames    <- unique(colnames(netdat))
+      netdat      <- data.frame(if(ncol(netdat) > 0) netdat[,netnames]  else netdat, stringsAsFactors=TRUE)
+      colnames(netdat)        <- netnames
+    }
+    attr(netdat, "Gating")    <- gate.names
+    attr(netdat, "Expert")    <- expx.names
+    attr(netdat, "Both")      <- if(length(intersect(gate.names, expx.names)) == 0) NA else intersect(gate.names, expx.names)
+    exp.cts       <- names(which(!sapply(expx.covs, is.factor)))
+    nct           <- length(exp.cts)
     init.var      <- ifelse(do.joint && !allg0, d + nct, d)
     highd         <- init.var >= n
     multv         <- init.var  > 1
@@ -328,7 +337,7 @@
       z           <- matrix(0, n, gN)
 
     # Initialise Expert Network & Allocations
-      XI        <- if(exp.g  && do.joint) cbind(X, netdat[,net.cts])[!noise,, drop=FALSE] else X[!noise,, drop=FALSE]
+      XI        <- (if(exp.g && do.joint) cbind(X, expx.covs[,exp.cts]) else X)[!noise,, drop=FALSE]
       z.tmp     <- unmap(if(g > 1) switch(init.z, hc=as.vector(hclass(tryCatch(hc(XI, modelName=hcName, minclus=g), error=function(e) stop("Error in hierarchical clustering initialisation")), g)),
                                           kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
                                           mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
@@ -341,29 +350,46 @@
       if(exp.init) {
         tmp.z     <- matrix(NA, nrow=ifelse(noisen == 0, n, noisen), ncol=g)
         mahala    <- res.G    <- list()
-        netnoise  <- netdat[!noise,, drop=FALSE]
+        expnoise  <- expx.covs[!noise,, drop=FALSE]
         ix        <- 0
+        ne        <- ncol(expnoise)
         while(!identical(tmp.z, z.tmp) && ix <= max.init) {
           tmp.z   <- z.tmp
           ix      <- ix  + 1
           for(k in Gseq) {
             sub   <- z.tmp[,k] == 1
-            exp   <- tryCatch(stats::lm(expert, data=netnoise, subset=sub), error=function(e) {
-                     try(stats::lm(stats::as.formula(paste("X", paste(names(netnoise[,!apply(netnoise[sub,, drop=FALSE], 2, function(x) all(x == x[1], na.rm=TRUE)), drop=FALSE]), collapse="+"), sep="~")), data=netnoise, subset=sub), silent=TRUE) })
-            if(inherits(exp, "try-error")) {
+            exp   <- tryCatch(stats::lm(expert, data=expnoise, subset=sub), error=function(e) {
+                     try(stats::lm(stats::as.formula(paste("X", paste(names(!apply(expnoise[sub,, drop=FALSE], 2, function(x) all(x == x[1], na.rm=TRUE))), collapse="+"), sep="~")), data=expnoise, subset=sub), silent=TRUE) })
+            if(inherits(exp,    "try-error")) {
               exp.init        <- FALSE
               break
             }
-            res   <- as.matrix((X - tryCatch(stats::predict(exp, newdata=netdat), error=function(e) stats::predict(exp, newdata=.drop_levels(exp, netdat))))[!noise,, drop=FALSE])
-            res.G[[k]]        <- res
-            mahala[[k]]       <- .MoE_mahala(exp, res, uni)
+            pred  <- tryCatch(stats::predict(exp, newdata=expnoise), error=function(e) try(stats::predict(exp, newdata=.drop_levels(exp, expnoise)), silent=TRUE))
+            if(inherits(pred,   "try-error")) {
+              exp.init        <- FALSE
+            } else {
+              pred            <- as.matrix(pred)
+              if(length((pna  <- which(is.na(pred[,1])))) > 1) {
+               nexp           <- expnoise[,sapply(seq_len(ne), function(p, ep=expnoise[,p], fep=is.factor(ep)) {
+                                 all(ep == ep[1], na.rm=TRUE) || (!fep || (fep && (nlevels(droplevels(ep[sub])) == nlevels(ep)))) }), drop=FALSE]
+               pt             <- try(stats::predict(stats::lm(stats::as.formula(paste("X", paste(colnames(nexp), collapse="+"), sep="~")), data=nexp, subset=pna)), silent=TRUE)
+               if(!inherits(pt, "try-error")) {
+                 pred[pna,]   <- pt
+               }
+              }
+              res             <- X - pred
+              res.G[[k]]      <- res
+              mahala[[k]]     <- .MoE_mahala(exp, res, uni)
+            }
           }
           if(!exp.init) {
             break
           } else if(g   > 1)   {
             maha  <- do.call(cbind, mahala)
-            maha[is.na(maha)] <- Inf
-            z.tmp <- maha == apply(maha, 1, min)
+            if(anyNA(maha))    {
+              exp.init        <- FALSE
+              break
+            } else   z.tmp    <- maha == apply(maha, 1, min)
           }
         }
         G.res     <- if(uni) as.matrix(do.call(base::c, res.G)) else do.call(rbind, res.G)
@@ -609,7 +635,7 @@
       mean.fin    <- vari.fin <- NULL
     }
 
-    if(multi      && verbose)    cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
+    if(verbose)                  cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
                                      paste0(G, " component", ifelse(G > 1, "s", ""))), ifelse(any(exp.gate) || (!noise.null && G != 0), paste0("\n\t\t\t   ", net.msg), ""), "\n\t\t",
                                      switch(criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
     if(G == 1     && gate.x)   {
@@ -710,7 +736,7 @@
 #' @examples
 #' data(ais)
 #' hema  <- ais[,3:7]
-#' model <- MoE_clust(hema, G=3, gating= ~ ais$BMI + ais$sex, model="EEE")
+#' model <- MoE_clust(hema, G=3, gating= ~ BMI + sex, model="EEE", network.data=ais)
 #' Dens  <- MoE_dens(modelName=model$modelName, data=hema,
 #'                   mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
 #'                   log.tau=log(model$parameters$pro))
@@ -783,7 +809,7 @@
 #' @examples
 #' data(ais)
 #' hema   <- ais[,3:7]
-#' model  <- MoE_clust(hema, G=3, gating= ~ ais$BMI + ais$sex, model="EEE")
+#' model  <- MoE_clust(hema, G=3, gating= ~ BMI + sex, model="EEE", network.data=ais)
 #' Dens   <- MoE_dens(modelName=model$modelName, data=hema,
 #'                    mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
 #'                    log.tau=log(model$parameters$pro))
@@ -843,7 +869,8 @@
 #'          G=3, loglik=c(-4036.99, -3987.12, -3992.45))
 #'
 #' data(CO2data)
-#' model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ CO2data$GNP)
+#' GNP   <- CO2data$GNP
+#' model <- MoE_clust(CO2data$CO2, G=1:2, expert= ~ GNP)
 #' G     <- model$G
 #' name  <- model$modelName
 #' ll    <- max(model$loglik)
@@ -904,15 +931,16 @@
 #' ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random")
 #'
 #' data(CO2data)
-#' res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, control=ctrl)
+#' GNP  <- CO2data$GNP
+#' res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl)
 #'
 #' # Alternatively, specify control arguments directly
-#' res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, stopping="relative")
+#' res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
 #'
 #' # Supplying ctrl without naming it as control throws an error,
 #' # when any of {modelNames, gating, expert} are not supplied
 #' \dontrun{
-#' res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP, ctrl)}
+#' res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl)}
   MoE_control     <- function(criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), exp.init = list(...),
                               init.z = c("hc", "quantile", "kmeans", "mclust", "random"), eps = .Machine$double.eps,  tol = c(1e-05, sqrt(.Machine$double.eps)),
                               itmax = c(.Machine$integer.max, .Machine$integer.max), equalPro = FALSE, warn.it = 0, noise.init = NULL,
@@ -925,17 +953,17 @@
     stopping      <- match.arg(stopping)
     if(is.null(exp.init$joint)) {
       exp.init$joint       <- TRUE
-    } else if(length(exp.init$joint)       > 1 ||
+    } else if(length(exp.init$joint)        > 1 ||
               !is.logical(exp.init$joint))        stop("'exp.init$joint' must be a single logical indicator")
-    if(is.null(exp.init$mahalanobis))      {
+    if(is.null(exp.init$mahalanobis))       {
       exp.init$mahalanobis <- TRUE
-    } else if(length(exp.init$mahalanobis) > 1 ||
+    } else if(length(exp.init$mahalanobis)  > 1 ||
               !is.logical(exp.init$mahalanobis))  stop("'exp.init$mahalanobis' must be a single logical indicator")
-    if(is.null(exp.init$max.init))         {
+    if(is.null(exp.init$max.init))          {
       exp.init$max.init    <- 100
-    } else if(isTRUE(exp.init$mahalanobis)     &&
-             (length(exp.init$max.init)    > 1 ||
-             ((!is.numeric(exp.init$max.init)  ||
+    } else if(isTRUE(exp.init$mahalanobis)      &&
+             (length(exp.init$max.init)     > 1 ||
+             ((!is.numeric(exp.init$max.init)   ||
               exp.init$max.init    <= 0))))       stop("'exp.init$max.init' must be a single strictly positive integer when 'exp.init$mahalanobis' is TRUE")
     miss.init     <- missing(init.z)
     miss.hc       <- missing(hc.meth)
@@ -1103,8 +1131,8 @@
     }
     MoEs          <- stats::setNames(MoEs, mod.names)
     if(any(sapply(MoEs, class) != "MoEClust"))    stop("All models must be of class 'MoE_clust'!")
-    if(length(unique(sapply(MoEs,
-       function(mod) mod$call$data)))  != 1)      stop("All models being compared must have been fit to the same data set!")
+    if(length(unique(lapply(MoEs,
+       "[[", "data")))         != 1)              stop("All models being compared must have been fit to the same data set!")
     title         <- "Comparison of Gaussian finite mixture of experts models fitted by EM algorithm"
     dat.name      <- deparse(MoEs[[1]]$call$data)
     gating        <- lapply(lapply(MoEs, "[[", "gating"), attr, "Formula")
@@ -1206,7 +1234,8 @@
 #' \dontrun{
 #' # Fit a mixture of experts model to the ais data
 #' data(ais)
-#' mod <- MoE_clust(ais[,3:7], G=2, expert= ~ ais$sex, gating= ~ ais$BMI)
+#' mod <- MoE_clust(ais[,3:7], G=2, expert= ~ sex,
+#'                  gating= ~ BMI, network.data=ais)
 #'
 #' # Convert to the "Mclust" class and examine the classification
 #' plot(as.Mclust(mod), what="classification")
@@ -1217,7 +1246,7 @@
 #' # While we could have just used plot.MoEClust above,
 #' # plot.Mclust is especially useful for univariate data
 #' data(CO2data)
-#' res <- MoE_clust(CO2data$CO2, G=2, expert = ~ CO2data$GNP)
+#' res <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, network.data=CO2data)
 #' plot(as.Mclust(res))}
   as.Mclust       <- function (x, resid = FALSE, signif = 0, ...) {
     UseMethod("as.Mclust")
@@ -1302,19 +1331,19 @@
     unlist(lapply(seq_along(x), function(i) stats::setNames(x[[i]], paste0(names(x[i]), "|", names(x[[i]])))))
   }
 
-  .drop_levels    <- function(fit, newdata) {
-    factors       <- gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", gsub("[-^0-9]|as.factor|\\(|\\)", "", names(unlist(fit$xlevels)))))
+  .drop_levels    <- function(fit, newdat) {
+    factors       <- gsub("[-^0-9]|as.factor|\\(|\\)", "", names(unlist(fit$xlevels)))
     factorLevels  <- unname(unlist(fit$xlevels))
     modelFactors  <- cbind.data.frame(factors, factorLevels)
-    predictors    <- names(newdata[names(newdata) %in% factors])
-    for(i in seq_along(predictors))  {
-      ind          <- newdata[,predictors[i]]      %in% modelFactors[modelFactors$factors == predictors[i],]$factorLevels
+    predictors    <- names(newdat[names(newdat) %in% factors])
+    for(i in seq_along(predictors)) {
+      ind         <- newdat[,predictors[i]]     %in% modelFactors[modelFactors$factors == predictors[i],]$factorLevels
       if(any(!ind)) {
-        newdata[!ind,predictors[i]] <-  NA
-        newdata[,predictors[i]]     <- factor(newdata[,predictors[i]], levels=modelFactors[modelFactors$factors == predictors[i],]$factorLevels)
+        newdat[!ind,predictors[i]] <- NA
+        newdat[,predictors[i]]     <- factor(newdat[,predictors[i]], levels=modelFactors[modelFactors$factors == predictors[i],]$factorLevels)
       }
     }
-    newdata
+      newdat
   }
 
   .mat_byrow      <- function(x, nrow, ncol) {
