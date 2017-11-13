@@ -19,5 +19,5 @@ Returns a quantile-based clustering for univariate data.
 }
 \examples{
 data(CO2data)
-MoE_qclass(CO2data$CO2, 2)
+MoE_qclass(CO2data$CO2, G=2)
 }

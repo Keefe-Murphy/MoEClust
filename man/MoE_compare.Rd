@@ -8,7 +8,8 @@
 MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
   optimal.only = FALSE)
 
-\method{print}{MoECompare}(x, index = seq_len(x$pick), ...)
+\method{print}{MoECompare}(x, index = seq_len(x$pick), noise.meth = TRUE,
+  ...)
 }
 \arguments{
 \item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single \emph{named} list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.}
@@ -22,6 +23,8 @@ MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
 \item{x}{An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.}
 
 \item{index}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
+
+\item{noise.meth}{A logical which determines whether presence of a noise-component should be indicated by the method employed to estimate the hypervolume (defaults to \code{TRUE}) or, if \code{FALSE}, simply by \code{TRUE}. In the absence of a noise component, \code{FALSE} will be printed regardless.}
 }
 \value{
 A list of class \code{"MoE_compare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(pick)}:
@@ -78,7 +81,7 @@ comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=18)
 print(comp2, comp2$expert != "None" & comp2$G > 1)
 }
 \references{
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}

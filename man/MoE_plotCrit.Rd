@@ -2,7 +2,7 @@
 % Please edit documentation in R/Plotting_Functions.R
 \name{MoE_plotCrit}
 \alias{MoE_plotCrit}
-\title{Model Selection Criteria Plot for MoEClust Models}
+\title{Model Selection Criteria Plot for MoEClust Mixture Models}
 \usage{
 MoE_plotCrit(res, criterion = c("bic", "icl", "aic"), ...)
 }

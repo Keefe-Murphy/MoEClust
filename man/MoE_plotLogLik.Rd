@@ -2,7 +2,7 @@
 % Please edit documentation in R/Plotting_Functions.R
 \name{MoE_plotLogLik}
 \alias{MoE_plotLogLik}
-\title{Plot the Log-Likelihood of a MoEClust model}
+\title{Plot the Log-Likelihood of a MoEClust Mixture Model}
 \usage{
 MoE_plotLogLik(res, type = "l", xlab = "Iteration",
   ylab = "Log-Likelihood", xaxt = "n", ...)
@@ -18,7 +18,7 @@ MoE_plotLogLik(res, type = "l", xlab = "Iteration",
 A plot of the log-likelihood versus the EM iterations.
 }
 \description{
-Plots the log-likelihood at every iteration of the EM algorithm used to fit a MoEClust model.
+Plots the log-likelihood at every iteration of the EM algorithm used to fit a MoEClust mixture model.
 }
 \note{
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotLogLik}} which accepts the default arguments, and also produces other types of plots.

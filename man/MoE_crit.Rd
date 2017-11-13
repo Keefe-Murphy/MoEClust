@@ -28,7 +28,7 @@ MoE_crit(modelName, loglik, n, d, G, gating.pen = G - 1, expert.pen = G * d,
 A simplified array containing the BIC, AIC, number of estimated parameters (\code{df}) and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
 }
 \description{
-Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Likelihood), and AIC (Akaike Information Criterion) for parameterized mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
+Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Likelihood), and AIC (Akaike Information Criterion) for parsimonious mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
 }
 \details{
 The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.\cr

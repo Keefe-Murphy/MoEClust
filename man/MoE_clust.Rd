@@ -4,7 +4,7 @@
 \alias{MoE_clust}
 \alias{print.MoEClust}
 \alias{summary.MoEClust}
-\title{Mixtures of Experts: Model-Based Clustering with Covariates}
+\title{MoEClust: Parsimonious Model-Based Clustering with Covariates}
 \usage{
 MoE_clust(data, G = 1:9, modelNames = NULL, gating = NULL,
   expert = NULL, network.data = NULL, control = MoE_control(...), ...)
@@ -21,14 +21,14 @@ MoE_clust(data, G = 1:9, modelNames = NULL, gating = NULL,
 \item{modelNames}{A vector of character strings indicating the models to be fitted in the EM phase of clustering. With \code{n} observations and \code{d} variables, the defaults are:\cr
 \tabular{ll}{for univariate data \tab \code{c("E", "V")}\cr
 for multivariate data \eqn{n > d}{n > d} \tab \code{mclust.options("emModelNames")}\cr
-for high-dimensional multivariate data \eqn{n \leq d}{n <= d} \tab \code{c("EII", "VII", "EEI", "EVI", "VEI", "VVI")}
+for high-dimensional multivariate data \eqn{n \leq d}{n <= d} \tab \code{c("EII", "VII", "EEI", "EVI", "VEI", "VVI")}\cr
 }
-\cr
+
 For single-component models these options reduce to:\cr
 \tabular{ll}{
 for univariate data \tab \code{"E"}\cr
 for multivariate data \eqn{n > d}{n > d} \tab \code{c("EII", "EEI", "EEE")}\cr
-for high-dimensional multivariate data \eqn{n \leq d}{n <= d}  \tab \code{c("EII", "EEI")}
+for high-dimensional multivariate data \eqn{n \leq d}{n <= d}  \tab \code{c("EII", "EEI")}\cr
 }
 For zero-component models with a noise component only the \code{"E"} and \code{"EII"} models will be fit for univariate and multivariate data, respectively. The help file for \code{\link[mclust]{mclustModelNames}} further describes the available models (though the \code{"X"} in the single-component models will be coerced to \code{"E"} if supplied that way).}
 
@@ -36,7 +36,7 @@ For zero-component models with a noise component only the \code{"E"} and \code{"
 
 \item{expert}{A formula for determining the model matrix for the (multivariate) WLS in the expert network when covariates are included in the component densities. Interactions etc. are permitted. The specification of the LHS of the formula is ignored.}
 
-\item{network.data}{An optional data frame in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called.}
+\item{network.data}{An optional data frame in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called. Try to ensure the names of variables in \code{network.data} do not match any of those in \code{data}.}
 
 \item{control}{A list of control parameters for the EM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}.}
 
@@ -74,8 +74,8 @@ A list (of class \code{"MoEClust"}) with the following named entries, mostly cor
 \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component. If there is a noise component, its values are found in the \emph{last} column.}
 \item{\code{classification}}{The vector of cluster labels for the chosen model corresponding to \code{z}, i.e. \code{max.col(z)}. Observations belonging the noise component will belong to component \code{0}.}
 \item{\code{uncertainty}}{The uncertainty associated with the \code{classification}.}
-\item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any. Will be missing in the absence of gating or expert network covariates, and supplied gating covariates will be exluded if the optimal model has only one component.}
-\item{\code{resid.data}}{In the presence of expert network covariates, this is the augmented data (as a data frame) actually used in the clustering at convergence consisting of the \code{(n * G) * d} matrix of (multivariate) WLS residuals. Will be missing in the absence of expert network covariates.}
+\item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any. Will contain zero columns in the absence of gating or expert network covariates. supplied gating covariates will be exluded if the optimal model has only one component. May have fewer columns than covariates supplied via the \code{network.data} argument also, as only the included covariates are gathered here.}
+\item{\code{resid.data}}{In the presence of expert network covariates, this is the augmented data (as a data frame) actually used in the clustering at convergence consisting of the \code{(n * G) * d} matrix of (multivariate) WLS residuals. Will contain zero columns in the absence of expert network covariates.}
 \item{\code{DF}}{A matrix of giving numbers of estimated parameters (i.e. the number of 'used' degrees of freedom) for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. Subtract these numbers from \code{n} to get the degrees of freedom. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustBIC"}, for which a dedicated plotting function exists.}
 \item{\code{iters}}{A matrix giving the total number of EM iterations with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged.}
 }
@@ -135,7 +135,7 @@ splom(~ hema | sex, groups=z)
 splom(~ hema | z, groups=sex)}
 }
 \references{
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 }

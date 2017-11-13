@@ -1,4 +1,8 @@
-__MoEClust: Model-Based Clustering with Gating and Expert Covariates__
-======================================================================
+__MoEClust: Finite Gaussian Mixtures of Experts -__   
+=====================================================
+__Parsimonious Model-Based Clustering  __  
+===========================================
+__with Gating and Expert Network Covariates__
+=============================================
 
-## MoEClust v0.1.0 - (_preview GitHub release: 2017-10-05_)
+## MoEClust v1.0.0 - (_first release: 2017-11-28_)

@@ -1,5 +1,5 @@
 ---
-title: "MoEClust: Parsimonious Model-Based Clustering with Gating and Expert Covariates"
+title: "MoEClust: Finite Gaussian Mixtures of Experts - Parsimonious Model-Based Clustering with Gating and Expert Network Covariates"
 author: "Keefe Murphy"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -16,13 +16,15 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show=
 ```
 
 ## Introduction
-__MoEClust__ is an R package which fits finite Mixtures of Experts models with __mclust__ family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various covariance parameterisations in the __mclust__ family. It also visualises mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
+__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models with __mclust__ family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various parsimonious covariance parameterisations in the __mclust__ family. These models were introduced by [Murphy and Murphy (2017)](https://arxiv.org/abs/1711.05632). The package also visualises mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
-The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `MoE_aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
+The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM algoirthm with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `MoE_aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 
-A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network &/or log-likelihood, and/or graphing model selection criteria values. The generalised pairs plots visualise all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, and also gives the marginal distributions of each variable along the diagonal.
+A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network &/or log-likelihood, and/or graphing model selection criteria values. The generalised pairs plots (`MoE_gpairs`) visualise all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, and also give the marginal distributions of each variable along the diagonal.
 
 An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component.
+
+The package also contains two data sets: `ais` and `CO2data`.
 
 If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
 
@@ -59,15 +61,15 @@ GNP   <- CO2data[,1]
 CO2   <- CO2data[,2]
 ```
 
-Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. 
+Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively.
 
 ```{r, results='hide'}
 m1    <- MoE_clust(CO2, G=1:2, verbose=FALSE)
-m2    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, verbose=FALSE)
+m2    <- MoE_clust(CO2, G=2,   gating= ~ GNP, verbose=FALSE)
 m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, verbose=FALSE)
-m4    <- MoE_clust(CO2, G=1:2, gating= ~ GNP, expert= ~ GNP, verbose=FALSE)
-m5    <- MoE_clust(CO2, G=1:2, equalPro=TRUE, verbose=FALSE)
-m6    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
+m4    <- MoE_clust(CO2, G=2,   gating= ~ GNP, expert= ~ GNP, verbose=FALSE)
+m5    <- MoE_clust(CO2, G=2,   equalPro=TRUE, verbose=FALSE)
+m6    <- MoE_clust(CO2, G=2,   expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
 ```
 
 Choose the best model among these and examine the results.
@@ -175,6 +177,6 @@ splom(~ hema | z, groups=sex, xlab=NULL)
 ```
 
 ## References
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates. _To appear_. Pre-print available at [arXiv:1711.05632](https://arxiv.org/abs/1711.05632).
 
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97:611-631.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions.R
 \name{MoE_estep}
 \alias{MoE_estep}
-\title{Compute the responsility matrix z and log-likelihood for MoEClust models}
+\title{Compute the Responsility Matrix and Log-likelihood for MoEClust Mixture Models}
 \usage{
 MoE_estep(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL,
   Dens = NULL)
@@ -30,7 +30,7 @@ A list containing two elements:
 }
 }
 \description{
-Softmax function to compute the responsibility matrix z and the log-likelihood for parameterised MVN mixtures of experts, with the aid of \code{\link{MoE_dens}}.
+Softmax function to compute the responsibility matrix z and the log-likelihood for MoEClust models, with the aid of \code{\link{MoE_dens}}.
 }
 \note{
 This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities.

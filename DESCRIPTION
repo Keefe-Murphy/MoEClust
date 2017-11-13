@@ -1,10 +1,11 @@
 Package: MoEClust
 Type: Package
-Date: 2017-10-05
-Title: Finite Gaussian Mixtures of Experts: Parsimonious Model-Based Clustering with Covariates
-Version: 0.1.0
-Authors@R: person("Keefe", "Murphy", email = "keefe.murphy@ucd.ie", role = c("aut", "cre"))
-Description: Fits finite Mixtures of Experts models with mclust family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various covariance parameterisations in the mclust family. Also visualises mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
+Date: 2017-11-28
+Title: Parsimonious Model-Based Clustering with Covariates
+Version: 1.0.0
+Authors@R: c(person("Keefe", "Murphy", email = "keefe.murphy@ucd.ie", role = c("aut", "cre")),
+           person("Thomas Brendan", "Murphy", email = "brendan.murphy@ucd.ie", role = "ctb"))
+Description: Clustering via parsimonious Mixtures of Experts using the MoEClust models introduced by Murphy and Murphy (2017) <arXiv:1711.05632>. This package fits finite Gaussian mixture models with gating and expert network covariates using parsimonious covariance parameterisations from 'mclust' via the EM algorithm. Visualisation of the results of such models using generalised pairs plots is also facilitated.
 Depends: R (>= 2.10)
 License: GPL (>=2)
 Encoding: UTF-8

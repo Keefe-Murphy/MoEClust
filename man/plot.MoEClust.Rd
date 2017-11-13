@@ -36,10 +36,10 @@ Caution is advised producing generalised pairs plots when the dimension of the d
 Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results.
 }
 \examples{
+\dontrun{
 data(ais)
-sex <- ais$sex
-BMI <- ais$BMI
-res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex, G=2, modelNames="EVE")
+res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex,
+                 G=2, modelNames="EVE", network.data=ais)
 
 # Plot the gating network
 plot(res, what="gating")
@@ -52,10 +52,10 @@ plot(res, what="gpairs")
 
 # Modify the gpairs plot by passing arguments to MoE_gpairs()
 plot(res, what="gpairs", response.type="density",
-     scatter.type="ci", jitter=FALSE, show.counts=FALSE)
+     scatter.type="ci", jitter=FALSE, show.counts=FALSE)}
 }
 \references{
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates.
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}

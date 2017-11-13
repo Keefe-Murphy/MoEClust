@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions.R
 \name{MoE_dens}
 \alias{MoE_dens}
-\title{Density for Parameterised MVN Mixture of Experts Models}
+\title{Density for MoEClust Mixture Models}
 \usage{
 MoE_dens(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL,
   logarithm = TRUE)
@@ -26,7 +26,7 @@ MoE_dens(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL,
 A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions.
 }
 \description{
-Computes densities (or log-densities) of observations in parameterised MVN mixtures of experts.
+Computes densities (or log-densities) of observations in MoEClust mixture models.
 }
 \note{
 This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities.
