@@ -11,20 +11,18 @@ MoE_aitken(loglik)
 }
 \value{
 A list with the following components:
-\itemize{
-\item{\code{ll} - }{The most current estimate for the log-likelihood.}
-\item{\code{linf} - }{The most current estimate of the final converged maxmised log-likelihood.}
-\item{\code{a} - }{The Aitken acceleration value where \code{0 <= a <= 1}.}
-}
+\item{\code{ll}}{The most current estimate for the log-likelihood.}
+\item{\code{linf}}{The most current estimate of the final converged maxmised log-likelihood.}
+\item{\code{a}}{The Aitken acceleration value where \code{0 <= a <= 1}.}
 }
 \description{
-Calculates the Aitken acceleration estimate of the final converged maximized log-likelihood.
+Calculates the Aitken acceleration estimate of the final converged maximised log-likelihood under the EM framework.
 }
 \details{
-The final converged maximized log-likelihood can be used to determine convergence of the EM algorithm within \code{\link{MoE_clust}}, i.e. by checking whether the absolute difference in the current and previous estimates of the final converged maximised log-likelihood is less than some tolerance.
+The final converged maximised log-likelihood can be used to determine convergence of the EM algorithm within \code{\link{MoE_clust}}, i.e. by checking whether the absolute difference in the current and previous estimates of the final converged maximised log-likelihood is less than some tolerance.
 }
 \note{
-Within \code{\link{MoE_clust}}, as specified by the \code{stopping} argument of \code{\link{MoE_control}}, \code{"aitken"} is the default method used to assess convergence. The other option monitors the \code{"relative"} change in log-likelihood against some tolerance. \cr
+Within \code{\link{MoE_clust}}, as specified by the \code{stopping} argument of \code{\link{MoE_control}}, \code{"aitken"} is the default method used to assess convergence. The other option monitors the \code{"relative"} change in log-likelihood against some tolerance. See \code{\link{MoE_control}}.
 
 When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.
 }
@@ -43,5 +41,6 @@ Boehning, D., Dietz, E., Schaub, R., Schlattmann, P. and Lindsay, B. G. (1994). 
 \code{\link{MoE_control}}
 }
 \author{
-Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }
+\keyword{control}

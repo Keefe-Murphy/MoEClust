@@ -40,5 +40,6 @@ inherits(pred2, "try-error") #FALSE
 anyNA(pred2)                 #TRUE
 }
 \author{
-Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }
+\keyword{utility}

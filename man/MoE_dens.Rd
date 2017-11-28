@@ -52,5 +52,6 @@ round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
 \code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}
 }
 \author{
-Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }
+\keyword{clustering}

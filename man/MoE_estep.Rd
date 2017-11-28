@@ -24,10 +24,8 @@ MoE_estep(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL,
 }
 \value{
 A list containing two elements:
-\itemize{
-\item{\code{z} - }{A matrix with n rows and G columns containing the probability of cluster membership for each of n observations and G clusters}
-\item{\code{loglik} - }{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
-}
+\item{\code{z}}{A matrix with n rows and G columns containing the probability of cluster membership for each of n observations and G clusters}
+\item{\code{loglik}}{The log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}}
 }
 \description{
 Softmax function to compute the responsibility matrix z and the log-likelihood for MoEClust models, with the aid of \code{\link{MoE_dens}}.
@@ -62,5 +60,6 @@ identical(Estep2$loglik, ll)                                          #TRUE
 \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}, \code{\link[mclust]{mclustModelNames}}
 }
 \author{
-Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }
+\keyword{clustering}

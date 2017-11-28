@@ -37,5 +37,6 @@ mod2  <- try(lm(form2, data=ais, subset=sub), silent=TRUE)
 inherits(mod2, "try-error") # FALSE
 }
 \author{
-Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }
+\keyword{utility}

@@ -22,11 +22,10 @@
 #' }
 #'
 #' @author
-#' Keefe Murphy [aut, cre]
+#' Keefe Murphy [aut, cre], Thomas Brendan Murphy [ctb]
 #'
-#' Maintainer: Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
-#'
-#' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Gating and Expert Network Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+#' \strong{Maintainer}: Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 #' @examples
 #' \dontrun{
 #' data(ais)
@@ -43,6 +42,7 @@
 #' m4    <- MoE_clust(CO2, G=2, gating= ~ GNP, expert= ~ GNP)
 #' MoE_compare(m1, m2, m3, m4)}
 #' @docType package
+#' @keywords package
 #' @name MoEClust
 NULL
 

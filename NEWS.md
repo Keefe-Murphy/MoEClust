@@ -1,8 +1,9 @@
 __MoEClust: Finite Gaussian Mixtures of Experts -__   
-=====================================================
-__Parsimonious Model-Based Clustering  __  
-===========================================
-__with Gating and Expert Network Covariates__
-=============================================
+=======================================================
+__Parsimonious Model-Based Clustering with Covariates__  
+=======================================================
 
-## MoEClust v1.0.0 - (_first release: 2017-11-28_)
+* Speed-ups due to functions from `matrixStats` (on which `MoEClust` already depended).
+* Removed dependency on the `grid` library.
+* Many documentation improvements.
+

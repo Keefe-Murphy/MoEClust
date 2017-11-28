@@ -35,5 +35,6 @@ MoE_plotGate(res)
 \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link[graphics]{matplot}}
 }
 \author{
-Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }
+\keyword{plotting}
