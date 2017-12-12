@@ -16,6 +16,7 @@ MoE_control(criterion = c("bic", "icl", "aic"),
   noise.init = NULL,
   noise.meth = c("hypvol", "convexhull", "ellipsoidhull"),
   hc.meth = NULL,
+  hcUse = "VARS",
   verbose = interactive(), ...)
 }
 \arguments{
@@ -46,9 +47,13 @@ The default is \code{c(.Machine$integer.max, .Machine$integer.max, 100)} allowin
 
 \item{noise.init}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation.}
 
+\item{noise.gate}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
+
 \item{noise.meth}{The method use to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively.}
 
 \item{hc.meth}{A character string indicating the model to be used when hierarchical clustering (see \code{\link[mclust]{hc}} is employed for initialisation according to \code{init.z}. Defaults to \code{"EII"} for high-dimensional data, or \code{"VVV"} otherwise.}
+
+\item{hcUse}{A string specifying the type of input variables to be used when \code{init.z} is set to \code{hc}. Unlike \code{mclust}, this defaults to "\code{VARS}" here.}
 
 \item{verbose}{Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.}
 
@@ -67,6 +72,8 @@ While the \code{criterion} argument controls the choice of the optimal number of
 }
 \note{
 When initialising using the \code{"hc"} option for the \code{init.z} argument, the \code{"EII"} model is used for high-dimensional data, otherwise \code{"VVV"} is used.
+
+Note also that, unlike \code{mclust}, the \code{hcUse} argument to \code{\link[mclust]{mclust.options}} is set to "\code{VARS}" by default.
 }
 \examples{
 ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random")
@@ -84,7 +91,7 @@ res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
 res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl)}
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link{MoE_qclass}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
+\code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{mclust.options}}, \code{\link{MoE_qclass}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

@@ -8,8 +8,7 @@
 MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
   optimal.only = FALSE)
 
-\method{print}{MoECompare}(x, index = seq_len(x$pick), noise.meth = TRUE,
-  ...)
+\method{print}{MoECompare}(x, index = seq_len(x$pick), noise = TRUE, ...)
 }
 \arguments{
 \item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single \emph{named} list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.}
@@ -24,7 +23,9 @@ MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
 
 \item{index}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
 
-\item{noise.meth}{A logical which determines whether presence of a noise-component should be indicated by the method employed to estimate the hypervolume (defaults to \code{TRUE}) or, if \code{FALSE}, simply by \code{TRUE}. In the absence of a noise component, \code{FALSE} will be printed regardless.}
+\item{noise}{A logical which determines whether presence of a noise-component should be indicated by the method employed to estimate the hypervolume (defaults to \code{TRUE}) or, if \code{FALSE}, simply by \code{TRUE}. In the absence of a noise component, \code{FALSE} will be printed regardless. Only relevant if at least one of the models being compared has a noise component.
+
+If any of the compared models do have a noise component, this switch also controls whether the influence (or not) of gating covariates on the noise component's mixing proportion is indicated (either by \code{TRUE} or \code{FALSE} for models with a noise component, or else a blank entry for those without) if any of the models being compared has gating covariates.}
 }
 \value{
 A list of class \code{"MoECompare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(pick)}:
@@ -39,6 +40,8 @@ A list of class \code{"MoECompare"}, for which a dedicated print function exists
 \item{\code{gating}}{The gating formulas.}
 \item{\code{expert}}{The expert formulas.}
 \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
+\item{\code{noise}}{Either a logical indicating the presence/absence of a noise component, or the type of noise component fitted (if any). Depends on the supplied value of \code{noise}. Only displayed if at least one of the compared models has a noise component.}
+\item{\code{noise.gate}}{Logical indicating whether gating covariates were allowed to influence the noise component's mixing proportion. Only printed for models with a noise component, when at least one of the compared models has gating covariates, and even then only when \code{noise} is supplied as \code{TRUE}.}
 }
 \description{
 Takes one or more sets of MoEClust models fitted by \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC. It's possible to respect the internal ranking within each set of models, or to discard models within each set which were already deemed sub-optimal.

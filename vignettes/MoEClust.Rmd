@@ -22,7 +22,7 @@ The most important function in the __MoEClust__ package is: `MoE_clust`, for fit
 
 A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network &/or log-likelihood, and/or graphing model selection criteria values. The generalised pairs plots (`MoE_gpairs`) visualise all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, and also give the marginal distributions of each variable along the diagonal.
 
-An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component.
+An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates).
 
 The package also contains two data sets: `ais` and `CO2data`.
 
@@ -61,10 +61,10 @@ GNP   <- CO2data[,1]
 CO2   <- CO2data[,2]
 ```
 
-Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively.
+Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. For the model with no covariates, we can only fit a model with only a noise component by including `G=0`.
 
 ```{r, results='hide'}
-m1    <- MoE_clust(CO2, G=1:2, verbose=FALSE)
+m1    <- MoE_clust(CO2, G=0:2, verbose=FALSE)
 m2    <- MoE_clust(CO2, G=2,   gating= ~ GNP, verbose=FALSE)
 m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP, verbose=FALSE)
 m4    <- MoE_clust(CO2, G=2,   gating= ~ GNP, expert= ~ GNP, verbose=FALSE)

@@ -220,9 +220,9 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(outer.labels)) {
     lab1   <- switch(names(x)[1], MAP=1, 2)
     lab2   <- switch(names(x)[1], MAP=2, 1)
-    outer.labels$top    <- rep(FALSE, N)
+    outer.labels$top    <- vector("logical", N)
     outer.labels$top[seq(lab1,  N, by=2)] <- TRUE
-    outer.labels$left   <- rep(FALSE, N)
+    outer.labels$left   <- vector("logical", N)
     outer.labels$left[seq(lab2, N, by=2)] <- TRUE
     outer.labels$right  <- !outer.labels$left
     outer.labels$bottom <- !outer.labels$top
@@ -629,7 +629,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
 
 .grid_1   <- function(n, range = c(0, 1), edge = TRUE) {
   if(any(n < 0 | round(n) != n))                      stop("n must be nonpositive and integer")
-  G       <- rep(0, n)
+  G       <- vector("numeric", n)
   if(edge) {
     G     <- seq(from=min(range), to=max(range), by=abs(diff(range))/(n - 1))
   } else   {
@@ -932,7 +932,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
   xscale      <- cur.limits$xlim
   yscale      <- cur.limits$ylim
   height      <- box.width
-  col         <- if(length(col) == 1)      rep(col,n)          else col
+  col         <- if(length(col) == 1)      rep(col, n)         else col
   if(horizontal) {
     for(i in seq_along(levels.fos)) {
       if(is.finite(max.d[i])) {
