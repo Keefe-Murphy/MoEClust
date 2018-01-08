@@ -28,7 +28,7 @@ By default, the noise component (if any) will be coloured \code{"grey65"}.
 \examples{
 data(ais)
 res <- MoE_clust(ais[,3:7], gating= ~ sex, G=3, modelNames="EEE", network.data=ais,
-                 noise.init = sample(c(TRUE, FALSE), replace=TRUE, size=nrow(ais)))
+                 noise.init=sample(c(TRUE, FALSE), replace=TRUE, size=nrow(ais)))
 MoE_plotGate(res)
 }
 \seealso{

@@ -10,7 +10,7 @@ MoE_gpairs(res,
   residuals = FALSE,
   scatter.type = c("lm", "points"),
   conditional = c("stripplot", "boxplot"),
-  addEllipses = c("outer", "yes", "no", "inner"),
+  addEllipses = c("outer", "yes", "no", "inner", "both"),
   border.col = c("purple", "black", "brown", "brown", "navy"),
   bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
   diagonal = c("on", "off"),
@@ -42,11 +42,11 @@ MoE_gpairs(res,
 
 \item{residuals}{Logical indicating whether to treat the data as the raw data (when \code{FALSE}, the default) or the augmented data comprising the residuals from the expert network (when \code{TRUE}). In the latter case, the mean and (co)variance parameters are taken to be the mean and (co)variance of the residuals. Only relevant if expert network covariates were supplied under \code{res}, otherwise coerced to \code{FALSE}.}
 
-\item{scatter.type}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots of covariates against response, and never response vs. response or covariate vs. covariate, but note that lines &/or confidence intervals will still be drawn even for continuous covariates included only in the gating network.}
+\item{scatter.type}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, use the options \code{"lm2"} or \code{"ci2"}.}
 
 \item{conditional}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"barcode"} and \code{"violin"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).}
 
-\item{addEllipses}{Controls whether to add ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lci.col}). Ellipses are only ever drawn for multivariate data.}
+\item{addEllipses}{Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. Ellipses are only ever drawn for multivariate data. Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables.}
 
 \item{border.col}{A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, respponse vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 
@@ -70,7 +70,7 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \item{scatter.pars}{A list supplying select parameters for the continuous vs. continuous scatter plots.
 
-\code{NULL} is equivalent to \code{list(scat.pch=res$classification, scat.size=unit(0.25, "char"), scat.col=res$classification, lci.col=res$classification)}, where \code{lci.col} gives the colour of the fitted lines &/or confidence intervals when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"} or \code{"inner"}. Note that \code{scatter.pars$scat.size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}.}
+\code{NULL} is equivalent to \code{list(scat.pch=res$classification, scat.size=unit(0.25, "char"), scat.col=res$classification, lci.col=res$classification)}, where \code{lci.col} gives the colour of the fitted lines &/or confidence intervals when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"}. Note that \code{scatter.pars$scat.size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}.}
 
 \item{density.pars}{A list supplying select parameters for visualising the bivariate density contours, only when \code{response.type} is \code{"density"}.
 
