@@ -3,7 +3,7 @@ __MoEClust: Finite Gaussian Mixtures of Experts -__
 __Parsimonious Model-Based Clustering with Covariates__  
 =======================================================
 
-## MoEClust v1.1.0 - (_2<sup>nd</sup> release [minor update]: 2017-12-13_)
+## MoEClust v1.1.0 - (_2<sup>nd</sup> release [minor update]: 2018-02-06_)
 ### New Features & Improvements
 * `MoE_control` gains the `noise.gate` argument (defaults to `TRUE`): when `FALSE`,  
   the noise component's mixing proportion isn't influenced by gating network covariates.
@@ -11,8 +11,10 @@ __Parsimonious Model-Based Clustering with Covariates__
   there are expert network covariates: when there are no expert covariates, the posterior  
   mean of the response is reported, as before. This effects the centres of the MVN ellipses  
   in response vs. response panels of `MoE_gpairs` plots when there are expert covariates.
+* New function `expert_covar` used to account for variability in the means, in the presence  
+  of expert covariates, in order to modify shape & size of MVN ellipses in visualisations.
 * `MoE_control` gains the `hcUse` argument (defaults to `"VARS"` as per old `mclust` versions).
-* `MoE_mahala` gains the `squared` argument + speed/matrix-inversion improvements.
+* `MoE_mahala` gains the `squared` argument + speedup/matrix-inversion improvements.
 * Speed-ups, incl. functions from `matrixStats` (on which `MoEClust` already depended).
 * The `MoE_gpairs` argument `addEllipses` gains the option `"both"`.
 
@@ -25,6 +27,7 @@ __Parsimonious Model-Based Clustering with Covariates__
   erroneously produced for panels involving pairs of continuous covariates only.
 * Fixed bugs in `MoE_mahala` and in expert network estimation with a noise component.
 * `G=0` models w/ noise component only can now be fitted without having to supply `noise.init`.
+* `MoE_compare` now correctly prints noise information for sub-optimal models.
 * Slight edit to criterion used when `stopping="relative"`: now conforms to `mclust`.
 * Added `check.margin=FALSE` to calls to `sweep()`.
 * Added `call.=FALSE` to all `stop()` messages.

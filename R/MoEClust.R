@@ -17,7 +17,7 @@
 #' \item{Type: }{Package}
 #' \item{Package: }{MoEClust}
 #' \item{Version: }{1.1.0}
-#' \item{Date: }{2017-12-12 (this version), 2017-11-28 (original release)}
+#' \item{Date: }{2018-02-06 (this version), 2017-11-28 (original release)}
 #' \item{Licence: }{GPL (>=2)}
 #' }
 #'

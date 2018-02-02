@@ -52,7 +52,7 @@
 #' \item{\code{mean}}{The means of each component. If there is more than one component, this is a matrix whose \emph{k}-th column is the mean of the \emph{k}-th component of the mixture model.
 #'
 #' For models with expert network covariates, this is given by the posterior mean of the fitted values, otherwise the posterior mean of the response is reported. For models with expert network covariates, the \emph{observation-specific} means can be accessed by calling \code{predict} on each object in the list given by \code{expert}.}
-#' \item{\code{variance}}{A list of variance parameters of each component of the model. The components of this list depend on the model type specification. See the help file for \code{\link[mclust]{mclustVariance}} for details.}
+#' \item{\code{variance}}{A list of variance parameters of each component of the model. The components of this list depend on the model type specification. See the help file for \code{\link[mclust]{mclustVariance}} for details. Also see \code{\link{expert_covar}} for an alternative approach to summarising the variance parameters in the presence of expert covariates.}
 #' \item{\code{Vinv}}{The inverse of the hypervolume parameter for the noise component if required, otherwise set to \code{NULL} (see \code{\link{MoE_control}}).}
 #' }}
 #' \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component. If there is a noise component, its values are found in the \emph{last} column.}
@@ -68,7 +68,7 @@
 #' While model selection in terms of choosing the optimal number of components and the \pkg{mclust} model type is performed within \code{\link{MoE_clust}}, using one of the \code{criterion} options within \code{\link{MoE_control}}, choosing between multiple fits with different combinations of covariates or different initialisation settings can be done by supplying objects of class \code{"MoEClust"} to \code{\link{MoE_compare}}.
 #'
 #' Where \code{BIC}, \code{ICL}, \code{AIC}, \code{DF} and \code{iters} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL}, \code{AIC} and \code{DF} all inherit the class \code{"MoECriterion"}, for which a dedicated print function exists.
-#' @seealso \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
+#' @seealso \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}
 #' @export
 #' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 #'
@@ -368,7 +368,7 @@
 
     # Initialise Expert Network & Allocations
       z.tmp       <- unmap(if(g > 1) switch(init.z, hc=hcZ[,h - anyg0], kmeans=stats::kmeans(XI, g)$cluster, random=sample(Gseq, noisen, replace=TRUE), quantile=MoE_qclass(XI, g),
-                                            mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0, n, noisen)))
+                                            mclust=Mclust(XI, g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification) else rep(1, ifelse(noisen == 0 || g == 0, n, noisen)))
       if(exp.g)    {
         z.mat     <- z.alloc   <- matrix(0, nrow=n * g, ncol=g)
         muX       <- if(uni)      vector("numeric", g)  else matrix(0, nrow=d, ncol=g)
@@ -408,7 +408,7 @@
              }
              res               <- xN - pred
              res.G[[k]]        <- res
-             mahala[[k]]       <- MoE_mahala(exp, res)
+             mahala[[k]]       <- MoE_mahala(exp, res, squared=TRUE)
             }
           }
           if(!exp.init) {
@@ -496,7 +496,7 @@
       } else      {
         if(equal.pro && !noise.null) {
           t0      <- mean(z.init[,gN])
-          tau     <- c(rep((1 - t0)/G, G), t0)
+          tau     <- c(rep((1 - t0)/g, g), t0)
         } else    {
           tau     <- if(equal.pro) rep(1/gN, gN) else colMeans2(z.init)
         }
@@ -521,7 +521,7 @@
          ERR      <- inherits(Mstep, "try-error")        || attr(Mstep, "returnCode")  < 0
         }
         if(g > 0  && !ERR)      {
-          mus     <- if(exp.init) muX    else Mstep$parameters$mean
+          mus     <- if(exp.init) muX     else Mstep$parameters$mean
           vari    <- Mstep$parameters$variance
           sigs    <- vari$sigma
         } else mus             <- matrix(NA, nrow=n, ncol=0)
@@ -589,7 +589,7 @@
           } else  {
             if(equal.pro && !noise.null) {
               t0  <- mean(z[,gN])
-              tau <- c(rep((1 - t0)/G, G), t0)
+              tau <- c(rep((1 - t0)/g, g), t0)
             } else   if(!equal.pro)      {
               tau <- if(noise.null) Mstep$parameters$pro else colMeans2(z)
             }
@@ -788,14 +788,21 @@
     attr(DF.x, "modelNames")   <- colnames(BICs)
     if(G     == 0 || !noise.null) {
       hypvol      <- 1/Vinv
+      attr(hypvol, "Hypvol0")  <- hypvol
       attr(hypvol, "Meth")     <- noise.meth
+      attr(hypvol, "Meth0")    <- noise.meth
+      attr(hypvol, "g0only")   <- noise.null
       attr(BICs, "Vinv")       <-
       attr(ICLs, "Vinv")       <-
       attr(AICs, "Vinv")       <-
       attr(DF.x, "Vinv")       <- Vinv
     } else    {
-      Vinv        <- NULL
       hypvol      <- NA
+      if(any(range.G == 0))     {
+       attr(hypvol, "Hypvol0") <- 1/Vinv
+       attr(hypvol, "Meth0")   <- noise.meth
+      }
+      Vinv        <- NULL
     }
     attr(BICs, "control")      <-
     attr(ICLs, "control")      <-
@@ -1195,13 +1202,13 @@
 #' Takes one or more sets of MoEClust models fitted by \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC. It's possible to respect the internal ranking within each set of models, or to discard models within each set which were already deemed sub-optimal.
 #' @param ... One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single \emph{named} list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.
 #' @param criterion The criterion used to determine the ranking. Defaults to \code{"bic"}.
-#' @param pick The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied.
+#' @param pick The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied. Setting \code{pick=Inf} is a valid way to select all models.
 #' @param optimal.only Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}
 #' @param x An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.
 #' @param index A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.
 #' @param noise A logical which determines whether presence of a noise-component should be indicated by the method employed to estimate the hypervolume (defaults to \code{TRUE}) or, if \code{FALSE}, simply by \code{TRUE}. In the absence of a noise component, \code{FALSE} will be printed regardless. Only relevant if at least one of the models being compared has a noise component.
 #'
-#' If any of the compared models do have a noise component, this switch also controls whether the influence (or not) of gating covariates on the noise component's mixing proportion is indicated (either by \code{TRUE} or \code{FALSE} for models with a noise component, or else a blank entry for those without) if any of the models being compared has gating covariates.
+#' If any of the compared models do have a noise component, this switch also controls whether the influence (or not) of gating covariates on the noise component's mixing proportion is indicated (either by \code{TRUE} or \code{FALSE} for models with a noise component, or else a blank entry for those without), for the models among those being compared which have gating covariates.
 #'
 #' @note The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.
 #'
@@ -1291,9 +1298,11 @@
     gating        <- lapply(gate.x, attr, "Formula")
     noise.gate    <- sapply(gate.x, attr, "NoiseGate", logical(1L))
     expert        <- lapply(lapply(MoEs, "[[", "expert"), attr, "Formula")
-    hypvol        <- lapply(MoEs, "[[", "hypvol")
+    hypvol        <- hypvol0   <- lapply(MoEs, "[[", "hypvol")
     noise.meth    <- sapply(hypvol, attr, "Meth")
+    noise.g0only  <- sapply(hypvol, attr, "g0only")
     noise.null    <- vapply(noise.meth,   is.null,     logical(1L))
+    noise.onlyg0  <- vapply(noise.g0only, isTRUE,      logical(1L))
     noise.gate[noise.null]     <- NA
     noise.meth[noise.null]     <- FALSE
     hypvol        <- unlist(hypvol)
@@ -1360,10 +1369,16 @@
     }
     gating[gating == "~1" | G  == 1]   <- "None"
     expert[expert == "~1"]             <- "None"
-    comp          <- list(title = title, data = dat.name, optimal = best.model, pick = pick, MoENames = crit.names, modelNames = modelNames, G = G,
-                          df = round(unname(dfxs[max.names]), 2), bic = round(unname(bics[max.names]), 2), icl = round(unname(icls[max.names]), 2),
-                          aic = round(unname(aics[max.names]), 2), gating = gating, expert = expert, equalPro = G == 1 | unname(equalPro[crit.names]),
-                          hypvol = unname(hypvol[crit.names]), noise.meth = unname(noise.meth[crit.names]), noise.gate = unname(noise.gate[crit.names]))
+    if(any(G == 0)) {
+      noise.meth0 <- sapply(hypvol0, attr, "Meth0")
+      hypvol0     <- sapply(hypvol0, attr, "Hypvol0")
+    }
+    hypvol        <- ifelse(G  == 0, hypvol0[crit.names], ifelse(noise.onlyg0[crit.names], NA, hypvol[crit.names]))
+    noise.meth    <- ifelse(is.na(hypvol), "FALSE",       noise.meth0[crit.names])
+    noise.gate    <- ifelse(is.na(hypvol), NA,            noise.gate[crit.names])
+    comp          <- list(title = title, data = dat.name, optimal = best.model, pick = pick, MoENames = crit.names, modelNames = modelNames, G = G, df = round(unname(dfxs[max.names]), 2),
+                          bic = round(unname(bics[max.names]), 2), icl = round(unname(icls[max.names]), 2), aic = round(unname(aics[max.names]), 2), gating = gating, expert = expert,
+                          equalPro = G == 1 | unname(equalPro[crit.names]), hypvol = unname(hypvol), noise.meth = unname(noise.meth), noise.gate = unname(replace(noise.gate, gating == "None", NA)))
     class(comp)   <- c("MoECompare", "MoEClust")
     bic.tmp       <- sapply(BICs, as.vector)
     attr(comp, "NMods")  <- c(tried = sum(vapply(bic.tmp, function(x) length(x[!is.na(x)]),    numeric(1L))),
@@ -1382,15 +1397,19 @@
 #' @return An object of class \code{"Mclust"}. See \code{methods(class="Mclust")} for a list of functions which can be applied to this class.
 #' @details Of course, the user is always encouraged to use the dedicated \code{\link[=plot.MoEClust]{plot}} function for objects of the \code{"MoEClust"} class instead, but calling \code{plot} after converting via \code{\link{as.Mclust}} can be particularly useful for univariate mixtures.
 #'
+#' In the presence of expert network covariates, the component-specific covariance matrices are modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
+#'
 #' The \code{signif} argument is intended only to aid visualisation via \code{\link[mclust]{plot.Mclust}}, as plots therein can be sensitive to outliers, particularly with regard to axis limits. This is especially true when \code{resid} is \code{TRUE} in the presence of expert network covariates.
 #' @note Of the functions which can be applied to the result of the conversion, \code{\link[mclust]{logLik.Mclust}} shouldn't be trusted in the presence of either expert network covariates, or (for more models with more than 1 component) gating network covariates.
 #'
 #' Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
 #'
+#' Plots may be misleading in the presence of expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}.
+#'
 #' Also note that plots may be misleading for models of univariate data with more than 1 component, in the presence of expert covariates when \code{resid} is \code{TRUE} and the \code{what} argument is either \code{"classification"} or \code{"uncertainty"} within \code{\link[mclust]{plot.Mclust}}.
 #' @importFrom mclust "as.densityMclust.Mclust" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "summary.Mclust"
 #' @export
-#' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}
+#' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @references C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #' @keywords utility
@@ -1411,12 +1430,13 @@
 #' data(CO2data)
 #' res <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, network.data=CO2data)
 #' plot(as.Mclust(res))}
-  as.Mclust       <- function (x, resid = FALSE, signif = 0, ...) {
+  as.Mclust       <- function(x, resid = FALSE, signif = 0, ...) {
     UseMethod("as.Mclust")
   }
 
 #' @method as.Mclust MoEClust
 #' @importFrom matrixStats "colMeans2"
+#' @importFrom mclust "sigma2decomp"
 #' @export
   as.Mclust.MoEClust      <- function(x, resid = FALSE, signif = 0, ...) {
     if(length(resid)  > 1 ||
@@ -1425,12 +1445,14 @@
        signif < 0 || signif >= 1)                 stop("'signif' must be a single number in the interval [0, 1)", call.=FALSE)
     x             <- if(inherits(x, "MoECompare")) x$optimal else x
     gating        <- attr(x, "Gating")
-    resid         <- resid  && attr(x, "Expert")
+    expert        <- attr(x, "Expert")
+    resid         <- resid  && expert
     x$loglik      <- x$loglik[length(x$loglik)]
     x$BIC         <- replace(x$BIC, !is.finite(x$BIC), NA)
     class(x$BIC)  <- "mclustBIC"
     x$parameters$pro      <- if(gating) colMeans2(x$z)                            else x$parameters$pro
     x$parameters$mean[]   <- if(resid)  0                                         else x$parameters$mean
+    x$parameters$variance <- if(expert) expert_covar(x)                           else x$parameters$variance
     x$classification      <- if(resid)  unname(rep(x$classification, x$G))        else unname(x$classification)
     x$data                <- if(resid)  as.matrix(x$resid.data)                   else as.matrix(x$data)
     rownames(x$data)      <- if(resid)  seq_len(x$n * x$G)                        else rownames(x$data)
@@ -1444,6 +1466,54 @@
     names(x)      <- name.x
     class(x)      <- "Mclust"
       x
+  }
+
+#' Account for extra variability in covariance matrices with expert covariates
+#'
+#' In the presence of expert network covariates, this helper function modifies the component-specific covariance matrices of a \code{"MoEClust"} object, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses. The function also works for univariate response data.
+#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}.
+#'
+#' @details This function is used internally by \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}}, for visualisation purposes.
+#' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters.
+#' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
+#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @keywords utility
+#' @export
+#'
+#' @examples
+#' data(ais)
+#' res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
+#'                    network.data=ais, modelNames="EVE")
+#'
+#' # Extract the variance object
+#' res$parameters$variance
+#'
+#' # Modify the variance object
+#' expert_covar(res)
+  expert_covar    <- function(x) {
+    UseMethod("expert_covar")
+  }
+
+#' @method expert_covar MoEClust
+#' @importFrom mclust "sigma2decomp"
+#' @export
+  expert_covar.MoEClust   <- function(x) {
+    x             <- if(inherits(x, "MoECompare")) x$optimal else x
+    x.sig         <- x$parameters$variance
+    d             <- x$d
+    if(attr(x, "Expert"))  {
+      pred.var    <- unlist(lapply(x$expert, function(expert) stats::cov(as.matrix(stats::predict(expert)))))
+      if(d  == 1)  {
+        x.sig$sigmasq     <- unname(x.sig$sigmasq + pred.var)
+        if(x$modelName    == "V" || length(unique(x.sig$sigmasq)) > 1) {
+          x.sig$scale     <- x.sig$sigmasq
+        }
+      } else {
+        x.sig     <- sigma2decomp(x.sig$sigma + array(pred.var, dim=c(d, d, x$G)))[names(x.sig)]
+      }
+    } else                                        message("No expert covariates: returning the variance object without modification")
+      return(x.sig)
   }
 
 #' Quantile-Based Clustering for Univariate Data
@@ -1581,9 +1651,9 @@
 #' Computes the Mahalanobis distance between the fitted values and residuals of linear regression models with multivariate or univariate responses.
 #' @param fit A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.
 #' @param resids The residuals. Can be residuals for observations included in the model, or residuals arising from predictions on unseen data.
-#' @param squared A logical. By default, the squared generalized interpoint distance is computed. Set this flag to \code{FALSE} for the square root value.
+#' @param squared A logical. By default (\code{FALSE}), the generalized interpoint distance is computed. Set this flag to \code{TRUE} for the squared value.
 #'
-#' @return A vector giving the (squared) Mahalanobis distance between fitted values and residuals for each observation.
+#' @return A vector giving the Mahalanobis distance (or square Mahalanobis distance) between fitted values and residuals for each observation.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @importFrom matrixStats "rowSums2"
 #' @keywords utility
@@ -1595,7 +1665,7 @@
 #' mod  <- lm(hema ~ sex + BMI, data=ais)
 #' res  <- hema - predict(mod)
 #' MoE_mahala(mod, res)
-  MoE_mahala      <- function(fit, resids, squared = TRUE)    {
+  MoE_mahala      <- function(fit, resids, squared = FALSE)    {
     if(length(squared) > 1   ||
        !is.logical(squared))                      stop("'squared' must be a single logical indicator", call.=FALSE)
     if(inherits(fit, "mlm"))  {

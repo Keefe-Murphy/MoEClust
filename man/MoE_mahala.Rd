@@ -4,17 +4,17 @@
 \alias{MoE_mahala}
 \title{Mahalanobis Distance Outlier Detection for Multivariate Response}
 \usage{
-MoE_mahala(fit, resids, squared = TRUE)
+MoE_mahala(fit, resids, squared = FALSE)
 }
 \arguments{
 \item{fit}{A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.}
 
 \item{resids}{The residuals. Can be residuals for observations included in the model, or residuals arising from predictions on unseen data.}
 
-\item{squared}{A logical. By default, the squared generalized interpoint distance is computed. Set this flag to \code{FALSE} for the square root value.}
+\item{squared}{A logical. By default (\code{FALSE}), the generalized interpoint distance is computed. Set this flag to \code{TRUE} for the squared value.}
 }
 \value{
-A vector giving the (squared) Mahalanobis distance between fitted values and residuals for each observation.
+A vector giving the Mahalanobis distance (or square Mahalanobis distance) between fitted values and residuals for each observation.
 }
 \description{
 Computes the Mahalanobis distance between the fitted values and residuals of linear regression models with multivariate or univariate responses.

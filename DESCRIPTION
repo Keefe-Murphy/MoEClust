@@ -1,6 +1,6 @@
 Package: MoEClust
 Type: Package
-Date: 2017-12-12
+Date: 2018-02-06
 Title: Parsimonious Model-Based Clustering with Covariates
 Version: 1.1.0
 Authors@R: c(person("Keefe", "Murphy", email = "keefe.murphy@ucd.ie", role = c("aut", "cre")),

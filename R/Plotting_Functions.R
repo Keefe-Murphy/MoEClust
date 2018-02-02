@@ -12,7 +12,9 @@
 #' @param residuals Logical indicating whether to treat the data as the raw data (when \code{FALSE}, the default) or the augmented data comprising the residuals from the expert network (when \code{TRUE}). In the latter case, the mean and (co)variance parameters are taken to be the mean and (co)variance of the residuals. Only relevant if expert network covariates were supplied under \code{res}, otherwise coerced to \code{FALSE}.
 #' @param scatter.type A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, use the options \code{"lm2"} or \code{"ci2"}.
 #' @param conditional A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"barcode"} and \code{"violin"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).
-#' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. Ellipses are only ever drawn for multivariate data. Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables.
+#' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
+#'
+#' Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
 #' @param border.col A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, respponse vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 #'
 #' Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.
@@ -48,6 +50,7 @@
 #'
 #' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "colMeans2" "rowLogSumExps"
+#' @importFrom mclust "sigma2decomp"
 #' @importFrom vcd "strucplot"
 #'
 #' @return A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
@@ -64,10 +67,8 @@
 #' @examples
 #' \dontrun{
 #' data(ais)
-#' sex   <- ais$sex
-#' BMI   <- ais$BMI
-#'
-#' res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex, modelNames="EVE")
+#' res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
+#'                    network.data=ais, modelNames="EVE")
 #' MoE_gpairs(res)
 #'
 #' # Produce the same plot, but with a violin plot in the lower triangle.
@@ -206,6 +207,9 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   addEllipses  <- ifelse(G == 0,   "no",    addEllipses)
   drawEllipses <- addEllipses   != "no"
   colEllipses  <- addEllipses   != "yes" && drawEllipses
+  if(res$d  > 1) {
+    res$parameters$varianceX    <- if(isTRUE(drawEllipses)) suppressMessages(expert_covar(res)) else res$parameters$variance
+  }
   upr.gate <- grepl("2", scatter.type[1])
   low.gate <- grepl("2", scatter.type[2])
   upr.exp  <- ifelse(upr.gate, substr(scatter.type[1], 1, nchar(scatter.type[1]) - 1), scatter.type[1])
@@ -613,7 +617,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
   if(!missing(what) && !all(is.character(what)))      stop("'what' must be a character string", call.=FALSE)
   what        <- match.arg(what, several.ok=TRUE)
   if(interactive()  && length(what) > 1) {
-    title     <- "MoEClust Plots"
+    title     <- c("MoEClust Plots\n\n<Press 0 to exit>")
     what.tmp  <- c(gpairs="Generalised Pairs Plot", gating="Gating Network",
                    criterion="Model Selection Criteria", loglik="Log-Likelihood")
     choice    <- utils::menu(what.tmp, graphics=FALSE, title=title)
@@ -879,7 +883,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik"), 
   grid::grid.points(x, y, pch=scatter.pars$pch, size=if(all(is.na(uncertainty))) scatter.pars$size else uncertainty, gp=grid::gpar(col=scatter.pars$col))
   switch(type, ellipses= {
     mu    <- array(if(isTRUE(residuals)) 0 else res$parameters$mean[dimens,], c(2, G))
-    sigma <- array(res$parameters$variance$sigma[dimens, dimens,], c(2, 2, G))
+    sigma <- array(res$parameters$varianceX$sigma[dimens, dimens,], c(2, 2, G))
     for(g in seq_len(G)) .mvn2D_panel(mu=mu[,g], sigma=sigma[,,g], k=15, col=if(mvn.type == "inner") c("grey30", mvn.col[g], mvn.col[g]) else if(mvn.type == "outer") c(mvn.col[g], "grey30", "grey30") else if(mvn.type == "both") rep(mvn.col[g], 3))
   }, lm=   {
     for(g in seq_len(G)) {
