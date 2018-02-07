@@ -3,6 +3,14 @@ __MoEClust: Finite Gaussian Mixtures of Experts -__
 __Parsimonious Model-Based Clustering with Covariates__  
 =======================================================
 
+### New Features & Improvements
+* New plotting function `MoE_Uncertainty` added (callable within `plot.MoEClust`):  
+  visualises clustering uncertainty (with or without reference to true labels).
+
+### Bug Fixes & Miscellaneous Edits
+* Fixed point-size, transparency & plotting symbols when `response.type="uncertainty"`  
+  within `MoE_gpairs` to better conform to `mclust`: previously no transparency.
+
 ## MoEClust v1.1.0 - (_2<sup>nd</sup> release [minor update]: 2018-02-06_)
 ### New Features & Improvements
 * `MoE_control` gains the `noise.gate` argument (defaults to `TRUE`): when `FALSE`,  

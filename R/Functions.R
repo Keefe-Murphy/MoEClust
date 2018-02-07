@@ -1404,7 +1404,7 @@
 #'
 #' Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
 #'
-#' Plots may be misleading in the presence of expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}.
+#' Plots may be misleading in the presence of gating &/or expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}.
 #'
 #' Also note that plots may be misleading for models of univariate data with more than 1 component, in the presence of expert covariates when \code{resid} is \code{TRUE} and the \code{what} argument is either \code{"classification"} or \code{"uncertainty"} within \code{\link[mclust]{plot.Mclust}}.
 #' @importFrom mclust "as.densityMclust.Mclust" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "summary.Mclust"
