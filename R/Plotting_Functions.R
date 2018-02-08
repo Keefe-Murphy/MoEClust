@@ -5,15 +5,15 @@
 #' @param subset A list giving named arguments for producing only a subset of panels:
 #' \describe{
 #' \item{\code{show.map}}{Logical indicating whether to show panels involving the MAP classification (defaults to \code{TRUE}, unless there is only one component, in which case the MAP classification is never plotted.).}
-#' \item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all.}
-#' \item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all.}
+#' \item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the response variables.}
+#' \item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the covariates.}
 #' }
+#' The subsetting must include at least two variables, whether they be the MAP, a response variable, or a covariate, in order to be valid for plotting purposes.
 #' @param response.type The type of plot desired for the scatter plots comparing continuous response variables. Defaults to \code{"points"}.
 #'
 #' Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In so doing, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data).
 #'
 #' Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}). Caution is advised, until further updates, when interpreting \code{"density"} plots in the presence of covariates in either the gating or expert networks.
-#' @param residuals Logical indicating whether to treat the data as the raw data (when \code{FALSE}, the default) or the augmented data comprising the residuals from the expert network (when \code{TRUE}). In the latter case, the mean and (co)variance parameters are taken to be the mean and (co)variance of the residuals. Only relevant if expert network covariates were supplied under \code{res}, otherwise coerced to \code{FALSE}.
 #' @param scatter.type A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, use the options \code{"lm2"} or \code{"ci2"}.
 #' @param conditional A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"barcode"} and \code{"violin"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).
 #' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
@@ -54,7 +54,7 @@
 #'
 #' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "colMeans2" "rowLogSumExps"
-#' @importFrom mclust "sigma2decomp"
+#' @importFrom mclust "covw" "sigma2decomp"
 #' @importFrom vcd "strucplot"
 #'
 #' @return A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
@@ -87,7 +87,7 @@
 #' MoE_gpairs(res, response.type="density", show.labels=FALSE,
 #'            hist.color=c("black", "cyan", "hotpink", "chartreuse"),
 #'            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))}
-MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), residuals = FALSE, scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
+MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
                                 diagonal = c("on", "off"), outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
                                 gap = 0.05, buffer = 0.02, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
@@ -96,20 +96,22 @@ MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", 
 
 #' @method MoE_gpairs MoEClust
 #' @export
-MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), residuals = FALSE, scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
+MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
                                 diagonal = c("on", "off"), outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
                                 gap = 0.05, buffer = 0.02, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
 
   res   <- if(inherits(res, "MoECompare")) res$optimal else res
-  if(attr(res, "Expert") && (length(residuals) > 1 ||
-                             !is.logical(residuals))) stop("'residuals' must be a single logical indicator", call.=FALSE)
-  resid <- residuals     && attr(res, "Expert")
+  opar  <- suppressWarnings(graphics::par(no.readonly=TRUE))
+  opar$new          <- FALSE
+  on.exit(suppressWarnings(graphics::par(opar)))
+  suppressWarnings(graphics::par(pty="m"))
+  dat   <- res$data
+  net   <- res$net.covs
+  z     <- res$z
+  class <- res$classification
   G     <- res$G
   Gseq  <- seq_len(G)
-  dat   <- if(resid) res$resid.data else res$data
-  rownames(dat)     <- if(resid) seq_len(res$n  * G)  else rownames(dat)
-  net   <- res$net.covs
   both  <- attr(net, "Both")
   gate  <- setdiff(attr(net, "Gating"), both)
   expx  <- setdiff(attr(net, "Expert"), both)
@@ -121,24 +123,25 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     subset$data.ind <- seq_len(ncol(dat))
   } else if(length(subset$data.ind) < 1  ||
             !all(is.numeric(subset$data.ind)) ||
-    !all(subset$data.ind    %in% seq_len(ncol(dat)))) stop("Invalid 'subset$data.ind'", call.=FALSE)
+ !all(subset$data.ind %in% c(0, seq_len(ncol(dat))))) stop("Invalid 'subset$data.ind'", call.=FALSE)
   if(is.null(subset$cov.ind))  {
     subset$cov.ind <- seq_len(ncol(net))
   } else if(length(subset$cov.ind)  < 1  ||
             !all(is.numeric(subset$cov.ind))  ||
-    !all(subset$cov.ind     %in% seq_len(ncol(net)))) stop("Invalid 'subset$cov.ind'", call.=FALSE)
+ !all(subset$cov.ind  %in% c(0, seq_len(ncol(net))))) stop("Invalid 'subset$cov.ind'", call.=FALSE)
   subset$data.ind  <- sort(unique(subset$data.ind))
   subset$cov.ind   <- sort(unique(subset$cov.ind))
+  if((length(subset$cov.ind[subset$cov.ind     > 0]) +
+     length(subset$data.ind[subset$data.ind    > 0]) +
+  subset$show.map) <= 1)                              stop("Invalid subsetting", call.=FALSE)
   if((length(c(subset$data.ind,
      subset$cov.ind)) + subset$show.map) <= 1)        stop("Not enough columns to plot based on arguments supplied to 'subset'!", call.=FALSE)
   dat   <- dat[,subset$data.ind, drop=FALSE]
   net   <- net[,subset$cov.ind,  drop=FALSE]
   dcol  <- ncol(dat)  + subset$show.map
-  z     <- if(resid) do.call(rbind, replicate(G, list(res$z))) else res$z
-  class <- if(resid) stats::setNames(rep(res$classification, G), seq_len(nrow(dat))) else res$classification
   uni.c <- unique(class[class > 0])
   class <- factor(class)
-  x     <- if(ncol(net) == 0) as.data.frame(dat)      else cbind(dat, if(resid) do.call(rbind, replicate(G, net, simplify=FALSE)) else net)
+  x     <- if(ncol(net) == 0) as.data.frame(dat)      else cbind(dat, net)
   x     <- if(subset$show.map) cbind(MAP  = class, x) else x
   clust <- as.character(class)
   zc    <- function(x) length(unique(x)) <= 1
@@ -441,11 +444,11 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
         }
         if(!any(is.factor(x[,i]), is.factor(x[,j])))  {
           if(response.type == "density" && all(j <= dcol, i <= dcol)) {
-            .density_panel(cbind(x[,j], x[,i]), dimens=c(j - subset$show.map, i - subset$show.map), res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border, resid)
+            .density_panel(cbind(x[,j], x[,i]), dimens=c(j - subset$show.map, i - subset$show.map), res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border)
           } else {
             .scatter_panel(x=x[,j], y=x[,i], type=ifelse(j > dcol && i <= dcol, ifelse(upr.gate || (j %in% c(expx, both)), upr.exp, "points"), ifelse(j <= dcol && i <= dcol, ifelse(drawEllipses, "ellipses", "points"), ifelse(j <= dcol && (low.gate || (i %in% c(expx, both))), low.exp, "points"))),
                            scatter.pars=scatter.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, z=z, G=G, res=res, dimens=c(j - subset$show.map, i - subset$show.map), outer.rot=outer.rot, bg=bg, mvn.type=addEllipses, border=border,
-                           uncertainty=if(response.type == "uncertainty" && (i <= dcol && j <= dcol)) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$ecol else NULL, residuals=resid)
+                           uncertainty=if(response.type == "uncertainty" && (i <= dcol && j <= dcol)) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$ecol else NULL)
           }
         }
         if(all(is.factor(x[,i]),  is.factor(x[,j]))) {
@@ -488,13 +491,17 @@ MoE_plotGate  <- function(res, type = "l", xlab = "Observation", ylab = expressi
 #' @method MoE_plotGate MoEClust
 #' @export
 MoE_plotGate.MoEClust   <- function(res, type = "l", xlab = "Observation", ylab = expression(tau[g]), ylim = c(0, 1), col = NULL, ...) {
-  res         <- if(inherits(res, "MoECompare")) res$optimal        else res
-  Tau         <- .mat_byrow(res$parameters$pro, nrow=res$n, ncol=ncol(res$z))
-  G           <- res$G
-  cX          <- missing(col)
-  nX          <- is.na(res$hypvol)
-  col         <- if(cX)                                  seq_len(G) else col
-  col         <- if(cX  && !nX) c(rep(col, length.out=G), "grey65") else col
+  res        <- if(inherits(res, "MoECompare")) res$optimal        else res
+  oldpar     <- suppressWarnings(graphics::par(no.readonly=TRUE))
+  oldpar$new <- FALSE
+  on.exit(suppressWarnings(graphics::par(oldpar)))
+  suppressWarnings(graphics::par(pty="m"))
+  Tau        <- .mat_byrow(res$parameters$pro, nrow=res$n, ncol=ncol(res$z))
+  G          <- res$G
+  cX         <- missing(col)
+  nX         <- is.na(res$hypvol)
+  col        <- if(cX)                                  seq_len(G) else col
+  col        <- if(cX  && !nX) c(rep(col, length.out=G), "grey65") else col
     graphics::matplot(Tau, type=type, xlab=xlab, ylab=ylab, ylim=ylim, col=col, ...)
     invisible()
 }
@@ -526,10 +533,14 @@ MoE_plotCrit <- function(res, criterion = c("bic", "icl", "aic"), ...) {
 #' @method MoE_plotCrit MoEClust
 #' @export
 MoE_plotCrit.MoEClust   <- function(res, criterion = c("bic", "icl", "aic"), ...) {
+  res        <- if(inherits(res, "MoECompare")) res$optimal else res
+  oldpar     <- suppressWarnings(graphics::par(no.readonly=TRUE))
+  oldpar$new <- FALSE
+  on.exit(suppressWarnings(graphics::par(oldpar)))
+  suppressWarnings(graphics::par(pty="m"))
   if(!missing(criterion)      &&
      (length(criterion)  > 1  ||
       !is.character(criterion)))                      stop("'criterion' must be a single character string", call.=FALSE)
-  res        <- if(inherits(res, "MoECompare")) res$optimal else res
   criterion  <- match.arg(criterion)
   crit       <- switch(criterion, bic=res$BIC, icl=res$ICL, res$AIC)
   crit       <- replace(crit, !is.finite(crit), NA)
@@ -564,6 +575,10 @@ MoE_plotLogLik           <- function(res, type = "l", xlab = "Iteration", ylab =
 #' @export
 MoE_plotLogLik.MoEClust  <- function(res, type = "l", xlab = "Iteration", ylab = "Log-Likelihood", xaxt = "n", ...) {
   res        <- if(inherits(res, "MoECompare")) res$optimal else res
+  oldpar     <- suppressWarnings(graphics::par(no.readonly=TRUE))
+  oldpar$new <- FALSE
+  on.exit(suppressWarnings(graphics::par(oldpar)))
+  suppressWarnings(graphics::par(pty="m"))
   xll        <- res$loglik
   if(all(xll != cummax(xll)))                         warning("Log-likelihoods are not strictly increasing", call.=FALSE)
   graphics::plot(xll, type = ifelse(length(xll) == 1, "p", type), xlab = xlab, ylab = ylab, xaxt = xaxt)
@@ -580,15 +595,17 @@ MoE_plotLogLik.MoEClust  <- function(res, type = "l", xlab = "Iteration", ylab =
 #'
 #' Plots the clustering uncertainty for every observation from a fitted \code{"MoEClust"} model.
 #' @param res An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}.
-#' @param truth An optional argument giving the true classification of the data. When \code{truth} is supplied, misclassified observations are highlighted in a different colour, otherwise observations with uncertainty greater than \code{1/res$G} are given in a different colour.
+#' @param type The type of plot to be produced (defaults to \code{"barplot"}). The \code{"profile"} option instead displays uncertainties in increasing/decreasing order of magnitude (see \code{decreasing}).
+#' @param truth An optional argument giving the true classification of the data. When \code{truth} is supplied and \code{type="barplot"}, misclassified observations are highlighted in a different colour, otherwise observations with uncertainty greater than \code{1/res$G} are given in a different colour. When \code{truth} is supplied and \code{type="profile"}, the uncertainty of misclassified observations is marked by vertical lines on the plot.
+#' @param decreasing Logical indicating whether uncertainties should be ordered in decreasing order (defaults to \code{FALSE}). Only relevant when \code{type="profile"}.
 #' @param ... Catches unused arguments.
 #'
-#' @details The y-axis of this plot runs from \code{0} to \code{1 - 1/res$G}, with a horizontal line also drawn at \code{1/res$G}. Uncertainties greater than this value are given a different colour when \code{truth} is not supplied, otherwise misclassified observations are given a different colour.
+#' @details The y-axis of this plot runs from \code{0} to \code{1 - 1/res$G}, with a horizontal line also drawn at \code{1/res$G}. When \code{type="barplot"}, uncertainties greater than this value are given a different colour when \code{truth} is not supplied, otherwise misclassified observations are given a different colour.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @note \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotGate}} which accepts the default arguments, and also produces other types of plots.
 #'
 #' An alternative means of visualising clustering uncertainties (at least for multivariate data) is provided by the functions \code{MoE_gpairs} and \code{plot.MoEClust}, specifically when their argument \code{response.type} is given as \code{"uncertainty"}.
-#' @return A plot showing the clustering uncertainty of each observation.
+#' @return A plot showing the clustering uncertainty of each observation (sorted in increasing/decreasing order when \code{type="profile"}).
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}
 #' @export
 #'
@@ -597,37 +614,72 @@ MoE_plotLogLik.MoEClust  <- function(res, type = "l", xlab = "Iteration", ylab =
 #' @examples
 #' data(ais)
 #' res <- MoE_clust(ais[,3:7], gating= ~ sex, G=3, modelNames="EEE", network.data=ais)
+#'
+#' # Produce an uncertainty barplot
 #' MoE_Uncertainty(res)
+#'
+#' # Produce an uncertainty profile plot
+#' MoE_Uncertainty(res, type="profile")
 #'
 #' # Let's assume the true clusters correspond to sex
 #' MoE_Uncertainty(res, truth=ais$sex)
-MoE_Uncertainty          <- function(res, truth = NULL, ...) {
+#' MoE_Uncertainty(res, type="profile", truth=ais$sex)
+MoE_Uncertainty          <- function(res, type = c("barplot", "profile"), truth = NULL, decreasing = FALSE, ...) {
   UseMethod("MoE_Uncertainty")
 }
 
 #' @method MoE_Uncertainty MoEClust
 #' @importFrom mclust "classError" "mclust.options"
 #' @export
-MoE_Uncertainty.MoEClust <- function(res, truth = NULL, ...) {
+MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth = NULL, decreasing = FALSE, ...) {
   res        <- if(inherits(res, "MoECompare")) res$optimal else res
+  oldpar     <- suppressWarnings(graphics::par(no.readonly=TRUE))
+  oldpar$new <- FALSE
+  on.exit(suppressWarnings(graphics::par(oldpar)))
+  suppressWarnings(graphics::par(pty="m", mar=replace(graphics::par()$mar, 4, 3.1)))
+  if(!missing(type)      && (length(type) > 1     ||
+     !is.character(type)))                            stop("'type' must be a single character string", call.=FALSE)
+  if(length(decreasing)   > 1                     ||
+     !is.logical(decreasing))                         stop("'decreasing' must be a single logical indicator", call.=FALSE)
+  type       <- match.arg(type)
   n.obs      <- res$n
-  uncert     <- res$uncertainty
-  if(t.miss  <- !missing(truth)) {
+  ucert      <- res$uncertainty
+  if(tmiss   <- !missing(truth)) {
     if(all(!is.factor(truth), !is.numeric(truth)) ||
        n.obs != length(truth))                        stop(paste0("'truth' must be a numeric or factor vector of length N=",  n.obs), call.=FALSE)
-    missC    <- classError(res$classification, as.numeric(as.factor(truth)))$misclassified
+    mC       <- classError(res$classification, as.numeric(as.factor(truth)))$misclassified
   }
   G          <- res$G
   oneG       <- 1/G
   min1G      <- 1   - oneG
-  yax        <- unique(c(0, pretty(c(0, min1G))))
-  yax[length(yax)  == min1G]
+  yx         <- unique(c(0, pretty(c(0, min1G))))
+  yx[length(yx)  == min1G]
   cm         <- mclust.options("classPlotColors")
-  cu         <- if(t.miss) replace(rep(cm[1], n.obs), missC, cm[5]) else cm[1:2][(uncert >= oneG) + 1]
-  cu[uncert  == 0] <- NA
-  graphics::plot(uncert, type="h", ylim=range(yax), col=cu, yaxt="n", ylab="Uncertainty", xlab="Observation", lend=1)
-  graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3])
-  graphics::axis(2, at=yax, labels=replace(yax, length(yax), "1 - 1/G"), las=2, xpd=TRUE)
+  if(type    == "barplot") {
+    cu       <- if(tmiss) replace(rep(cm[1], n.obs), mC, cm[5]) else cm[1:2][(ucert >= oneG) + 1]
+    cu[ucert == 0] <- NA
+    graphics::plot(ucert, type="h", ylim=range(yx), col=cu, yaxt="n", ylab="Uncertainty", xlab="Observation", lend=1)
+    graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3])
+    graphics::axis(2, at=yx, labels=replace(yx, length(yx), "1 - 1/G"), las=2, xpd=TRUE)
+    graphics::axis(2, at=oneG, labels="1/G", las=2, xpd=TRUE, side=4, xpd=TRUE)
+  } else      {
+    ord      <- order(ucert, decreasing=decreasing)
+    ucord    <- ucert[ord]
+    graphics::plot(ucord, type="n", ylim=c(-max(ucert)/32, max(yx)), ylab="Uncertainty", xaxt="n", yaxt="n", xlab=paste0("Observations in order of ", ifelse(decreasing, "decreasing", "increasing"), " uncertainty"))
+    graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3])
+    graphics::axis(2, at=yx, labels=replace(yx, length(yx), "1 - 1/G"), las=2, xpd=TRUE)
+    graphics::axis(2, at=oneG, labels="1/G", las=2, xpd=TRUE, side=4, xpd=TRUE)
+    if(tmiss)  mcO <- which(ord %in% mC)
+    graphics::points(ucord, pch=15, cex=if(tmiss) replace(rep(0.5, n.obs), mcO, 0.75) else 0.5, col=if(tmiss) replace(rep(1, n.obs), mcO, cm[2]) else 1)
+    graphics::lines(ucord)
+    graphics::lines(x=c(0, n.obs), y=c(0, 0), lty=3)
+    if(tmiss) {
+      for(i in mC)  {
+        x    <- (seq_len(n.obs))[ord == i]
+        graphics::lines(c(x, x), c(-max(ucert)/32, ucert[i]), lty=1, lend=1)
+      }
+    }
+  }
 }
 
 #' Plot MoEClust Results
@@ -648,7 +700,7 @@ MoE_Uncertainty.MoEClust <- function(res, truth = NULL, ...) {
 #' @details For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}} and \code{\link{MoE_Uncertainty}} directly.
 #' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "colMeans2" "rowLogSumExps"
-#' @importFrom mclust "plot.mclustBIC" "plot.mclustICL"
+#' @importFrom mclust "covw" "plot.mclustBIC" "plot.mclustICL" "sigma2decomp"
 #' @importFrom vcd "strucplot"
 #' @note Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #'
@@ -671,6 +723,9 @@ MoE_Uncertainty.MoEClust <- function(res, truth = NULL, ...) {
 #'
 #' # Plot the log-likelihood
 #' plot(res, what="loglik")
+#'
+#' # Plot the uncertainty profile
+#' plot(res, what="uncertainty", type="profile")
 #'
 #' # Produce a generalised pairs plot
 #' plot(res, what="gpairs")
@@ -810,8 +865,9 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     stripplot.pars$col <- if(col.ind) unique(stripplot.pars$col)[match(levels(y), unique(y))][as.numeric(y)] else stripplot.pars$col
   }
   grid::grid.rect(gp=grid::gpar(fill=bg, col=border))
+  cont.range   <- range(cont.var, na.rm=TRUE)
   if(horiz) {
-    xlim       <- range(cont.var, na.rm=TRUE) + c(-buffer * (max(cont.var, na.rm=TRUE) - min(cont.var, na.rm=TRUE)), buffer * (max(cont.var, na.rm=TRUE) - min(cont.var, na.rm=TRUE)))
+    xlim       <- cont.range + c(-buffer * (diff(cont.range)), buffer * (diff(cont.range)))
     grid::pushViewport(grid::viewport(xscale=xlim, yscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5)))
     if(is.null(ypos)) cat.labels <- NULL
     .draw_axis(x=cont.var, y=cat.var, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=cat.labels, horiz=horiz, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
@@ -821,7 +877,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     if(type == "stripplot") panel.stripplot(cont.var, cat.var, horizontal=horiz, jitter.data=stripplot.pars$jitter, col=stripplot.pars$col, cex=stripplot.pars$size, pch=stripplot.pars$pch)
     if(type == "violin")    .violin_panel(cont.var, cat.var, horizontal=horiz, col=box.fill)
   } else {
-    ylim       <- range(cont.var, na.rm=TRUE) + c(-buffer * (max(cont.var, na.rm=TRUE) - min(cont.var, na.rm=TRUE)), buffer * (max(cont.var, na.rm=TRUE) - min(cont.var, na.rm=TRUE)))
+    ylim       <- cont.range + c(-buffer * (diff(cont.range)), buffer * (diff(cont.range)))
     grid::pushViewport(grid::viewport(yscale=ylim, xscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5)))
     if(is.null(xpos)) cat.labels <- NULL
     .draw_axis(x=cat.var, y=cont.var, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=cat.labels, horiz=horiz, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
@@ -867,14 +923,16 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 }
 
 #' @importFrom matrixStats "colMeans2" "rowLogSumExps"
-.density_panel <- function(dat, dimens, res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border, residuals) {
+.density_panel <- function(dat, dimens, res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border) {
   par          <- res$parameters
   G            <- res$G
-  mu           <- if(residuals) array(0, c(2, G)) else par$mean[dimens,, drop=FALSE]
-  sigma        <- array(dim=c(2, 2, G))
-  for(k in seq_len(G))  sigma[,,k] <- par$variance$sigma[dimens,dimens,k]
-  xlim         <- range(dat[,1], na.rm=TRUE) + c(-buffer * (max(dat[,1], na.rm=TRUE) - min(dat[,1], na.rm=TRUE)), buffer * (max(dat[,1], na.rm=TRUE) - min(dat[,1], na.rm=TRUE)))
-  ylim         <- range(dat[,2], na.rm=TRUE) + c(-buffer * (max(dat[,2], na.rm=TRUE) - min(dat[,2], na.rm=TRUE)), buffer * (max(dat[,2], na.rm=TRUE) - min(dat[,2], na.rm=TRUE)))
+  mu           <- par$mean[dimens,, drop=FALSE]
+  sigma        <- list(G=G, sigma=array(dim=c(2, 2, G)))
+  for(k in seq_len(G)) sigma$sigma[,,k] <- par$variance$sigma[dimens,dimens,k]
+  range1       <- range(dat[,1], na.rm=TRUE)
+  range2       <- range(dat[,2], na.rm=TRUE)
+  xlim         <- range1 + c(-buffer * (diff(range1)), buffer * (diff(range1)))
+  ylim         <- range2 + c(-buffer * (diff(range2)), buffer * (diff(range2)))
   lx           <- density.pars$grid.size[1]
   ly           <- density.pars$grid.size[2]
   x            <- .grid_1(n=lx, range=xlim, edge=TRUE)
@@ -896,7 +954,8 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 #' @importFrom lattice "panel.histogram"
 .diag_panel <- function(x, varname, diag.pars, hist.col, axis.pars, xpos, ypos, buffer, index, outer.rot) {
   x         <- x[!is.na(x)]
-  xlim      <- range(as.numeric(x), na.rm=TRUE) + c(-buffer * (max(as.numeric(x), na.rm=TRUE) - min(as.numeric(x), na.rm=TRUE)), buffer * (max(as.numeric(x), na.rm=TRUE) - min(as.numeric(x), na.rm=TRUE)))
+  drange    <- range(as.numeric(x), na.rm=TRUE)
+  xlim      <- drange + c(-buffer * (diff(drange)), buffer * (diff(drange)))
   ylim      <- xlim
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim))
   what      <- if(is.factor(x)) x else as.numeric(x)
@@ -940,9 +999,11 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 }
 
 #' @importFrom lattice "panel.abline"
-.scatter_panel <- function(x, y, type, scatter.pars, axis.pars, xpos, ypos, buffer, z, G, res, dimens, outer.rot, bg, uncertainty, mvn.col, mvn.type, border, residuals) {
-  xlim    <- range(x, na.rm=TRUE) + c(-buffer * (max(x, na.rm=TRUE) - min(x, na.rm=TRUE)), buffer * (max(x, na.rm=TRUE) - min(x, na.rm=TRUE)))
-  ylim    <- range(y, na.rm=TRUE) + c(-buffer * (max(y, na.rm=TRUE) - min(y, na.rm=TRUE)), buffer * (max(y, na.rm=TRUE) - min(y, na.rm=TRUE)))
+.scatter_panel <- function(x, y, type, scatter.pars, axis.pars, xpos, ypos, buffer, z, G, res, dimens, outer.rot, bg, uncertainty, mvn.col, mvn.type, border) {
+  xrange  <- range(x, na.rm=TRUE)
+  yrange  <- range(y, na.rm=TRUE)
+  xlim    <- xrange + c(-buffer * (diff(xrange)), buffer * (diff(xrange)))
+  ylim    <- yrange + c(-buffer * (diff(yrange)), buffer * (diff(yrange)))
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim))
   .draw_axis(x=x, y=y, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=NULL, horiz=NULL, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
   grid::popViewport(1)
@@ -951,7 +1012,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   uncert  <- !all(is.na(uncertainty))
   grid::grid.points(x, y, pch=scatter.pars$pch, size=scatter.pars$size, gp=grid::gpar(col=if(uncert) uncertainty$col else scatter.pars$col, cex=if(uncert) uncertainty$cex else 1))
   switch(type, ellipses= {
-    mu    <- array(if(isTRUE(residuals)) 0 else res$parameters$mean[dimens,], c(2, G))
+    mu    <- array(res$parameters$mean[dimens,], c(2, G))
     sigma <- array(res$parameters$varianceX$sigma[dimens, dimens,], c(2, 2, G))
     for(g in seq_len(G)) .mvn2D_panel(mu=mu[,g], sigma=sigma[,,g], k=15, col=if(mvn.type == "inner") c("grey30", mvn.col[g], mvn.col[g]) else if(mvn.type == "outer") c(mvn.col[g], "grey30", "grey30") else if(mvn.type == "both") rep(mvn.col[g], 3))
   }, lm=   {
@@ -1223,8 +1284,9 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   maxct         <- 0
   ux     <- unlist(x)
   if(is.null(xlim)) {
-    minx <- min(ux) - buffer * (max(ux) - min(ux))
-    maxx <- max(ux) + buffer * (max(ux) - min(ux))
+    drux <- diff(range(ux))
+    minx <- min(ux) - buffer * drux
+    maxx <- max(ux) + buffer * drux
   } else  {
     minx <- xlim[1]
     maxx <- xlim[2]

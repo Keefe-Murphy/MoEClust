@@ -48,6 +48,9 @@ plot(res, what="gating")
 # Plot the log-likelihood
 plot(res, what="loglik")
 
+# Plot the uncertainty profile
+plot(res, what="uncertainty", type="profile")
+
 # Produce a generalised pairs plot
 plot(res, what="gpairs")
 

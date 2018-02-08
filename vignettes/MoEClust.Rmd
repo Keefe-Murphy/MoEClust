@@ -146,6 +146,12 @@ Visualise the clustering uncertainty for the optimal model using a generalised p
 plot(mod, what="gpairs", response.type="uncertainty")
 ```
 
+Instead visualise the clustering uncertainty in the form of an ordered profile plot.
+
+```{r}
+plot(mod, what="uncertainty", type="profile")
+```
+
 Plot the BIC of the visited models.
 ```{r, eval=FALSE}
 plot(mod, what="criterion")

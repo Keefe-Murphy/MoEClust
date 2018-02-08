@@ -5,11 +5,18 @@ __Parsimonious Model-Based Clustering with Covariates__
 
 ### New Features & Improvements
 * New plotting function `MoE_Uncertainty` added (callable within `plot.MoEClust`):  
-  visualises clustering uncertainty (with or without reference to true labels).
+  visualises clustering uncertainty in the form of a barplot or an ordered profile plot,  
+  with or without reference to the true labels in both cases.
 
 ### Bug Fixes & Miscellaneous Edits
 * Fixed point-size, transparency & plotting symbols when `response.type="uncertainty"`  
   within `MoE_gpairs` to better conform to `mclust`: previously no transparency.
+* `subset` arg. to `MoE_gpairs` now allows `data.ind=0` or `cov.ind=0`, allowing plotting of  
+  response variables or plotting of the covariates to be suppressed entirely.
+* `sigs` arg. to `MoE_dens` and `MoE_estep` must now be a variance object,  
+   as per the `variance` object in the  parameters list from `MoE_clust` & `mclust` output.
+* `resid.data` now returned by `MoE_clust` as a list, to better conform to `MoE_dens`.
+* Removed redundant & erroneous `resid` & `residuals` args. to `as.Mclust` & `MoE_gpairs`.
 
 ## MoEClust v1.1.0 - (_2<sup>nd</sup> release [minor update]: 2018-02-06_)
 ### New Features & Improvements

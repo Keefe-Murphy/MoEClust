@@ -12,9 +12,9 @@ MoE_estep(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL,
 
 \item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (n) and columns correspond to variables (d). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of (multivariate) WLS residuals for each component.}
 
-\item{mus}{The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means. In the presence of expert network covariates, all values should be equal to zero.}
+\item{mus}{The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means. In the presence of expert network covariates, all values should be equal to \code{0}.}
 
-\item{sigs}{A list of length G of variance parameters of the model. The components of this list depend on the specification of \code{modelName}.}
+\item{sigs}{The \code{variance} component in the parameters list from the output to eg. \code{\link{MoE_clust}}. The components of this list depend on the specification of \code{modelName} (see \code{\link[mclust]{mclustVariance}} for details).}
 
 \item{log.tau}{If covariates enter the gating network, an n times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.}
 
@@ -38,7 +38,7 @@ data(ais)
 hema   <- ais[,3:7]
 model  <- MoE_clust(hema, G=3, gating= ~ BMI + sex, model="EEE", network.data=ais)
 Dens   <- MoE_dens(modelName=model$modelName, data=hema,
-                   mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
+                   mus=model$parameters$mean, sigs=model$parameters$variance,
                    log.tau=log(model$parameters$pro))
 
 # Construct the z matrix and compute the log-likelihood
@@ -52,12 +52,17 @@ round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
 
 # Call MoE_estep directly
 Estep2 <- MoE_estep(modelName=model$modelName, data=hema,
-                    mus=model$parameters$mean, sigs=model$parameters$variance$sigma,
+                    mus=model$parameters$mean, sigs=model$parameters$variance,
                     log.tau=log(model$parameters$pro))
 identical(Estep2$loglik, ll)                                          #TRUE
+
+# The same can be done for models with expert covariates
+m2     <- MoE_clust(hema, G=2, expert= ~ sex, model="EVE", network.data=ais)
+Estep3 <- MoE_estep(modelName=m2$modelName, data=m2$resid.data, mus=0,
+                    sigs=m2$parameters$variance, log.tau=log(m2$parameters$pro))
 }
 \seealso{
-\code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}, \code{\link[mclust]{mclustModelNames}}
+\code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

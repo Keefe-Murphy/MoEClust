@@ -7,7 +7,6 @@
 MoE_gpairs(res,
   response.type = c("points", "uncertainty", "density"),
   subset = list(...),
-  residuals = FALSE,
   scatter.type = c("lm", "points"),
   conditional = c("stripplot", "boxplot"),
   addEllipses = c("outer", "yes", "no", "inner", "both"),
@@ -40,11 +39,10 @@ Alternatively, the bivariate \code{"density"} contours can be displayed (see \co
 \item{subset}{A list giving named arguments for producing only a subset of panels:
 \describe{
 \item{\code{show.map}}{Logical indicating whether to show panels involving the MAP classification (defaults to \code{TRUE}, unless there is only one component, in which case the MAP classification is never plotted.).}
-\item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all.}
-\item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all.}
-}}
-
-\item{residuals}{Logical indicating whether to treat the data as the raw data (when \code{FALSE}, the default) or the augmented data comprising the residuals from the expert network (when \code{TRUE}). In the latter case, the mean and (co)variance parameters are taken to be the mean and (co)variance of the residuals. Only relevant if expert network covariates were supplied under \code{res}, otherwise coerced to \code{FALSE}.}
+\item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the response variables.}
+\item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the covariates.}
+}
+The subsetting must include at least two variables, whether they be the MAP, a response variable, or a covariate, in order to be valid for plotting purposes.}
 
 \item{scatter.type}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, use the options \code{"lm2"} or \code{"ci2"}.}
 
