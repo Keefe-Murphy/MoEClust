@@ -31,12 +31,12 @@ A list containing two elements:
 Softmax function to compute the responsibility matrix z and the log-likelihood for MoEClust models, with the aid of \code{\link{MoE_dens}}.
 }
 \note{
-This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities.
+This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities. Caution is advised using this function without explicitly naming the arguments.
 }
 \examples{
 data(ais)
 hema   <- ais[,3:7]
-model  <- MoE_clust(hema, G=3, gating= ~ BMI + sex, model="EEE", network.data=ais)
+model  <- MoE_clust(hema, G=3, gating= ~ BMI + sex, modelNames="EEE", network.data=ais)
 Dens   <- MoE_dens(modelName=model$modelName, data=hema,
                    mus=model$parameters$mean, sigs=model$parameters$variance,
                    log.tau=log(model$parameters$pro))
@@ -45,10 +45,9 @@ Dens   <- MoE_dens(modelName=model$modelName, data=hema,
 Estep  <- MoE_estep(Dens=Dens)
 (ll    <- Estep$loglik)
 
-# The z matrix will be close but not exactly the same as that from the model
-# as the EM algorithm finishes on an M-step, but the classification should be
+# Check that the z matrix & classification are the same as those from the model
 identical(max.col(Estep$z), as.integer(unname(model$classification))) #TRUE
-round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
+identical(Estep$z, model$z)                                           #TRUE
 
 # Call MoE_estep directly
 Estep2 <- MoE_estep(modelName=model$modelName, data=hema,
@@ -57,7 +56,7 @@ Estep2 <- MoE_estep(modelName=model$modelName, data=hema,
 identical(Estep2$loglik, ll)                                          #TRUE
 
 # The same can be done for models with expert covariates
-m2     <- MoE_clust(hema, G=2, expert= ~ sex, model="EVE", network.data=ais)
+m2     <- MoE_clust(hema, G=2, expert= ~ sex, modelNames="EVE", network.data=ais)
 Estep3 <- MoE_estep(modelName=m2$modelName, data=m2$resid.data, mus=0,
                     sigs=m2$parameters$variance, log.tau=log(m2$parameters$pro))
 }

@@ -23,7 +23,7 @@ MoE_dens(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL,
 \item{logarithm}{A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.}
 }
 \value{
-A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions.
+A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions. These densities are unnormalised.
 }
 \description{
 Computes densities (or log-densities) of observations in MoEClust mixture models.
@@ -34,7 +34,7 @@ This function is intended for joint use with \code{\link{MoE_estep}}, using the 
 \examples{
 data(ais)
 hema  <- ais[,3:7]
-model <- MoE_clust(hema, G=3, gating= ~ BMI + sex, model="EEE", network.data=ais)
+model <- MoE_clust(hema, G=3, gating= ~ BMI + sex, modelNames="EEE", network.data=ais)
 Dens  <- MoE_dens(modelName=model$modelName, data=hema,
                   mus=model$parameters$mean, sigs=model$parameters$variance,
                   log.tau=log(model$parameters$pro))
@@ -43,13 +43,12 @@ Dens  <- MoE_dens(modelName=model$modelName, data=hema,
 Estep <- MoE_estep(Dens=Dens)
 (ll   <- Estep$loglik)
 
-# The z matrix will be close but not exactly the same as that from the model
-# as the EM algorithm finishes on an M-step, but the classification should be
+# Check that the z matrix & classification are the same as those from the model
 identical(max.col(Estep$z), as.integer(unname(model$classification))) #TRUE
-round(sum(Estep$z - model$z), options()$digits) == 0                  #TRUE
+identical(Estep$z, model$z)                                           #TRUE
 
 # The same can be done for models with expert covariates
-m2    <- MoE_clust(hema, G=2, expert= ~ sex, model="EVE", network.data=ais)
+m2    <- MoE_clust(hema, G=2, expert= ~ sex, modelNames="EVE", network.data=ais)
 Dens2 <- MoE_dens(modelName=m2$modelName, data=m2$resid.data, mus=0,
                   sigs=m2$parameters$variance, log.tau=log(m2$parameters$pro))
 }
