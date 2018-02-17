@@ -15,7 +15,7 @@ drop_levels(fit, newdata)
 A \code{data.frame} like \code{newdata} with unseen factor levels replaced by \code{NA}.
 }
 \description{
-Drops unseen factor levels in \code{new.data} for which predictions are required from a \code{\link[stats]{lm}} model \code{fit}.
+Drops unseen factor levels in \code{newdata} for which predictions are required from a \code{\link[stats]{lm}} model \code{fit}.
 }
 \note{
 This function is untested for models other than \code{\link[stats]{lm}}.

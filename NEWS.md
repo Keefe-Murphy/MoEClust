@@ -3,7 +3,10 @@ __MoEClust: Finite Gaussian Mixtures of Experts -__
 __Parsimonious Model-Based Clustering with Covariates__  
 =======================================================
 
+## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-02-07_)
 ### New Features & Improvements
+* New `predict.MoEClust` function added: predicts the response, cluster membership probability  
+  & MAP classification, using only new covariates or new covariates & new response data.
 * New plotting function `MoE_Uncertainty` added (callable within `plot.MoEClust`):  
   visualises clustering uncertainty in the form of a barplot or an ordered profile plot,  
   with or without reference to the true labels in both cases.
@@ -20,7 +23,10 @@ __Parsimonious Model-Based Clustering with Covariates__
 * `resid.data` now returned by `MoE_clust` as a list, to better conform to `MoE_dens`.
 * Removed redundant extra M-step after convergence for models without expert covariates.
 * Removed redundant & erroneous `resid` & `residuals` args. to `as.Mclust` & `MoE_gpairs`.
+* Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
+* Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.
+* Added extra precautions for empty clusters at initialisation.
 
 ## MoEClust v1.1.0 - (_2<sup>nd</sup> release [minor update]: 2018-02-06_)
 ### New Features & Improvements

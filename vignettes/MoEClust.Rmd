@@ -121,6 +121,26 @@ plot(mod, what="classification")
 plot(mod, what="uncertainty")
 ```
 
+Predictions can also be made from `MoEClust` models: the response, probability of cluster membership, and the MAP classification can be predicted for the fitted data or for new data (in the form of new covarariates and new response variables, or new covariates only). Let's predict the MAP classification for the optimal model fit above to the CO2 data.
+
+```{r}
+predict(comp$optimal)$classification
+```
+
+Now let's build a model on some of the CO2 data and retain the indices of the withheld observations:
+```{r, results="hide"}
+ind     <- sample(1:nrow(CO2data), 2)
+res2    <- MoE_clust(CO2data[-ind,]$CO2, G=2, expert=~GNP, network.data=CO2data[-ind,])
+```
+
+Now we can make predictions on the withheld data, either by using the withheld covariates only, or by also using the withheld response variables. Note that `newdata` can be either a list with component(s) `new.x` (and optionally `new.y`) or a single matrix/data.frame with the appropriate columns.
+
+```{r}
+predict(res2, newdata= list(new.x=CO2data[ind,"GNP", drop=FALSE])) # Using new covariates only
+
+predict(res2, newdata = CO2data[ind,])         # Using both new covariates & new response data
+```
+
 ## AIS Data
 Load the Australian Institute of Sports data.
 

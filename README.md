@@ -8,6 +8,8 @@
 ## with Gating and Expert Network Covariates
 ### Written by Keefe Murphy
 
+## Description
+
 Fits _MoEClust_ models introduced by Murphy and Murphy (2017) <[arXiv:1711.05632](https://arxiv.org/abs/1711.05632)>, i.e. fits finite Gaussian mixture of experts models with gating and expert network covariates using parsimonious covariance parameterisations from __mclust__ via the EM algorithm. Also visualises mixture of experts models with parsimonious covariance structures using generalised pairs plots.
 
 The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `MoE_aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
@@ -18,7 +20,15 @@ An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` fro
 
 The package also contains two data sets: `ais` and `CO2data`.
 
-To install the development version of the package type:
+## Installation
+
+You can install the latest stable official release of the `MoEClust` package from CRAN:
+
+```
+install.packages("MoEClust")
+```
+
+or the development version from GitHub:
 
 ```
 # If required install devtools:  
@@ -26,9 +36,26 @@ To install the development version of the package type:
 devtools::install_github('Keefe-Murphy/MoEClust')
 ```
 
-You can then explore the package with:
+In either case, you can then explore the package with:
 
 ```
 library(MoEClust)  
 help(MoE_clust) # Help on the main modelling function
 ```
+
+For a more thorough intro, the vignette document is available as follows:
+
+```
+vignette("MoEClust", package="MoEClust")
+```
+
+However, if the package is installed from GitHub the vignette is not automatically created. It can be accessed when installing from GitHub with the code:
+
+```
+devtools::install_github('Keefe-Murphy/MoEClust', build_vignettes = TRUE)
+```
+
+Alternatively, the vignette is available on the package's CRAN page.
+
+### References
+K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. _To appear_. <[arXiv:1711.05632](https://arxiv.org/abs/1711.05632)>

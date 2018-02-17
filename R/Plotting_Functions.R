@@ -293,8 +293,9 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   } else if(length(density.pars$dcol) > 1   ||
             !is.character(density.pars$dcol))         stop("Invalid 'density.pars$dcol", call.=FALSE)
   if(is.null(density.pars$nlevels))  {
-    density.pars$nlevels     <- 11
-  } else if(length(density.pars$nlevels) > 1 || !is.numeric(density.pars$nlevels) ||
+    density.pars$nlevels <- 11
+  } else if(length(density.pars$nlevels) > 1     ||
+            !is.numeric(density.pars$nlevels)    ||
             density.pars$nlevels            <= 1)     stop("Invalid 'density.pars$nlevels'", call.=FALSE)
   if(is.null(density.pars$show.labels))  {
     density.pars$show.labels <- TRUE
