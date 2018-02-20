@@ -5,13 +5,15 @@ __Parsimonious Model-Based Clustering with Covariates__
 
 ## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-02-07_)
 ### New Features & Improvements
-* New `predict.MoEClust` function added: predicts the response, cluster membership probability  
-  & MAP classification, using only new covariates or new covariates & new response data.
+* New `predict.MoEClust` function added: predicts cluster membership probability,  
+  MAP classification, and fitted response, using only new covariates or new covariates &  
+  new response data with noise components (and the `noise.gate` option) accounted for.
 * New plotting function `MoE_Uncertainty` added (callable within `plot.MoEClust`):  
   visualises clustering uncertainty in the form of a barplot or an ordered profile plot,  
   with or without reference to the true labels in both cases.
 * Added `drop.break` arg. to `MoE_control` for further control over the extra initialisation  
   step invoked in the presence of expert covariates (see Documentation for details).
+* Sped-up `MoE_dens` for the `EEE` & `VVV` models by using already available Cholesky factors.
 
 ### Bug Fixes & Miscellaneous Edits
 * Fixed point-size, transparency & plotting symbols when `response.type="uncertainty"`  
@@ -23,6 +25,7 @@ __Parsimonious Model-Based Clustering with Covariates__
 * `resid.data` now returned by `MoE_clust` as a list, to better conform to `MoE_dens`.
 * Removed redundant extra M-step after convergence for models without expert covariates.
 * Removed redundant & erroneous `resid` & `residuals` args. to `as.Mclust` & `MoE_gpairs`.
+* `MoE_plotCrit`, `MoE_plotGate` & `MoE_plotLogLik` now invisibly return revelant quantities.
 * Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.

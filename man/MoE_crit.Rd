@@ -34,6 +34,8 @@ Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Like
 The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.
 
 If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
+
+Models with a noise component are facilitated here too provided the extra number of parameters are accounted for by the user.
 }
 \note{
 In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.

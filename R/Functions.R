@@ -472,9 +472,7 @@
         }
         G.res     <- if(uni) as.matrix(do.call(base::c, res.G)) else do.call(rbind, res.G)
       }
-      if(expold   != exp.init)  {                 warning(paste0("Extra initialisation step with expert covariates failed for G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ", even with 'drop_constants' and 'drop_levels' invoked\n try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
-        eNO       <- TRUE
-      } else eNO  <- FALSE
+      if(eNO      <- expold    != exp.init)       warning(paste0("Extra initialisation step with expert covariates failed for G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ", even with 'drop_constants' and 'drop_levels' invoked:\n Try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
 
       # Account for Noise Component
       z.tmp       <- 0 + z.tmp
@@ -530,6 +528,7 @@
         gate.pen  <- ifelse(equal.pro, noiseG, gN - 1) + ifelse(noiseG, 1, 0)
       }
       ltau.init   <- ltau
+      failedM     <- NULL
 
     # Loop over the mclust model type(s)
       for(modtype in if(g > 1)    mfg     else if(g == 1) mf1 else mf0)  {
@@ -542,7 +541,9 @@
          Mstep    <- try(mstep(modtype, G.res, z.alloc, control=control), silent=TRUE)
          exp.init <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
         }
-        if(expold != exp.init  && !eNO)           warning(paste0("Extra initialisation step with expert covariates failed for the ", modtype, " model", ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ", even with 'drop_constants' and 'drop_levels' invoked\n try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
+        if(expold != exp.init  && !eNO) {
+          failedM <- c(failedM, modtype)
+        }
         if(g > 0  && !exp.init) {
          Mstep    <- try(mstep(modtype, X, if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control), silent=TRUE)
          ERR      <- inherits(Mstep, "try-error")        || attr(Mstep, "returnCode")  < 0
@@ -696,6 +697,7 @@
         DF.x[h,modtype]        <- ifelse(ERR, -Inf, x.df)
         it.x[h,modtype]        <- ifelse(ERR,  Inf, j2)
       } # for (modtype)
+      if((faillen <- length(failedM)) > 1)        warning(paste0("Extra initialisation step with expert covariates failed for the ", paste(shQuote(failedM), collapse=", "), " model", ifelse(faillen == 1, "", "s"), ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ", even with 'drop_constants' and 'drop_levels' invoked:\n Try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
 
     # Pull out mclust model corresponding to highest BIC/ICL/AIC
       if(crit.tx   > crit.gx)   {
@@ -897,7 +899,7 @@
 #' @param Vinv An estimate of the reciprocal hypervolume of the data region. The default is determined by applying the function \code{\link[mclust]{hypvol}} to the data. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.
 #' @param logarithm A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.
 #'
-#' @note This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities.
+#' @note This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities. Note that models with a noise component are facilitated here too.
 #' @importFrom mclust "mclustModelNames" "mclustVariance"
 #' @importFrom mvnfast "dmvn"
 #' @return A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions. These densities are unnormalised.
@@ -928,14 +930,9 @@
 #' Dens2 <- MoE_dens(modelName=m2$modelName, data=m2$resid.data, mus=0,
 #'                   sigs=m2$parameters$variance, log.tau=log(m2$parameters$pro))
   MoE_dens        <- function(modelName, data, mus, sigs, log.tau = 0, Vinv = NULL, logarithm = TRUE) {
+    ltau.miss     <- missing(log.tau)
     if(any(log.tau > 0))                          stop("'log.tau' cannot be greater than 0: mixing proportions must be supplied on the log scale", call.=FALSE)
     G             <- sigs$G
-    d             <- sigs$d
-    Gseq          <- seq_len(G)
-    mu.tmp        <- matrix(0, nrow=sigs$d, ncol=G)
-    mu.tmp[]      <- mus
-    mus           <- mu.tmp
-    sigs          <- sigs$sigma
     Vnul          <- is.null(Vinv)
     Ldat          <- inherits(data, "list")
     if(!Ldat      || (Ldat &&
@@ -944,30 +941,42 @@
     } else data   <- lapply(data, as.matrix)
     dat1          <- data[[1]]
     n             <- ifelse(is.matrix(dat1),   nrow(dat1),      length(dat1))
-    sq_mat        <- if(d  <= 50)      sqrt    else function(x) diag(sqrt(diag(x)))
     if(G > 0) {
-      switch(EXPR=modelName, EVE=, VEE=, VVE=, EEV=, VEV=, EVV=, VVV = {
-        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigs[,,k],         log=TRUE, isChol=FALSE), numeric(n)), silent=TRUE))
-      }, VII=, VEI=, EVI=, VVI = {
-        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sq_mat(sigs[,,k]), log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
-      }, EII=, EEI = {
-        sigx      <- sq_mat(sigs[,,1]);
-        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
+      d           <- sigs$d
+      mu.tmp      <- matrix(0, nrow=d, ncol=G)
+      mu.tmp[]    <- mus
+      mus         <- mu.tmp
+      Gseq        <- seq_len(G)
+      sigmas      <- switch(EXPR=modelName, E=, V=, EII=, VII=sqrt(sigs$sigmasq), sigs$sigma)
+      sq_mat      <- if(d <= 50) sqrt else .sq_mat
+      switch(EXPR=modelName, EEV=, EVE=, EVV=, VEE=, VEV=, VVE= {
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigmas[,,k],                         log=TRUE, isChol=FALSE), numeric(n)), silent=TRUE))
+      }, EVI=, VEI=, VVI =  {
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sq_mat(sigmas[,,k]),                 log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
       }, EEE= {
-        sigx      <- .chol(sigs[,,1]) ;
-        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,              log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
+         sigx     <- force_posiDiag(sigs$cholSigma);
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,                                log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
+      }, EEI= {
+        sigx      <- sq_mat(sigs$Sigma);
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,                                log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
+      }, EII= {
+        sigx      <- .mat_sq(sigmas, d);
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], sigx,                                log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
+      }, VII= {
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], .mat_sq(sigmas[k], d),               log=TRUE, isChol=TRUE),  numeric(n)), silent=TRUE))
+      }, VVV= {
+        idens     <- utils::capture.output(densi <- try(vapply(Gseq, function(k) dmvn(data[[k]], mus[,k], force_posiDiag(sigs$cholsigma[,,k]), log=TRUE, isChol=TRUE), numeric(n)), silent=TRUE))
       }, E=   {
-        densi     <- vapply(Gseq, function(k)       stats::dnorm(data[[k]], mus[k], sqrt(sigs), log=TRUE), numeric(n))
+        densi     <- vapply(Gseq, function(k)       stats::dnorm(data[[k]], mus[k], sigmas,    log=TRUE), numeric(n))
       }, V=   {
-        sigx      <- sqrt(sigs);
-        densi     <- vapply(Gseq, function(k)       stats::dnorm(data[[k]], mus[k], sigx[k],    log=TRUE), numeric(n))
+        densi     <- vapply(Gseq, function(k)       stats::dnorm(data[[k]], mus[k], sigmas[k], log=TRUE), numeric(n))
       } )
       test        <- is.infinite(densi) & densi   > 0
       densi[test] <- 0
     }
     densi         <- if(Vnul) densi else if(G     > 0) cbind(densi, log(Vinv)) else matrix(log(Vinv), nrow=n, ncol=G + !Vnul)
-    densi         <- densi  + if(is.matrix(log.tau) || missing(log.tau))                              log.tau else
-                              if(length(log.tau)    == G + !Vnul) .mat_byrow(log.tau, nrow=n, ncol=G + !Vnul) else stop(paste0("'log.tau' must be given for every component", ifelse(Vnul, "", ", incl. the noise component if 'Vinv' is supplied")), call.=FALSE)
+    densi         <- densi  + if(ltau.miss       || is.matrix(log.tau))                            log.tau else
+                              if(length(log.tau) == G + !Vnul) .mat_byrow(log.tau, nrow=n, ncol=G + !Vnul) else stop(paste0("'log.tau' must be given for every component", ifelse(Vnul, "", ", incl. the noise component if 'Vinv' is supplied")), call.=FALSE)
       if(logarithm)  densi    else exp(densi)
   }
 
@@ -984,7 +993,7 @@
 #' @importFrom matrixStats "rowLogSumExps"
 #' @importFrom mclust "mclustModelNames" "mclustVariance"
 #' @export
-#' @note This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities. Caution is advised using this function without explicitly naming the arguments.
+#' @note This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities. Caution is advised using this function without explicitly naming the arguments. Models with a noise component are facilitated here too.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @keywords clustering
 #' @seealso \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link[matrixStats]{rowLogSumExps}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
@@ -1041,6 +1050,8 @@
 #' @details The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.
 #'
 #' If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
+#'
+#' Models with a noise component are facilitated here too provided the extra number of parameters are accounted for by the user.
 #' @importFrom matrixStats "rowMaxs"
 #' @importFrom mclust "mclustModelNames" "nVarParams"
 #' @return A simplified array containing the BIC, AIC, number of estimated parameters (\code{df}) and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
@@ -1440,28 +1451,32 @@
 
 #' Predictions for MoEClust models
 #'
-#' Predicts both cluster membership probability and response values from a \code{MoEClust} model, using covariates and response data, or covariates only. The MAP classification is also reported in both cases.
-#' @param object An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}.
+#' Predicts both cluster membership probability and fitted response values from a \code{MoEClust} model, using covariates and response data, or covariates only. The MAP classification is also reported in both cases.
+#' @param object An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Predictions for models with a noise component are facilitated here too.
 #' @param newdata A list with two \emph{named} components, each of which must be a \code{data.frame} or \code{matrix} with named columns, giving the data for which predicitions are desired.
 #' \describe{
-#' \item{new.x}{The new covariates for the \code{gating} &/or \code{expert} networks. \strong{Must} be supplied when \code{newdata$new.y} is supplied.}
-#' \item{new.y}{(Optional) response data. When supplied, cluster and response prediction is based on both \code{newdata$new.x} and \code{newdata$new.y}, otherwise only on the covariates in \code{newdata$new.x}.}
+#' \item{\code{new.x}}{The new covariates for the \code{gating} &/or \code{expert} networks. \strong{Must} be supplied when \code{newdata$new.y} is supplied.}
+#' \item{\code{new.y}}{(Optional) response data. When supplied, cluster and response prediction is based on both \code{newdata$new.x} and \code{newdata$new.y}, otherwise only on the covariates in \code{newdata$new.x}.}
 #' }
 #' If supplied as a list with elements \code{new.x} and \code{new.y}, both \strong{must} have the same number of rows.
 #'
-#' Alternatively, a single \code{data.frame} or \code{matrix} can be supplied and an attempt will be made to extract & separate covariate and response columns (\emph{if any}) into \code{newdata$new.x} and \code{newdata$new.y} based on the variable names in \code{object$data} and \code{object$net.covs}. When \code{newdata} is not supplied in any way, the covariates and response variables used in the fitting of the model are used here.
+#' Alternatively, a single \code{data.frame} or \code{matrix} can be supplied and an attempt will be made to extract & separate covariate and response columns (\emph{if any}) into \code{newdata$new.x} and \code{newdata$new.y} based on the variable names in \code{object$data} and \code{object$net.covs}.
+#'
+#' When \code{newdata} is not supplied in any way, the covariates and response variables used in the fitting of the model are used here.
 #' @param ... Catches unused arguments.
 #'
 #' @return A list with the following components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
-#' \item{\code{y}}{Predicted values of the response variables.}
+#' \item{\code{y}}{Fitted values of the response variables.}
 #' \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belonds to the \emph{k}-th component..}
 #' \item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}.}
 #'
+#' @note Predictions can also be made for models with noise components, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). Note that calculating \code{ystar} for models with a noise component involves renormalising the rows of \code{zstar} such that non-noise columns sum to 1, but the \emph{unnormalised} \code{zstar} is what's reported.
 #' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @seealso \code{\link{MoE_clust}}
 #' @method predict MoEClust
 #' @keywords clustering main
+#' @importFrom matrixStats "rowSums2"
 #' @export
 #'
 #' @examples
@@ -1496,6 +1511,7 @@ predict.MoEClust  <- function(object, newdata = list(...), ...) {
   net             <- object$net.covs
   dat             <- object$data
   datnames        <- colnames(dat)
+  noise           <- !is.na(object$hypvol)
   yM              <- FALSE
   if(nmiss        <- ifelse(inherits(newdata,
                                      "list")    &&
@@ -1559,12 +1575,21 @@ predict.MoEClust  <- function(object, newdata = list(...), ...) {
   G               <- object$G
   Gseq            <- seq_len(G)
   params          <- object$parameters
-  if(G  ==  0 ||     !is.null(params$Vinv))       stop("Prediction not yet implemented for models with a noise-component")
-  new.tau         <- matrix(stats::predict(object$gating, type="probs", newdata=newgate), ncol=G)
+  if(G == 0)   {
+    return(list(classification=rep(0, nr),
+                zstar=provideDimnames(matrix(1, nrow=nr, ncol=1), base=list(as.character(nrseq), "Cluster0"))))
+  }
   pred.exp        <- lapply(object$expert, stats::predict, newdata=newexpx)
   if(nmiss)    {
     zstar         <- object$z
   } else       {
+    GN            <- G + noise
+    if(noise      && attr(object, "NoiseGate"))  {
+      new.tau     <- matrix(stats::predict(object$gating, type=ifelse(GN > 1, "probs", "response"), newdata=newgate), ncol=GN)
+    } else     {
+      new.tau     <- matrix(stats::predict(object$gating, type=ifelse(G  > 1, "probs", "response"), newdata=newgate), ncol=G)
+      new.tau     <- if(noise) .tau_noise(new.tau, if(attr(object, "Gating")) params$pro[1,GN] else params$pro[GN]) else new.tau
+    }
     if(!yM)    {
       newdata.y   <- as.data.frame(newdata.y)
       y.names     <- names(newdata.y)
@@ -1594,21 +1619,24 @@ predict.MoEClust  <- function(object, newdata = list(...), ...) {
       Xexp        <- attr(object, "Expert")
       newdata.y   <- if(Xexp) lapply(pred.exp, "-", newdata.y) else newdata.y
       mus         <- if(Xexp) 0                                else params$mean
-      zstar       <- MoE_estep(Dens=MoE_dens(modelName=object$modelName, data=newdata.y, mus=mus, sigs=params$variance, log.tau=log(new.tau)))$z
+      zstar       <- MoE_estep(Dens=MoE_dens(modelName=object$modelName, data=newdata.y, mus=mus, sigs=params$variance, log.tau=log(new.tau), Vinv=params$Vinv))$z
     }
   }
-  ystar           <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar[,g] * pred.exp[[g]])))
+  zstar2          <- if(!nmiss && !yM && noise) (function(zu) sweep(zu, 1, FUN="/", rowSums2(zu)))(zstar[,-GN, drop=FALSE]) else zstar
+  ystar           <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar2[,g] * pred.exp[[g]])))
+  claX            <- stats::setNames(max.col(zstar), nrseq)
+  claX[claX   == G + 1]  <- 0
   rownames(ystar) <- nrseq
   colnames(ystar) <- datnames
   gnames          <- paste0("Cluster", Gseq)
-  colnames(zstar) <- gnames
-    return(list(y=ystar, classification=max.col(zstar), z=zstar))
+  colnames(zstar) <- if(noise) c(gnames, "Cluster0") else gnames
+    return(list(y=ystar, classification=claX, z=zstar))
 }
 
 #' Convert MoEClust objects to the Mclust class
 #'
 #' Converts an object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} and converts it to an object of class \code{"Mclust"} as generated by fitting \code{\link[mclust]{Mclust}}, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package.
-#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}.
+#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Models with a noise component are facilitated here too.
 #' @param signif Significance level for outlier removal. Must be a single number in the interval [0, 1). Corresponds to the percentage of data to be considered extreme and therefore removed (half of \code{signif} at each endpoint, on a column-wise basis). The default, \code{0}, corresponds to no outlier removal. \strong{Only} invoke this argument as an aid to visualisation via \code{\link[mclust]{plot.Mclust}}.
 #' @param ... Further arguments to be passed to other methods.
 #'
@@ -1683,7 +1711,7 @@ predict.MoEClust  <- function(object, newdata = list(...), ...) {
 #' Account for extra variability in covariance matrices with expert covariates
 #'
 #' In the presence of expert network covariates, this helper function modifies the component-specific covariance matrices of a \code{"MoEClust"} object, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses. The function also works for univariate response data.
-#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}.
+#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Models with a noise component are facilitated here too.
 #'
 #' @details This function is used internally by \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}}, for visualisation purposes.
 #' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters.
@@ -1727,6 +1755,32 @@ predict.MoEClust  <- function(object, newdata = list(...), ...) {
       }
     } else                                        message("No expert covariates: returning the variance object without modification")
       return(x.sig)
+  }
+
+#' Force diagonal elements of a triangular matrix to be positive
+#'
+#' This function ensures that the triangular matrix in a QR (or other) decomposition has positive values along its diagonal.
+#' @param x A matrix, which must be either upper-triangular or lower-triangular.
+#'
+#' @return An upper or lower triangular matrix with positive diagonal entries such that the matrix is still a valid decomposition of the matrix the input \code{x} is a decomposition of.
+#' @export
+#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @keywords utility
+#'
+#' @examples
+#' data(ais)
+#' res <- MoE_clust(ais[,3:7], G=3, modelNames="EEE")
+#' sig <- res$parameters$variance
+#' a   <- force_posiDiag(sig$cholSigma)
+#' b   <- chol(sig$Sigma)
+#' round(sum(a - b), 10) == 0          #TRUE
+#' sum(crossprod(a) != sig$Sigma) == 0 #TRUE
+#' sum(crossprod(b) != sig$Sigma) == 0 #TRUE
+  force_posiDiag  <- function(x) {
+    if(!is.matrix(x) ||
+       any(x[row(x)   > col(x)] != 0) &&
+       any(x[col(x)   > row(x)] != 0))            stop("'x' must be an upper or lower triangular matrix")
+      diag(sign(diag(x))) %*% x
   }
 
 #' Quantile-Based Clustering for Univariate Data
@@ -1944,6 +1998,8 @@ predict.MoEClust  <- function(object, newdata = list(...), ...) {
     matrix(x, nrow=nrow, ncol=ncol, byrow=any(dim(as.matrix(x)) == 1))
   }
 
+  .mat_sq         <- function(x, d) diag(x, d)
+
   .pick_MoECrit   <- function(x, pick = 3L) {
     if(!inherits(x, "MoECriterion"))              stop("'x' must be an object of class 'MoECriterion'", call.=FALSE)
     x             <- replace(x, !is.finite(x), NA)
@@ -1959,6 +2015,8 @@ predict.MoEClust  <- function(object, newdata = list(...), ...) {
     x.ind[,2]     <- colnames(x)[as.numeric(x.ind[,2])]
       return(list(crits = stats::setNames(x.val, vapply(seq_len(pick), function(p, b=x.ind[p,]) paste0(b[2], ",", b[1]), character(1L))), pick = pick))
   }
+
+  .sq_mat       <- function(x) diag(sqrt(diag(x)))
 
   #' @importFrom matrixStats "rowSums2"
   .tau_noise      <- function(tau, z0, row.ind = row(tau)) {

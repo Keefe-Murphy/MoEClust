@@ -29,7 +29,7 @@ A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of ob
 Computes densities (or log-densities) of observations in MoEClust mixture models.
 }
 \note{
-This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities.
+This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities. Note that models with a noise component are facilitated here too.
 }
 \examples{
 data(ais)
