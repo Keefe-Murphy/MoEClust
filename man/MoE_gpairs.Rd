@@ -34,7 +34,7 @@ MoE_gpairs(res,
 
 Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In so doing, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data).
 
-Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}). Caution is advised, until further updates, when interpreting \code{"density"} plots in the presence of covariates in either the gating or expert networks.}
+Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}). Caution is advised when producing density plots for models with covariates in the expert network, the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow.}
 
 \item{subset}{A list giving named arguments for producing only a subset of panels:
 \describe{
@@ -78,7 +78,7 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \item{density.pars}{A list supplying select parameters for visualising the bivariate density contours, only when \code{response.type} is \code{"density"}.
 
-\code{NULL} is equivalent to \code{list(grid.size=c(100, 100), dcol="grey30", nlevels=11, show.labels=TRUE)}, where \code{density.pars$grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively.}
+\code{NULL} is equivalent to \code{list(grid.size=c(100, 100), dcol="grey50", nlevels=11, show.labels=TRUE)}, where \code{density.pars$grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively, and \code{density.pars$dcol} is either a single colour or a vector of length \code{density.pars$nlevels} colours, although note that \code{density.pars$dcol}, when \emph{not} specified, will be adjusted for transparency.}
 
 \item{stripplot.pars}{A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"stripplot"}.
 
@@ -119,12 +119,13 @@ res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
 MoE_gpairs(res)
 
 # Produce the same plot, but with a violin plot in the lower triangle.
-# Add confidence intervals to the scatter plots. Remove the "Fe" variable.
+# Add fitted lines to the scatter plots. Don't show the "sex" covariate.
 # Size points in the response vs. response panels by their clustering uncertainty.
-MoE_gpairs(res, conditional=c("stripplot", "violin"), data.ind=1:4,
-           scatter.type=c("ci", "points"), response.type="uncertainty")
+MoE_gpairs(res, conditional=c("stripplot", "violin"), cov.ind=1,
+           scatter.type=c("lm2", "points"), response.type="uncertainty")
 
 # Instead show the bivariate density contours of the reponse variables.
+# (Plotting may be slow when response.type="density" for models with expert covariates.)
 # Use different colours for histograms of covariates in the gating/expert/both networks.
 # Also use different colours for response vs. covariate & covariate vs. response panels.
 MoE_gpairs(res, response.type="density", show.labels=FALSE,

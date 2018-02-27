@@ -31,7 +31,7 @@ Of the functions which can be applied to the result of the conversion, \code{\li
 
 Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
 
-Plots may be misleading in the presence of gating &/or expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}.
+Plots may be misleading in the presence of gating &/or expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
 }
 \examples{
 \dontrun{

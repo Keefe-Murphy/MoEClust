@@ -4,7 +4,7 @@
 #' @section Usage:
 #' The most important function in the \pkg{MoEClust} package is: \code{\link{MoE_clust}}, for fitting the model via EM with gating and/or expert network covariates, supplied via formula interfaces.
 #'
-#' Other functions also exist, e.g. \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_dens}}, \code{\link{MoE_estep}}, \code{\link{MoE_compare}}, and \code{\link{MoE_aitken}}, which are all used within \code{\link{MoE_clust}} but are nonetheless made available for standalone use.
+#' Other functions also exist, e.g. \code{\link{MoE_control}}, \code{\link{MoE_crit}}, \code{\link{MoE_dens}}, \code{\link{MoE_estep}}, \code{\link{MoE_compare}}, and \code{\link{aitken}}, which are all used within \code{\link{MoE_clust}} but are nonetheless made available for standalone use.
 #'
 #' A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network &/or log-likelihood, and/or graphing model selection criteria values. The generalised pairs plots (\code{\link{MoE_gpairs}}) visualise all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, and also give the marginal distributions of each variable along the diagonal.
 #'
@@ -55,5 +55,5 @@ NULL
   } else   {
     packageStartupMessage("\nPackage 'MoEClust' version ", version, ".")
   }
-  packageStartupMessage(paste("Type '?MoEClust' to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote("MoEClust"),")")) ,"for citing the package in publications."))
+  packageStartupMessage(paste("Type '?MoEClust' to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote("MoEClust"),")")) ,"for citing the package in publications.\nType 'MoE_news()' to see new features recent changes and bug fixes."))
 }

@@ -3,33 +3,43 @@ __MoEClust: Finite Gaussian Mixtures of Experts -__
 __Parsimonious Model-Based Clustering with Covariates__  
 =======================================================
 
-## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-02-07_)
+## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-02-18_)
 ### New Features & Improvements
 * New `predict.MoEClust` function added: predicts cluster membership probability,  
   MAP classification, and fitted response, using only new covariates or new covariates &  
   new response data with noise components (and the `noise.gate` option) accounted for.
 * New plotting function `MoE_Uncertainty` added (callable within `plot.MoEClust`):  
   visualises clustering uncertainty in the form of a barplot or an ordered profile plot,  
-  with or without reference to the true labels in both cases.
+  allowing reference to the made to the true labels, or not, in both cases.
+* Specifying `response.type="density"` to `MoE_gpairs` now works properly for models with  
+  gating &/or expert network covariates. Previous approach which evaluated the density using  
+  averaged gates &/or average means replaced by more computationally expensive but correct  
+  approach, which evaluates MVN density for every observation individually and then averages.
 * Added `drop.break` arg. to `MoE_control` for further control over the extra initialisation  
   step invoked in the presence of expert covariates (see Documentation for details).
 * Sped-up `MoE_dens` for the `EEE` & `VVV` models by using already available Cholesky factors.
+* Added `kstarts` arg. to `MoE_control` for use when `init.z="kmeans"`.
 
 ### Bug Fixes & Miscellaneous Edits
 * Fixed point-size, transparency & plotting symbols when `response.type="uncertainty"`  
   within `MoE_gpairs` to better conform to `mclust`: previously no transparency.
 * `subset` arg. to `MoE_gpairs` now allows `data.ind=0` or `cov.ind=0`, allowing plotting of  
   response variables or plotting of the covariates to be suppressed entirely.
-* `sigs` arg. to `MoE_dens` and `MoE_estep` must now be a variance object,  
-   as per the `variance` object in the  parameters list from `MoE_clust` & `mclust` output.
+* `sigs` arg. to `MoE_dens` and `MoE_estep` must now be a variance object, as per `variance`  
+  in the  parameters list from `MoE_clust` & `mclust` output, the number of  clusters `G`,  
+  variables `d` & `modelName` is inferred from this object: the arg. `modelName` was removed.
 * `resid.data` now returned by `MoE_clust` as a list, to better conform to `MoE_dens`.
+* Renamed functions `MoE_aitken` & `MoE_qclass` to `aitken` & `quant_clust`, respectively.
+* Fixed small bug calculating `linf` within `aitken`.
 * Removed redundant extra M-step after convergence for models without expert covariates.
 * Removed redundant & erroneous `resid` & `residuals` args. to `as.Mclust` & `MoE_gpairs`.
 * `MoE_plotCrit`, `MoE_plotGate` & `MoE_plotLogLik` now invisibly return revelant quantities.
 * Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
+* Interactions and higher-order terms are now accounted for within `drop_constants`.
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.
 * Added extra precautions for empty clusters at initialisation.
+* Added utility function `MoE_news` for accessing this `NEWS` file.
 
 ## MoEClust v1.1.0 - (_2<sup>nd</sup> release [minor update]: 2018-02-06_)
 ### New Features & Improvements

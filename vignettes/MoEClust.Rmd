@@ -18,7 +18,7 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show=
 ## Introduction
 __MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models with __mclust__ family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various parsimonious covariance parameterisations in the __mclust__ family. These models were introduced by [Murphy and Murphy (2017)](https://arxiv.org/abs/1711.05632). The package also visualises mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
-The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM algoirthm with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `MoE_aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
+The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM algoirthm with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 
 A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network &/or log-likelihood, and/or graphing model selection criteria values. The generalised pairs plots (`MoE_gpairs`) visualise all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, and also give the marginal distributions of each variable along the diagonal.
 
@@ -160,13 +160,19 @@ Visualise the results for the optimal model using a generalised pairs plot.
 plot(mod, what="gpairs")
 ```
 
+Replace the scatter plots in response vs. response panels with bivariate density contours. Note that this is liable to slow for models with expert network covariates.
+
+```{r}
+plot(mod, what="gpairs", response.type="density")
+```
+
 Visualise the clustering uncertainty for the optimal model using a generalised pairs plot.
 
 ```{r}
 plot(mod, what="gpairs", response.type="uncertainty")
 ```
 
-Instead visualise the clustering uncertainty in the form of an ordered profile plot.
+Instead visualise the clustering uncertainty in the form of an ordered profile plot (`type="barplot"` can also be specified here).
 
 ```{r}
 plot(mod, what="uncertainty", type="profile")

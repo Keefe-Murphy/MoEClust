@@ -18,12 +18,13 @@ MoE_control(criterion = c("bic", "icl", "aic"),
   noise.meth = c("hypvol", "convexhull", "ellipsoidhull"),
   hc.meth = NULL,
   hcUse = "VARS",
+  kstarts = 10,
   verbose = interactive(), ...)
 }
 \arguments{
 \item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.}
 
-\item{stopping}{The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{MoE_aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.}
+\item{stopping}{The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.}
 
 \item{exp.init}{A list supplying select parameters to control the initialisation routine in the presence of \emph{expert} network covariates (otherwise ignored):
 \describe{
@@ -33,7 +34,7 @@ MoE_control(criterion = c("bic", "icl", "aic"),
 \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given componenet's expert regression (particularly for categorical covariates). It may also occur due to this partitioning that "unseen" data, when calculating the residuals, will have new factor levels. When \code{drop.break} is \code{TRUE}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios. Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{drop.break}.}
 }}
 
-\item{init.z}{The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data, or quantile-based clustering as per \code{\link{MoE_qclass}} for univariate data (unless there are continuous expert network covariates, in which case the defaults is again \code{\link[mclust]{hc}}). The \code{"quantile"} option is only available for univariate data without continuous expert network covariates. Other options include \code{kmeans}, \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.}
+\item{init.z}{The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data (see \code{hc.meth} and \code{hcUse}), or quantile-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are continuous expert network covariates incorporated via \code{exp.init$joint}, in which case the default is again \code{\link[mclust]{hc}}). The \code{"quantile"} option is thus only available for univariate data without continuous expert network covariates or when \code{exp.init$joint} is \code{FALSE}. Other options include \code{kmeans} (see \code{kstarts}), \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.}
 
 \item{eps}{A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of \code{eps} allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.}
 
@@ -56,6 +57,8 @@ The default is \code{c(.Machine$integer.max, .Machine$integer.max, 100)} allowin
 \item{hc.meth}{A character string indicating the model to be used when hierarchical clustering (see \code{\link[mclust]{hc}} is employed for initialisation according to \code{init.z}. Defaults to \code{"EII"} for high-dimensional data, or \code{"VVV"} otherwise.}
 
 \item{hcUse}{A string specifying the type of input variables to be used when \code{init.z} is set to \code{hc}. Unlike \code{mclust}, this defaults to "\code{VARS}" here.}
+
+\item{kstarts}{The number of random initialisations to use when \code{init.z="kmeans"}. Defaults to 10.}
 
 \item{verbose}{Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.}
 
@@ -93,7 +96,7 @@ res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
 res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl)}
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{MoE_aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{mclust.options}}, \code{\link{MoE_qclass}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
+\code{\link{MoE_clust}}, \code{\link{aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{mclust.options}}, \code{\link{quant_clust}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

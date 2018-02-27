@@ -9,7 +9,7 @@ drop_constants(dat, formula, sub = NULL)
 \arguments{
 \item{dat}{A \code{data.frame} where rows correspond to observations and columns correspond to variables. Ideally column names should be present.}
 
-\item{formula}{An object of class \code{"\link[stats]{formula}"}: a symbolic description of the model to be fitted. Variables in the formula not present in the column names of \code{dat} will automatically be discarded.}
+\item{formula}{An object of class \code{"\link[stats]{formula}"}: a symbolic description of the model to be fitted. Variables in the \code{formula} not present in the columns of \code{dat} will automatically be discarded. The \code{formula} may include interactions or higher order terms.}
 
 \item{sub}{An optional vector specifying a subset of observations to be used in the fitting process.}
 }
