@@ -5,26 +5,26 @@
 \title{Set control values for use with MoEClust}
 \usage{
 MoE_control(criterion = c("bic", "icl", "aic"),
-  stopping = c("aitken", "relative"),
-  exp.init = list(...),
-  init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
-  eps = .Machine$double.eps,
-  tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08),
-  itmax = c(.Machine$integer.max, .Machine$integer.max, 100),
-  equalPro = FALSE,
-  warn.it = 0,
-  noise.init = NULL,
-  noise.gate = TRUE,
-  noise.meth = c("hypvol", "convexhull", "ellipsoidhull"),
-  hc.meth = NULL,
-  hcUse = "VARS",
-  kstarts = 10,
-  verbose = interactive(), ...)
+            stopping = c("aitken", "relative"),
+            init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
+            exp.init = list(...),
+            eps = .Machine$double.eps,
+            tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08),
+            itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
+            equalPro = FALSE,
+            noise.args = list(...),
+            hc.args = list(...),
+            km.args = list(...),
+            warn.it = 0L,
+            verbose = interactive(),
+            ...)
 }
 \arguments{
 \item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.}
 
-\item{stopping}{The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the final estimate of the log-likelihood is the value of \code{linf} at convergence, rather than the value of \code{ll} at convergence under the \code{"relative"} option.}
+\item{stopping}{The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the asymptotic estimate of the final converged maximised log-likelihood is also returned as \code{linf} for models with 2 or more components, though the largest element of the returned vector \code{ll} still gives the log-likelihood value achieved by the parameters returned at convergence, under both \code{stopping} methods.}
+
+\item{init.z}{The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data (see \code{hc.args}), or quantile-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are continuous expert network covariates incorporated via \code{exp.init$joint}, in which case the default is again \code{\link[mclust]{hc}}). The \code{"quantile"} option is thus only available for univariate data without continuous expert network covariates or when \code{exp.init$joint} is \code{FALSE}. Other options include \code{kmeans} (see \code{km.args}), \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.}
 
 \item{exp.init}{A list supplying select parameters to control the initialisation routine in the presence of \emph{expert} network covariates (otherwise ignored):
 \describe{
@@ -34,8 +34,6 @@ MoE_control(criterion = c("bic", "icl", "aic"),
 \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given componenet's expert regression (particularly for categorical covariates). It may also occur due to this partitioning that "unseen" data, when calculating the residuals, will have new factor levels. When \code{drop.break} is \code{TRUE}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios. Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{drop.break}.}
 }}
 
-\item{init.z}{The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data (see \code{hc.meth} and \code{hcUse}), or quantile-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are continuous expert network covariates incorporated via \code{exp.init$joint}, in which case the default is again \code{\link[mclust]{hc}}). The \code{"quantile"} option is thus only available for univariate data without continuous expert network covariates or when \code{exp.init$joint} is \code{FALSE}. Other options include \code{kmeans} (see \code{kstarts}), \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.}
-
 \item{eps}{A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of \code{eps} allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.}
 
 \item{tol}{A vector of length three giving relative convergence tolerances for 1) the log-likelihood of the EM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.}
@@ -44,21 +42,28 @@ MoE_control(criterion = c("bic", "icl", "aic"),
 
 The default is \code{c(.Machine$integer.max, .Machine$integer.max, 100)} allowing termination to be completely governed by \code{tol} for the inner and outer loops of the EM. If only one number is supplied, it is used as the iteration limit for the outer loop only.}
 
-\item{equalPro}{Logical variable indicating whether or not the mixing proportions are to be constrained to be equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored. In the presence of a noise component (see below), only the mixing proportions for the non-noise components are constrained to be equal, after accounting for the noise component.}
+\item{equalPro}{Logical variable indicating whether or not the mixing proportions are to be constrained to be equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored. In the presence of a noise component (see \code{noise.args}), only the mixing proportions for the non-noise components are constrained to be equal, after accounting for the noise component.}
+
+\item{noise.args}{A list supplying select parameters to control inclusion of a noise component in the estimation of the mixture:
+\describe{
+\item{\code{noise.init}}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation.}
+\item{\code{noise.gate}}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
+\item{\code{noise.meth}}{The method used to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively.}
+}}
+
+\item{hc.args}{A list supplying select parameters to control the initialisation of the cluster allocations when \code{init.z="hc"} (otherwise irrelevant):
+\describe{
+\item{\code{hcUse}}{A string specifying the type of input variables to be used. Unlike \code{mclust}, this defaults to "\code{VARS}" here.}
+\item{\code{hc.meth}}{A character string indicating the model to be used when hierarchical clustering (see \code{\link[mclust]{hc}} is employed for initialisation. Defaults to \code{"EII"} for high-dimensional data, or \code{"VVV"} otherwise.}
+}}
+
+\item{km.args}{A list supplying select parameters to control the initialisation of the cluster allocations when \code{init.z="kmeans"} (otherwise irrelevant):
+\describe{
+\item{\code{kstarts}}{The number of random initialisations to use. Defaults to 10.}
+\item{\code{kiters}}{The maximum number of K-Means iterations allowed. Defaults to 10.}
+}}
 
 \item{warn.it}{A single number giving the iteration count at which a warning will be printed if the EM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}. A warning will always be printed if one of more models fail to converge in \code{itmax[1]} iterations.}
-
-\item{noise.init}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation.}
-
-\item{noise.gate}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
-
-\item{noise.meth}{The method use to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively.}
-
-\item{hc.meth}{A character string indicating the model to be used when hierarchical clustering (see \code{\link[mclust]{hc}} is employed for initialisation according to \code{init.z}. Defaults to \code{"EII"} for high-dimensional data, or \code{"VVV"} otherwise.}
-
-\item{hcUse}{A string specifying the type of input variables to be used when \code{init.z} is set to \code{hc}. Unlike \code{mclust}, this defaults to "\code{VARS}" here.}
-
-\item{kstarts}{The number of random initialisations to use when \code{init.z="kmeans"}. Defaults to 10.}
 
 \item{verbose}{Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.}
 

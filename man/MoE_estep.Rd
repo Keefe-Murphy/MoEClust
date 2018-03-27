@@ -4,7 +4,12 @@
 \alias{MoE_estep}
 \title{Compute the Responsility Matrix and Log-likelihood for MoEClust Mixture Models}
 \usage{
-MoE_estep(data, mus, sigs, log.tau = 0, Vinv = NULL, Dens = NULL)
+MoE_estep(data,
+          mus,
+          sigs,
+          log.tau = 0L,
+          Vinv = NULL,
+          Dens = NULL)
 }
 \arguments{
 \item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (n) and columns correspond to variables (d). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of (multivariate) WLS residuals for each component.}

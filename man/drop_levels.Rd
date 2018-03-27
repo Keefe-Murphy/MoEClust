@@ -4,7 +4,8 @@
 \alias{drop_levels}
 \title{Drop unused factor levels to predict from unseen data}
 \usage{
-drop_levels(fit, newdata)
+drop_levels(fit,
+            newdata)
 }
 \arguments{
 \item{fit}{A fitted \code{\link[stats]{lm}} model.}

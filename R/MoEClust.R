@@ -23,6 +23,10 @@
 #' \item{Licence: }{GPL (>=2)}
 #' }
 #'
+#' @section See Also:
+#' Further details and examples are given in the associated vignette document:\cr
+#' \code{vignette("MoEClust", package = "MoEClust")}
+#'
 #' @author
 #' Keefe Murphy [aut, cre], Thomas Brendan Murphy [ctb]
 #'

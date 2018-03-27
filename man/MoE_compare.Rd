@@ -5,10 +5,15 @@
 \alias{print.MoECompare}
 \title{Choose the best MoEClust model}
 \usage{
-MoE_compare(..., criterion = c("bic", "icl", "aic"), pick = 3L,
-  optimal.only = FALSE)
+MoE_compare(...,
+            criterion = c("bic", "icl", "aic"),
+            pick = 3L,
+            optimal.only = FALSE)
 
-\method{print}{MoECompare}(x, index = seq_len(x$pick), noise = TRUE, ...)
+\method{print}{MoECompare}(x,
+      index = seq_len(x$pick),
+      noise = TRUE,
+      ...)
 }
 \arguments{
 \item{...}{One or more objects of class \code{"MoEClust"} outputted by \code{\link{MoE_clust}}. All models must have been fit to the same data set. A single \emph{named} list of such objects can also be supplied. This argument is only relevant for the \code{\link{MoE_compare}} function and will be ignored for the associated \code{print} function.}

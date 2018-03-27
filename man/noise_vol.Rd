@@ -4,8 +4,9 @@
 \alias{noise_vol}
 \title{Approximate Hypervolume Estimate}
 \usage{
-noise_vol(data, method = c("hypvol", "convexhull", "ellipsoidhull"),
-  reciprocal = FALSE)
+noise_vol(data,
+          method = c("hypvol", "convexhull", "ellipsoidhull"),
+          reciprocal = FALSE)
 }
 \arguments{
 \item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed. If a matrix or data frame, rows correspond to observations and columns correspond to variables.}

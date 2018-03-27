@@ -23,6 +23,7 @@
 #' data(ais, package="MoEClust")
 #' pairs(ais[,c(3:4, 10:13)], col=as.numeric(ais[,1]), main = "AIS data")
 #' @docType data
+#' @keywords datasets
 #' @usage data(ais)
 "ais"
 
@@ -38,5 +39,6 @@
 #' }
 #' @references Hurn, M., Justel, A. and Robert, C. P. (2003) Estimating Mixtures of Regressions, \emph{Journal of Computational and Graphical Statistics}, 12(1): 55-79.
 #' @docType data
+#' @keywords datasets
 #' @usage data(CO2data)
 "CO2data"

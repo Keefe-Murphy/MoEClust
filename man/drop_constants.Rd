@@ -4,7 +4,9 @@
 \alias{drop_constants}
 \title{Drop constant variables from a formula}
 \usage{
-drop_constants(dat, formula, sub = NULL)
+drop_constants(dat,
+               formula,
+               sub = NULL)
 }
 \arguments{
 \item{dat}{A \code{data.frame} where rows correspond to observations and columns correspond to variables. Ideally column names should be present.}

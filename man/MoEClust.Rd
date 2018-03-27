@@ -34,6 +34,12 @@ The package also contains two data sets: \code{ais} and \code{CO2data}.
 }
 }
 
+\section{See Also}{
+
+Further details and examples are given in the associated vignette document:\cr
+\code{vignette("MoEClust", package = "MoEClust")}
+}
+
 \examples{
 \dontrun{
 data(ais)

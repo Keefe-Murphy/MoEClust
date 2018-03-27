@@ -4,7 +4,12 @@
 \alias{MoE_dens}
 \title{Density for MoEClust Mixture Models}
 \usage{
-MoE_dens(data, mus, sigs, log.tau = 0, Vinv = NULL, logarithm = TRUE)
+MoE_dens(data,
+         mus,
+         sigs,
+         log.tau = 0L,
+         Vinv = NULL,
+         logarithm = TRUE)
 }
 \arguments{
 \item{data}{If there are no expert network covariates, \code{data} should be a numeric matrix or data frame, wherein rows correspond to observations (n) and columns correspond to variables (d). If there are expert network covariates, this should be a list of length G containing matrices/data.frames of (multivariate) WLS residuals for each component.}

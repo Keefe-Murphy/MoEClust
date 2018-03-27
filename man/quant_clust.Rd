@@ -4,7 +4,8 @@
 \alias{quant_clust}
 \title{Quantile-Based Clustering for Univariate Data}
 \usage{
-quant_clust(x, G)
+quant_clust(x,
+            G)
 }
 \arguments{
 \item{x}{A vector of numeric data.}

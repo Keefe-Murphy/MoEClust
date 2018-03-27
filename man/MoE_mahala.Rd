@@ -4,7 +4,9 @@
 \alias{MoE_mahala}
 \title{Mahalanobis Distance Outlier Detection for Multivariate Response}
 \usage{
-MoE_mahala(fit, resids, squared = FALSE)
+MoE_mahala(fit,
+           resids,
+           squared = FALSE)
 }
 \arguments{
 \item{fit}{A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.}
