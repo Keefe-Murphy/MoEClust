@@ -1,12 +1,12 @@
 Package: MoEClust
 Type: Package
 Date: 2018-02-06
-Title: Parsimonious Model-Based Clustering with Covariates
 Version: 1.1.0
+Title: Gaussian Parsimonious Clustering Models with Covariates
 Authors@R: c(person("Keefe", "Murphy", email = "keefe.murphy@ucd.ie", role = c("aut", "cre")),
            person("Thomas Brendan", "Murphy", email = "brendan.murphy@ucd.ie", role = "ctb"))
-Description: Clustering via parsimonious Mixtures of Experts using the MoEClust models introduced by Murphy and Murphy (2017) <arXiv:1711.05632>. This package fits finite Gaussian mixture models with gating and expert network covariates using parsimonious covariance parameterisations from 'mclust' via the EM algorithm. Visualisation of the results of such models using generalised pairs plots is also facilitated.
 Depends: R (>= 2.10)
+Description: Clustering via parsimonious Gaussian Mixtures of Experts using the MoEClust models introduced by Murphy and Murphy (2017) <arXiv:1711.05632>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations via the EM algorithm. Visualisation of the results of such models using generalised pairs plots is also facilitated.
 License: GPL (>=2)
 Encoding: UTF-8
 URL: https://cran.r-project.org/package=MoEClust

@@ -1,5 +1,5 @@
 ---
-title: "MoEClust: Finite Gaussian Mixtures of Experts - Parsimonious Model-Based Clustering with Gating and Expert Network Covariates"
+title: "MoEClust: Gaussian Parsimonious Clustering Models with Gating and Expert Network Covariates"
 author: "Keefe Murphy"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -16,11 +16,11 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show=
 ```
 
 ## Introduction
-__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models with __mclust__ family covariance structures using the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite mixture models under the various parsimonious covariance parameterisations in the __mclust__ family. These models were introduced by [Murphy and Murphy (2017)](https://arxiv.org/abs/1711.05632). The package also visualises mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
+__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM famly (e.g. __mclust__) These models were introduced by [Murphy and Murphy (2017)](https://arxiv.org/abs/1711.05632). The package also visualises Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
-The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM algoirthm with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
+The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM algorithm with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 
-A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network &/or log-likelihood, and/or graphing model selection criteria values. The generalised pairs plots (`MoE_gpairs`) visualise all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, and also give the marginal distributions of each variable along the diagonal.
+A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network, and/or log-likelihood, and/or clustering uncertainties, and/or graphing model selection criteria values. The generalised pairs plots (`MoE_gpairs`) visualise all pairwise relationships between clustered response variables and associated continuous, categorical, and/or ordinal covariates in the gating &/or expert networks, coloured according to the MAP classification, and also give the marginal distributions of each variable (incl. the covariates) along the diagonal.
 
 An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates). Finally, a `predict` method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response data, or new covariates only.
 
@@ -61,7 +61,7 @@ GNP   <- CO2data[,1]
 CO2   <- CO2data[,2]
 ```
 
-Fit various mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. For the model with no covariates, we can only fit a model with only a noise component by including `G=0`.
+Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. For the model with no covariates, we can only fit a model with only a noise component by including `G=0`.
 
 ```{r, results='hide'}
 m1    <- MoE_clust(CO2, G=0:2, verbose=FALSE)
@@ -121,10 +121,10 @@ plot(mod, what="classification")
 plot(mod, what="uncertainty")
 ```
 
-Predictions can also be made from `MoEClust` models: the response, probability of cluster membership, and the MAP classification can be predicted for the fitted data or for new data (in the form of new covarariates and new response variables, or new covariates only). Let's predict the MAP classification for the optimal model fit above to the CO2 data.
+Predictions can also be made from `MoEClust` models: the response, probability of cluster membership, and the MAP classification can be predicted for the fitted data or for new data (in the form of new covarariates and new response variables, or new covariates only). Let's predict the response variable using the optimal model fit above to the CO2 data.
 
 ```{r}
-predict(comp$optimal)$classification
+as.vector(predict(comp$optimal)$y)
 ```
 
 Now let's build a model on some of the CO2 data and retain the indices of the withheld observations:
@@ -149,7 +149,7 @@ data(ais)
 hema  <- ais[,3:7]
 ```
 
-Fit a mixture of experts model to the hematological variables within AIS data, with `sex` in the expert network and `bmi` in the gating network. This time, allow the printing of messages to the screen.
+Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within AIS data, with `sex` in the expert network and `bmi` in the gating network. This time, allow the printing of messages to the screen.
 ```{r}
 mod   <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais)
 ```
@@ -160,7 +160,7 @@ Visualise the results for the optimal model using a generalised pairs plot.
 plot(mod, what="gpairs")
 ```
 
-Replace the scatter plots in response vs. response panels with bivariate density contours. Note that this is liable to slow for models with expert network covariates.
+Replace the scatter plots in response vs. response panels with bivariate density contours. Note that this is liable to be slow for models with expert network covariates.
 
 ```{r}
 plot(mod, what="gpairs", response.type="density")

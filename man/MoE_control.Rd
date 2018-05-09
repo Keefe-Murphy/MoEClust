@@ -28,7 +28,7 @@ MoE_control(criterion = c("bic", "icl", "aic"),
 
 \item{exp.init}{A list supplying select parameters to control the initialisation routine in the presence of \emph{expert} network covariates (otherwise ignored):
 \describe{
-\item{\code{joint}}{A logical indicating whether the initial partition is obtained on the joint distribution of the response and (continuous only) expert network covariates (defaults to \code{TRUE}) or just the response variables (\code{FALSE}). Only relevant when \code{init.z} is not \code{"random"}. This may render the \code{"quantile"} option to \code{init.z} for univariate data unusable.}
+\item{\code{joint}}{A logical indicating whether the initial partition is obtained on the joint distribution of the response and (continuous only) expert network covariates (defaults to \code{TRUE}) or just the response variables (\code{FALSE}). Only relevant when \code{init.z} is not \code{"random"}. This will render the \code{"quantile"} option to \code{init.z} for univariate data unusable if continuous expert network covariates are supplied.}
 \item{\code{mahalanobis}}{A logical indicating whether to iteratively reallocate observations during the initialisation phase to the component corresponding to the expert network regression to which it's closest to the fitted values of in terms of Mahalanobis distance (defaults to \code{TRUE}). This will ensure that each component can be well modelled by a single expert prior to running the EM algorithm.}
 \item{\code{max.init}}{The maximum number of iterations for the Mahalanobis distance-based reallocation procedure when \code{exp.init$mahalanobis} is \code{TRUE}. Defaults to \code{100}.}
 \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given componenet's expert regression (particularly for categorical covariates). It may also occur due to this partitioning that "unseen" data, when calculating the residuals, will have new factor levels. When \code{drop.break} is \code{TRUE}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios. Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{drop.break}.}
@@ -78,7 +78,7 @@ Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}
 \details{
 \code{\link{MoE_control}} is provided for assigning values and defaults within \code{\link{MoE_clust}}.
 
-While the \code{criterion} argument controls the choice of the optimal number of components and \pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
+While the \code{criterion} argument controls the choice of the optimal number of components and GPCM/\pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
 }
 \note{
 When initialising using the \code{"hc"} option for the \code{init.z} argument, the \code{"EII"} model is used for high-dimensional data, otherwise \code{"VVV"} is used.

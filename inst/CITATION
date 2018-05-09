@@ -28,13 +28,13 @@ vers     <- paste("package version", meta$Version)
 citEntry(entry  = "Manual",
   author  = personList(person(given="Keefe", family="Murphy"),
                        person(given=c("Thomas", "Brendan"), family="Murphy")),
-  title   = "{MoEClust}: Parsimonious Model-Based Clustering with Covariates",
+  title   = "{MoEClust}: Gaussian Parsimonious Clustering Models with Covariates",
   year    = year,
   note    = paste0("{R} ", vers),
   url     = "https://cran.r-project.org/package=MoEClust",
 
   textVersion   =
     paste0("Keefe Murphy and T. Brendan Murphy (", year, "). ",
-    "MoEClust: Parsimonious Model-Based Clustering with Covariates. ",
+    "MoEClust: Gaussian Parsimonious Clustering Models with Covariates. ",
     "URL: https://cran.r-project.org/package=MoEClust ", "R ", vers)
 )

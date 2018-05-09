@@ -38,6 +38,9 @@ form2 <- drop_constants(ais, form1, sub)
 mod2  <- try(lm(form2, data=ais, subset=sub), silent=TRUE)
 inherits(mod2, "try-error") # FALSE
 }
+\seealso{
+\code{\link{drop_levels}}
+}
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }

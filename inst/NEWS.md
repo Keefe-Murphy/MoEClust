@@ -1,6 +1,6 @@
-__MoEClust: Finite Gaussian Mixtures of Experts -__   
+__MoEClust: Gaussian Parsimonious Clustering Models -__   
 =======================================================
-__Parsimonious Model-Based Clustering with Covariates__  
+__with Gating and Expert Network Covariates__  
 =======================================================
 
 ## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-02-18_)
@@ -22,7 +22,7 @@ __Parsimonious Model-Based Clustering with Covariates__
     * Consolidated args. related to `init.z="hc"` & noise into `hc.args` & `noise.args`.
 
 ### Bug Fixes & Miscellaneous Edits
-* Fixed point-size, transparency & plotting symbols when `response.type="uncertainty"`  
+* Fixed point-size, transparency, & plotting symbols when `response.type="uncertainty"`  
   within `MoE_gpairs` to better conform to `mclust`: previously no transparency.
 * `subset` arg. to `MoE_gpairs` now allows `data.ind=0` or `cov.ind=0`, allowing plotting of  
   response variables or plotting of the covariates to be suppressed entirely.
@@ -38,12 +38,16 @@ __Parsimonious Model-Based Clustering with Covariates__
 * Removed redundant & erroneous `resid` & `residuals` args. to `as.Mclust` & `MoE_gpairs`.
 * `MoE_plotCrit`, `MoE_plotGate` & `MoE_plotLogLik` now invisibly return revelant quantities.
 * Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
+* Improved `drop_levels` to handle alphanumeric variable names and ordinal variables.
 * Interactions and higher-order terms are now accounted for within `drop_constants`.
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.
+* Added `mclust::clustCombi/clustCombiOptim` examples to `as.Mclust` documentation.
 * Added extra precautions for empty clusters at initialisation.
 * Added utility function `MoE_news` for accessing this `NEWS` file.
 * Added line-breaks to `usage` sections of multi-argument functions.
+* Corrected `MoEClust-package` help file (formerly just `MoEClust`).
+* Many documentation clarifications.
 
 ## MoEClust v1.1.0 - (_2<sup>nd</sup> release [minor update]: 2018-02-06_)
 ### New Features & Improvements

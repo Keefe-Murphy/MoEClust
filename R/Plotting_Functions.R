@@ -518,7 +518,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
 #' @param type,xlab,ylab,ylim,col These graphical parameters retain their definitions from \code{\link[graphics]{matplot}}.
 #' @param ... Catches unused arguments, or additional arguments to be passed to \code{\link[graphics]{matplot}}.
 #'
-#' @return A plot of the gating network of the fitted model. The parameters of the gating network can also be returned invisibly.
+#' @return A plot of the gating network of the fitted MoEClust model. The parameters of the gating network can also be returned invisibly.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @note \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotGate}} which accepts the default arguments, and also produces other types of plots.
 #'
@@ -621,7 +621,7 @@ MoE_plotCrit.MoEClust   <- function(res, criterion = c("bic", "icl", "aic"), ...
 #' @param type,xlab,ylab,xaxt These graphical parameters retain their usual definitions from \code{\link[graphics]{plot}}.
 #' @param ... Catches unused arguments, or additional arguments to be passed to \code{\link[graphics]{plot}}.
 #'
-#' @return A plot of the log-likelihood versus the EM iterations. A list with the vector of log-likelihood values and the final value at convergence can also be returned invisibly.
+#' @return A plot of the log-likelihood versus the number EM iterations. A list with the vector of log-likelihood values and the final value at convergence can also be returned invisibly.
 #' @note \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotLogLik}} which accepts the default arguments, and also produces other types of plots.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @keywords plotting

@@ -40,6 +40,9 @@ pred2 <- try(predict(mod, newdata=drop_levels(mod, ais)), silent=TRUE)
 inherits(pred2, "try-error") #FALSE
 anyNA(pred2)                 #TRUE
 }
+\seealso{
+\code{\link{drop_constants}}
+}
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }

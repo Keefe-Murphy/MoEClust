@@ -20,7 +20,7 @@ MoE_plotGate(res,
 \item{...}{Catches unused arguments, or additional arguments to be passed to \code{\link[graphics]{matplot}}.}
 }
 \value{
-A plot of the gating network of the fitted model. The parameters of the gating network can also be returned invisibly.
+A plot of the gating network of the fitted MoEClust model. The parameters of the gating network can also be returned invisibly.
 }
 \description{
 Plots the gating network for fitted MoEClust models, i.e. the observation index against the mixing proportions for that observation, coloured by cluster.
