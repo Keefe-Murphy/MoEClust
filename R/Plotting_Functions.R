@@ -739,14 +739,14 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
     cu[ucert == 0] <- NA
     graphics::plot(ucert, type="h", ylim=range(yx), col=cu, yaxt="n", ylab="", xlab="Observations", lend=1)
     graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3])
-    graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression('1/G'^{'(0)'}), "1 - 1/G")), las=2, xpd=TRUE)
+    graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression('1 - 1/G'^{'(0)'}), "1 - 1/G")), las=2, xpd=TRUE)
     graphics::axis(2, at=oneG, labels=ifelse(noise, expression('1/G'^{'(0)'}), "1/G"), las=2, xpd=TRUE, side=4, xpd=TRUE)
   } else      {
     ord      <- order(ucert, decreasing=decreasing)
     ucord    <- ucert[ord]
     graphics::plot(ucord, type="n", ylim=c(-max(ucert)/32, max(yx)), ylab="", xaxt="n", yaxt="n", xlab=paste0("Observations in order of ", ifelse(decreasing, "decreasing", "increasing"), " uncertainty"))
     graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3])
-    graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression('1/G'^{'(0)'}), "1 - 1/G")), las=2, xpd=TRUE)
+    graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression('1 - 1/G'^{'(0)'}), "1 - 1/G")), las=2, xpd=TRUE)
     graphics::axis(2, at=oneG, labels=ifelse(noise, expression('1/G'^{'(0)'}), "1/G"), las=2, xpd=TRUE, side=4, xpd=TRUE)
     if(tmiss)  mcO <- which(ord %in% mC)
     graphics::points(ucord, pch=15, cex=if(tmiss) replace(rep(0.5, n.obs), mcO, 0.75) else 0.5, col=if(tmiss) replace(rep(1, n.obs), mcO, cm[2]) else 1)

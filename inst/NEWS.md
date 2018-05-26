@@ -10,11 +10,14 @@ __with Gating and Expert Network Covariates__
   new response data with noise components (and the `noise.gate` option) accounted for.
 * New plotting function `MoE_Uncertainty` added (callable within `plot.MoEClust`):  
   visualises clustering uncertainty in the form of a barplot or an ordered profile plot,  
-  allowing reference to the made to the true labels, or not, in both cases.
+  allowing reference to be made to the true labels, or not, in both cases.
 * Specifying `response.type="density"` to `MoE_gpairs` now works properly for models with  
   gating &/or expert network covariates. Previous approach which evaluated the density using  
   averaged gates &/or average means replaced by more computationally expensive but correct  
   approach, which evaluates MVN density for every observation individually and then averages.
+* Added `clustMD` package to `Suggests:`. New `MoE_control` argument `exp.init$clustMD`  
+  governs whether categorical/ordinal covariates are also incorporated into the initialisation  
+  when `isTRUE(exp.init$joint)` and `clustMD` is loaded (defaults to `FALSE`). 
 * Added `drop.break` arg. to `MoE_control` for further control over the extra initialisation  
   step invoked in the presence of expert covariates (see Documentation for details).
 * Sped-up `MoE_dens` for the `EEE` & `VVV` models by using already available Cholesky factors.
@@ -43,7 +46,7 @@ __with Gating and Expert Network Covariates__
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.
 * Added `mclust::clustCombi/clustCombiOptim` examples to `as.Mclust` documentation.
-* Added extra precautions for empty clusters at initialisation.
+* Added extra precautions for empty clusters: during initialisation & during EM.
 * Added utility function `MoE_news` for accessing this `NEWS` file.
 * Added line-breaks to `usage` sections of multi-argument functions.
 * Corrected `MoEClust-package` help file (formerly just `MoEClust`).

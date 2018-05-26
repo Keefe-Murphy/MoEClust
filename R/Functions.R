@@ -44,7 +44,7 @@
 #' \item{\code{gating}}{An object of class \code{"MoE_gating"} and either \code{"multinom"} or \code{"glm"} (for single-component models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component, its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
 #' \item{\code{expert}}{An object of class \code{"MoE_expert"} and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * length(coef(expert[[1]]))}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
 #' \item{\code{loglik}}{The vector of increasing log-likelihood values for every EM iteration under the optimal model. The last element of this vector is the maximum log-likelihood achieved by the parameters returned at convergence.}
-#' \item{\code{linf}}{An asymptotic estimate of the final converged maximised log-likelihood. Only returned when \code{stopping="aitken"} and \code{G > 1} (see \code{\link{MoE_control}} and \code{\link{aitken}}).}
+#' \item{\code{linf}}{An asymptotic estimate of the final converged maximised log-likelihood. Returned when \code{stopping="aitken"} and \code{G > 1} (see \code{\link{MoE_control}} and \code{\link{aitken}}), otherwise the last element of \code{loglik} is returned instead.}
 #' \item{\code{df}}{The number of estimated parameters in the optimal model (i.e. the number of 'used' degrees of freedom). Subtract this number from \code{n} to get the degrees of freedom. The number of parameters due to the gating network, expert network, and covariance matrices are also stored here as attributes of \code{df}.}
 #' \item{\code{hypvol}}{The hypervolume parameter for the noise component if required, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
 #' \item{\code{parameters}}{A list with the following components:
@@ -136,7 +136,6 @@
     init.z        <- control$init.z
     exp.init      <- control$exp.init
     do.joint      <- exp.init$joint   && init.z != "random"
-    do.mahala     <- exp.init$mahalanobis
     max.init      <- exp.init$max.init
     drop.exp      <- exp.init$drop.break
     max.it        <- control$itmax[1]  + 2
@@ -184,6 +183,7 @@
     X             <- as.matrix(data)
     n             <- nrow(X)
     d             <- ncol(X)
+    Nseq          <- seq_len(n)
     noise.null    <- is.null(noise)
     noise.gate    <- (!noise.null     && noise.gate) || noise.null
     if(missing(G) && !noise.null) G   <- 0:9
@@ -196,9 +196,9 @@
     if(!noise.null)   {
      if(length(noise)          != n)              stop("'noise.args$noise.init' must be a vector of length n", call.=FALSE)
      if(!is.logical(noise))     {
-       if(any(match(noise, seq_len(n),
+       if(any(match(noise, Nseq,
               nomatch=0)       == 0))             stop("Numeric 'noise.args$noise.init' must correspond to row indices of data", call.=FALSE)
-       noise      <- as.logical(match(seq_len(n), noise, nomatch=0))
+       noise      <- as.logical(match(Nseq, noise, nomatch=0))
      }
      Vinv         <- noise_vol(X, noise.meth, reciprocal=TRUE)
      nnoise       <- sum(as.numeric(noise))
@@ -242,7 +242,7 @@
       if(any(sX   <- grepl("X",     mNs)))      {
        mNs        <- gsub("X", "E", mNs)
        if(verbose &&
-          all(is.element(mNs,             mfg)))  message(paste0("'modelNames' which contain 'X' coerced to ", paste(shQuote(mNs[sX]), collapse=", ")))
+          all(is.element(mNs,             mfg)))  message(paste0("'modelNames' which contain 'X' coerced to ", paste(shQuote(mNs[sX]), collapse=" + ")))
       }
       if(Gany     && any(!is.element(mNs, mfg)))  stop(paste0("Invalid 'modelNames'", ifelse(uni, " for univariate data", ifelse(low.dim, "", " for high-dimensional data")), "!"), call.=FALSE)
       if(!Gall)   {
@@ -250,7 +250,7 @@
           mf1     <- tryCatch(unname(vapply(mNs,  function(x)  switch(EXPR=x, E=, V="E", EII=, VII="EII", EEI=, VEI=, EVI=, VVI="EEI", EEE=, EVE=, VEE=,  VVE=, EEV=, VEV=, EVV=, VVV="EEE"), character(1L))),
                               error=function(e) { e$message <- paste0("Invalid 'modelNames' for single component models", ifelse(uni, " for univariate data", ifelse(low.dim, "", " for high-dimensional data")), "!")
                                                   stop(e, call.=FALSE) } )
-          if(verbose)                             message(paste0("'modelNames'", ifelse(any(sX), " further", ""), " coerced from ", paste(shQuote(mNs[sZ]), collapse=", "), " to ", paste(shQuote(mf1[sZ]), collapse=", "), " where 'G'=1"))
+          if(verbose)                             message(paste0("'modelNames'", ifelse(any(sX), " further", ""), " coerced from ", paste(shQuote(mNs[sZ]), collapse=" + "), " to ", paste(shQuote(mf1[sZ]), collapse=" + "), " where G=1"))
         }
       }
       mf1         <- mfg       <- mNs
@@ -308,7 +308,6 @@
         exp.x     <- FALSE
       }
       expx.names  <- all.vars(expert)[-1]
-      Nseq        <- seq_len(n)
     } else expert <- stats::as.formula(X ~ 1)
     one.G         <- all(G == 1)
     if(init.z == "mclust"      && !one.G &&
@@ -347,27 +346,49 @@
     jo.cts        <- names(which(!vapply(expx.covs, is.factor, logical(1L))))
     nct           <- length(jo.cts)
     do.joint      <- do.joint  && nct >= 1
-    init.var      <- ifelse(do.joint  && !allg0, d + nct, d)
-    highd         <- init.var  >= n
-    multv         <- init.var   > 1
     someG         <- !one.G    && !allg0
-    if(!multv)     {
-      init.z      <- ifelse(miss.init, "quantile", init.z)
-    } else if(someG && init.z  == "quantile")     stop("Quantile-based initialisation of the allocations is only permitted for univariate data without continuous expert network covariates", call.=FALSE)
-    if(someG        && init.z  == "hc")  {
-      if(miss.hc)  {
-        hcName    <- ifelse(highd, "EII", "VVV")
-      }
-      if(multv    &&
-         is.element(hcName, c("E",        "V")))  stop("'hc.args$hc.meth' can only be 'E' or 'V' for univariate data without continuous expert network covariates", call.=FALSE)
-      if(highd    && !is.element(hcName, c("EII",
-                              "VII",    "EEE")))  warning("Consider a diagonal 'EII' or 'VII' model (or equal volume 'EEE' model) for 'hc.args$hc.meth' for initialising allocations for high-dimensional data", call.=FALSE)
-      if(!multv   && !is.element(hcName, c("VVV",
-                              "E",        "V")))  warning("Possibly invalid 'hc.args$hc.meth' for univariate data", call.=FALSE)
+    if(clust.MD   <- exp.init$clustMD) {
+      exp.fac     <- ncol(expx.covs)   - nct
+      if(!exp.init$joint)                         message("exp.init$clustMD not invoked - exp.init$joint not set to TRUE")
+      if(!(do.md  <- exp.fac    > 0))             message("exp.init$clustMD not invoked - no categorical or ordinal expert network covariates")
+      if(!(has.md <- suppressMessages(requireNamespace("clustMD",
+                     quietly=TRUE))))             warning("exp.init$clustMD not invoked - 'clustMD' library not loaded", call.=FALSE, immediate.=TRUE)
     }
-    XI            <- (if(exp.x && do.joint) cbind(X, expx.covs[,jo.cts]) else X)[!noise,, drop=FALSE]
-    if(init.z     == "hc" && someG)  {
-      g.range     <- range.G[range.G > 0]
+    if(clust.MD   && all(do.md, has.md, someG)) {
+      expx.facs   <- expx.covs[,setdiff(colnames(expx.covs), jo.cts), drop=FALSE]
+      b.ind       <- which(vapply(expx.facs, nlevels,    integer(1L)) == 2)
+      o.ind       <- which(vapply(expx.facs, is.ordered, logical(1L)))
+      n.ind       <- setdiff(seq_len(ncol(expx.facs)),  c(b.ind, o.ind))
+      XY          <- cbind(X,  expx.covs[,jo.cts, drop=FALSE])
+      XY          <- cbind(XY, vapply(expx.facs[,c(b.ind, o.ind, n.ind), drop=FALSE], as.numeric, numeric(n)))
+      mods        <- c("EII", "VII", "EEI", "VEI", "EVI", "VVI", "BD")
+      startCL     <- switch(init.z, kmeans="kmeans", mclust="mclust", random="random", "hc_mclust")
+      mdinf       <- rep(-Inf,  length(mods))
+      mderr       <- matrix(NA, nrow=length(range.G), ncol=length(mods))
+    } else         {
+      mderr       <- FALSE
+      init.var    <- ifelse(do.joint  && !allg0, d + nct, d)
+      highd       <- init.var  >= n
+      multv       <- init.var   > 1
+      if(!multv)   {
+        init.z    <- ifelse(miss.init, "quantile", init.z)
+      } else if(someG && init.z  == "quantile")   stop("Quantile-based initialisation of the allocations is only permitted for univariate data without expert network covariates", call.=FALSE)
+      if(someG    && init.z == "hc")   {
+        if(miss.hc)    {
+          hcName  <- ifelse(highd, "EII", "VVV")
+        }
+        if(multv  &&
+           is.element(hcName, c("E",      "V")))  stop("'hc.args$hc.meth' can only be 'E' or 'V' for univariate data without expert network covariates", call.=FALSE)
+        if(highd  && !is.element(hcName, c("EII",
+                                "VII",  "EEE")))  warning("Consider a diagonal 'EII' or 'VII' model (or equal volume 'EEE' model) for 'hc.args$hc.meth' for initialising allocations for high-dimensional data", call.=FALSE)
+        if(!multv && !is.element(hcName, c("VVV",
+                                "E",      "V")))  warning("Possibly invalid 'hc.args$hc.meth' for univariate data", call.=FALSE)
+      }
+    }
+    XI            <- (if(exp.x && do.joint) cbind(X, expx.covs[,jo.cts, drop=FALSE]) else X)[!noise,, drop=FALSE]
+    if(init.z     == "hc"  && someG && any(!clust.MD, clust.MD && !all(do.md, has.md))) {
+      g.range     <- range.G[range.G > 1]
+      hc1         <- any(G == 1)
       hcZ         <- hclass(tryCatch(hc(XI, modelName=hcName, use=hcUse, minclus=min(g.range)), error=function(e)    {
                                                   stop("Hierarchical clustering initialisation failed", call.=FALSE) }), G=g.range)
     }
@@ -380,7 +401,7 @@
       equal.pro   <- equal.tau[h]
       gate.g      <- gate.G[h]
       exp.g       <- exp.x && g > 0
-      exp.init    <- exp.g && do.mahala
+      init.exp    <- exp.g && exp.init$mahalanobis
       Gseq        <- seq_len(g)
       gN          <- max(g  + !noise.null, 1)
       z           <- matrix(0, n, gN)
@@ -389,25 +410,44 @@
       Xinv        <- if(noiseG) Vinv else NULL
 
     # Initialise Expert Network & Allocations
-      z.tmp       <- unmap(if(g > 1) switch(init.z,
-                                            hc       = hcZ[,h - anyg0],
+      if(clust.MD && all(do.md, has.md, g > 1))      {
+        md        <- vector("list", length(mods))
+        for(m in seq_along(mods)) {
+          mds     <- utils::capture.output(md[[m]]  <- try(suppressWarnings(
+                            clustMD::clustMD(X=XY, G=g, CnsIndx=d + nct, OrdIndx=ncol(XY) - length(n.ind), Nnorms=25000,
+                                             MaxIter=500, model=mods[m], startCL=startCL, autoStop=TRUE, stop.tol=1e-04)),
+                            silent=TRUE))
+        }
+        mdh       <- sapply(md, inherits, "try-error")
+        mderr[h,] <- mdh
+        if(all(mdh))              {              warning(paste0("Invoking exp.init$clustMD failed for ALL clustMD model types where G=",  g, ", probably due to the presence of nominal expert network covariates"), call.=FALSE, immediate.=TRUE)
+          next
+        }
+        if(any(mdh))                             warning(paste0("Invoking exp.init$clustMD failed for SOME clustMD model types where G=", g, ", probably due to the presence of nominal expert network covariates"), call.=FALSE, immediate.=TRUE)
+        z.tmp     <- unmap(md[[which.max(replace(mdinf, !mdh, sapply(md[!mdh], "[[", switch(criterion, icl="ICLhat", "BIChat"))))]]$cl)
+      } else       {
+        z.tmp     <- unmap(if(g > 1) switch(init.z,
+                                            hc       = hcZ[,h - anyg0 - hc1],
                                             quantile = quant_clust(x=XI, G=g),
                                             random   = sample(x=Gseq, size=noisen, replace=TRUE),
                                             kmeans   = stats::kmeans(x=XI, centers=g, iter.max=kiters, nstart=kstarts)$cluster,
                                             mclust   = Mclust(data=XI, G=g, verbose=FALSE, control=emControl(equalPro=equal.pro))$classification)
                            else      rep(1, ifelse(noisen == 0 || g == 0, n, noisen)))
+      }
       zc          <- ncol(z.tmp)
       if(zc != g  && g > 0) {
         z.tmp     <- cbind(z.tmp, matrix(0, ncol=g - zc, nrow=n))
       }
+
+    # Invoke Iterative Mahalanobis Step?
       if(exp.g)    {
         z.mat     <- z.alloc   <- matrix(0, nrow=n * g,  ncol=g)
         muX       <- if(uni)      vector("numeric",  g)  else matrix(0, nrow=d, ncol=g)
       } else {
         exp.pen   <- g * d
       }
-      expold      <- exp.init
-      if(exp.init) {
+      expold      <- init.exp
+      if(init.exp) {
         tmp.z     <- matrix(NA, nrow=ifelse(noisen == 0, n, noisen), ncol=g)
         mahala    <- res.G     <- Efit <- list()
         xN        <- X[!noise,, drop=FALSE]
@@ -420,19 +460,19 @@
           ix      <- ix  + 1
           for(k in Gseq) {
             sub   <- z.tmp[,k] == 1
-            exp   <- tryCatch(stats::lm(expN, data=expnoise, subset=sub), error=function(e) try(if(drop.exp) stop("DROP") else stats::lm(drop_constants(expnoise, expN, sub), data=expnoise, subset=sub), silent=TRUE))
+            exp   <- tryCatch(stats::lm(expN, data=expnoise, subset=sub),              error=function(e) try(if(drop.exp) stop("DROP") else stats::lm(drop_constants(expnoise, expN, sub), data=expnoise, subset=sub), silent=TRUE))
             if(inherits(exp,        "try-error")) {
-              exp.init         <- FALSE
+              init.exp         <- FALSE
               break
             } else Efit[[k]]   <- exp
-            pred  <- tryCatch(stats::predict(exp, newdata=expnoise),      error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(exp, newdata=drop_levels(exp, expnoise)), silent=TRUE))
+            pred  <- tryCatch(suppressWarnings(stats::predict(exp, newdata=expnoise)), error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(exp, newdata=drop_levels(exp, expnoise)), silent=TRUE))
             if(inherits(pred,       "try-error")) {
-              exp.init         <- FALSE
+              init.exp         <- FALSE
             } else {
               pred             <- as.matrix(pred)
               if(sum(pna       <- !stats::complete.cases(pred)) >= 1) {
                 if(drop.exp)    {
-                  exp.init     <- FALSE
+                  init.exp     <- FALSE
                 } else   {
                   nexp         <- expnoise[,vapply(seq_len(ne), function(p, ep=expnoise[,p], fep=is.factor(ep)) {
                                  (!fep && !all(ep[sub] == ep[sub][1], na.rm=TRUE)) || (fep && (nlevels(droplevels(ep[sub])) == nlevels(ep))) }, logical(1L)), drop=FALSE]
@@ -440,7 +480,7 @@
                   if(!inherits(px,  "try-error")) {
                     pred[pna,] <- px
                   } else   {
-                    exp.init   <- FALSE
+                    init.exp   <- FALSE
                   }
                 }
               }
@@ -449,18 +489,18 @@
               mahala[[k]]      <- MoE_mahala(exp, res, squared=TRUE)
             }
           }
-          if(!exp.init) {
+          if(!init.exp) {
             break
           } else if(g   > 1)    {
             maha  <- do.call(cbind, mahala)
             if(anyNA(maha))     {
-              exp.init         <- FALSE
+              init.exp         <- FALSE
               break
             } else   z.tmp     <- maha == rowMins(maha)
           }
         }
         if(ix     >= max.init)                    warning(paste0("Mahalanobis initialisation step failed to converge in max.init=", max.init, " iterations for the ", g, " cluster models"), call.=FALSE, immediate.=TRUE)
-        if(noiseG && exp.init)  {
+        if(noiseG && init.exp)  {
          nRG      <- replicate(g, matrix(NA, nrow=n, ncol=d), simplify=FALSE)
          nX       <- X[noise,, drop=FALSE]
          noisexp  <- expx.covs[noise,, drop=FALSE]
@@ -469,12 +509,12 @@
            exp    <- Efit[[k]]
            pred   <- tryCatch(stats::predict(exp, newdata=noisexp),       error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(exp, newdata=drop_levels(exp, noisexp)), silent=TRUE))
            if(inherits(pred,        "try-error")) {
-             exp.init          <- FALSE
+             init.exp          <- FALSE
            } else  {
              pred              <- as.matrix(pred)
              if(sum(pna        <- !stats::complete.cases(pred)) >= 1) {
                if(drop.exp)    {
-                 exp.init      <- FALSE
+                 init.exp      <- FALSE
                } else   {
                  sub           <- z.tmp[,k] == 1
                  nexp          <- expnoise[,vapply(seq_len(ne), function(p, ep=expnoise[,p], fep=is.factor(ep)) {
@@ -483,7 +523,7 @@
                  if(!inherits(px,   "try-error")) {
                    pred[pna,]  <- px
                  } else {
-                   exp.init    <- FALSE
+                   init.exp    <- FALSE
                  }
                }
              }
@@ -494,7 +534,7 @@
         }
         G.res     <- if(uni) as.matrix(do.call(base::c, res.G)) else do.call(rbind, res.G)
       }
-      if(eNO      <- expold    != exp.init)       warning(paste0("Extra initialisation step with expert covariates failed for G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ", even with 'drop_constants' and 'drop_levels' invoked:\n Try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
+      if(eNO      <- expold    != init.exp)       warning(paste0("Extra initialisation step with expert covariates failed where G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ", even with 'drop_constants' and 'drop_levels' invoked:\n Try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
 
       # Account for Noise Component
       z.tmp       <- 0 + z.tmp
@@ -516,14 +556,14 @@
         rZn       <- row(zN)
         zN        <- zN[!noise,, drop=FALSE]
       }
-      if(exp.init) {
+      if(init.exp) {
         for(k in Gseq) z.alloc[(k - 1) * n + Nseq,k] <- z.init[,k]
       }
       col.z       <- colSums2(z.init)
       emptyinit   <- FALSE
-      if(any(col.z < 1))  {                       warning(paste0("For the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), "components were empty after initialisation"), call.=FALSE)
+      if(any(col.z < 1))  {                       warning(paste0("For the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were empty after initialisation"), call.=FALSE)
         emptyinit <- TRUE
-      } else if(any(col.z < 2))                   warning(paste0("For the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), "components were initialised with only 1 observation"), call.=FALSE)
+      } else if(any(col.z < 2))                   warning(paste0("For the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were initialised with only 1 observation"), call.=FALSE)
 
     # Initialise gating network
       if(gate.g)  {
@@ -551,7 +591,7 @@
       }
       ltau.init   <- ltau
       failedM     <- NULL
-      expinitG    <- exp.init
+      expinitG    <- init.exp
 
     # Loop over the mclust model type(s)
       for(modtype in if(g > 1)    mfg     else if(g == 1) mf1 else mf0)  {
@@ -562,24 +602,24 @@
         x.df      <- ifelse(g   > 0, nVarParams(modtype, d, g), 0) + gate.pen
         if(g > 0  && expinitG)  {
          Mstep    <- try(mstep(modtype, G.res, z.alloc, control=control), silent=TRUE)
-         exp.init <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
+         init.exp <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
         }
-        if(expold != exp.init  && !eNO) {
+        if(expold != init.exp  && !eNO) {
           failedM <- c(failedM, modtype)
         }
-        if(g > 0  && !exp.init) {
+        if(g > 0  && !init.exp) {
          Mstep    <- try(mstep(modtype, X, if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control), silent=TRUE)
          ERR      <- inherits(Mstep, "try-error")           ||   attr(Mstep, "returnCode")  < 0
         }
         if(g > 0  && !ERR)      {
-          mus     <- if(exp.init) muX     else Mstep$parameters$mean
+          mus     <- if(init.exp) muX     else Mstep$parameters$mean
           vari    <- Mstep$parameters$variance
         } else     {
           mus     <- matrix(NA, nrow=n, ncol=0)
           vari    <- list(modelName=modtype, d=d, G=0)
         }
 
-        medens    <- try(MoE_dens(data=if(exp.init) res.G else x.dat, mus=mus, sigs=vari, log.tau=ltau.init, Vinv=Xinv), silent=TRUE)
+        medens    <- try(MoE_dens(data=if(init.exp) res.G else x.dat, mus=mus, sigs=vari, log.tau=ltau.init, Vinv=Xinv), silent=TRUE)
         if((ERR   <- ERR || ((g > 0 && attr(Mstep, "returnCode") < 0) || (inherits(medens, "try-error")) || any(medens > 0)))) {
           ll      <- NA
           j       <- 1
@@ -611,7 +651,7 @@
              e.fit[[k]]        <- fitE
              e.res[[k]]        <- stats::residuals(fitE)
             #e.res[[k]]        <- X - stats::predict(fitE, type="response", newx=model.matrix(expert, data=expx.covs)[,-1], s="lambda.1se")[,,1]
-             z.mat[(k - 1) * n + Nseq,k]       <- z[,k]
+             z.mat[(k - 1) * n  + Nseq,k]      <- z[,k]
             }
             res.x <- if(uni) as.matrix(do.call(base::c, e.res))  else do.call(rbind, e.res)
           }
@@ -647,10 +687,10 @@
               t0  <- mean(z[,gN])
               tau <- c(rep((1 - t0)/g, g), t0)
             } else   if(!equal.pro)      {
-              tau <- if(noise.null) Mstep$parameters$pro else colMeans2(z)
+              tau <- if(noise.null && !ERR) Mstep$parameters$pro else colMeans2(z)
             }
-            tau   <- if(!exp.g    || !noise.null)    tau else tau/sum(tau)
-            ltau  <- if(equal.pro &&  noise.null)   ltau else .mat_byrow(log(tau), nrow=n, ncol=gN)
+            tau   <- if(!exp.g     || !noise.null  || ERR)   tau else tau/sum(tau)
+            ltau  <- if(equal.pro  &&  noise.null)          ltau else .mat_byrow(log(tau), nrow=n, ncol=gN)
           }
 
         # E-step & record log-likelihood
@@ -725,7 +765,7 @@
         DF.x[h,modtype]        <- ifelse(ERR, -Inf, x.df)
         it.x[h,modtype]        <- ifelse(ERR,  Inf, j2)
       } # for (modtype)
-      if((faillen <- length(failedM)) > 1)        warning(paste0("Extra initialisation step with expert covariates worked,\n but expert networks themselves couldn't be properly initialised for the ", paste(shQuote(failedM), collapse=", "), " model", ifelse(faillen == 1, "", "s"), ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ",\n even with 'drop_constants' and 'drop_levels' invoked:\n Try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
+      if((faillen <- length(failedM)) > 1)        warning(paste0("Extra initialisation step with expert covariates worked,\n but expert networks themselves couldn't be properly initialised for the G=", g, " ", paste(shQuote(failedM), collapse=" + "), " model", ifelse(faillen == 1, "", "s"), ifelse(drop.exp, ": try setting 'drop.exp' to FALSE", ",\n even with 'drop_constants' and 'drop_levels' invoked:\n Try suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
 
     # Pull out mclust model corresponding to highest BIC/ICL/AIC
       if(crit.tx   > crit.gx)   {
@@ -751,6 +791,7 @@
         }
       }
     } # for (g)
+    if(all(mderr))                                stop("Initialisation failed for all G values due to invocation of exp.init$clustMD", call.=FALSE)
     if(all(is.infinite(BICs[!is.na(BICs)])))      stop("All models failed!", call.=FALSE)
 
   # Gather results + fit extra gating & expert networks
@@ -760,12 +801,12 @@
     Gseq          <- seq_len(G)
     GN            <- max(G + !noise.null, 1)
     zN       <- z <- x.z
-    rownames(z)   <- as.character(seq_len(n))
+    rownames(z)   <- as.character(Nseq)
     best.mod      <- colnames(CRITs)[best.ind[2]]
     bic.fin       <- BICs[best.ind]
     icl.fin       <- ICLs[best.ind]
     aic.fin       <- AICs[best.ind]
-    uncertainty   <- if(GN > 1) 1     - rowMaxs(z)             else vector("numeric", n)
+    uncert        <- if(GN > 1) 1     - rowMaxs(z)             else vector("numeric", n)
     exp.x         <- exp.x & G  != 0
     x.ll          <- x.ll[if(GN == 1 && !exp.x) 2 else if(GN == 1 && exp.x) seq_len(3)[-1] else -c(1:2)]
     x.ll          <- x.ll[!is.na(x.ll)]
@@ -906,13 +947,13 @@
     attr(x.DF, "nVar.Penalty")        <- nVarParams(best.mod, d, G)
     claX       <- max.col(z)
     claX[claX  == G + 1]       <- 0
-    results       <- list(call = call, data = as.data.frame(X), modelName = best.mod, n = n, d = d,
-                          G = G,BIC = BICs, ICL = ICLs, AIC = AICs, bic = bic.fin, icl = icl.fin,
-                          aic = aic.fin, gating = x.fitG, expert = x.fitE, loglik = x.ll)
-    results       <- c(results, if(stopaX && G > 1) list(x.linf))
-    results       <- c(results, list(df = x.DF, hypvol = hypvol, parameters = list(pro = x.tau, mean = mean.fin, variance = vari.fin, Vinv = Vinv),
-                                     z = z, classification = stats::setNames(claX, seq_len(n)), uncertainty = stats::setNames(uncertainty, seq_len(n)),
-                                     net.covs = netdat, resid.data = residX, DF = DF.x, iters = it.x))
+    results       <- list(call = call, data = as.data.frame(X), modelName = best.mod,
+                          n = n, d = d, G = G, BIC = BICs, ICL = ICLs, AIC = AICs, bic = bic.fin,
+                          icl = icl.fin, aic = aic.fin, gating = x.fitG, expert = x.fitE, loglik = x.ll,
+                          linf = if(stopaX && G > 1) x.linf else x.ll[length(x.ll)], df = x.DF, hypvol = hypvol,
+                          parameters = list(pro = x.tau, mean = mean.fin, variance = vari.fin, Vinv = Vinv), z = z,
+                          classification = stats::setNames(claX, Nseq), uncertainty = stats::setNames(uncert, Nseq),
+                          net.covs = netdat, resid.data = residX, DF = DF.x, iters = it.x)
     class(results)             <- "MoEClust"
     attr(results, "Details")   <- paste0(best.mod, ": ", ifelse(G == 0, "only a noise component", paste0(G, " component", ifelse(G > 1, "s", ""), net.msg)))
     attr(results, "EqualPro")  <- equal.pro
@@ -1148,14 +1189,19 @@
 #'
 #' Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
 #' @param criterion When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.
+#'
+#' When \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded, the \code{criterion} argument also determines the optimum \code{\link[clustMD]{clustMD}} model to initialise with (note that "\code{aic}" will be interpreted as "\code{bic}" for this purpose only).
 #' @param stopping The criterion used to assess convergence of the EM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the asymptotic estimate of the final converged maximised log-likelihood is also returned as \code{linf} for models with 2 or more components, though the largest element of the returned vector \code{ll} still gives the log-likelihood value achieved by the parameters returned at convergence, under both \code{stopping} methods.
-#' @param init.z The method used to initialise the cluster labels. Defaults to a hierarchical clustering tree as per \code{\link[mclust]{hc}} for multivariate data (see \code{hc.args}), or quantile-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are continuous expert network covariates incorporated via \code{exp.init$joint}, in which case the default is again \code{\link[mclust]{hc}}). The \code{"quantile"} option is thus only available for univariate data without continuous expert network covariates or when \code{exp.init$joint} is \code{FALSE}. Other options include \code{kmeans} (see \code{km.args}), \code{random} initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.
+#' @param init.z The method used to initialise the cluster labels. Defaults to a model-based hierarchical clustering tree as per "\code{\link[mclust]{hc}}" for multivariate data (see \code{hc.args}), or "\code{quantile}"-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are expert network covariates incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, in which case the default is again "\code{\link[mclust]{hc}}"). The \code{"quantile"} option is thus only available for univariate data when expert network covariates are not incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, or when expert network covariates are not supplied. Other options include "\code{kmeans}" (see \code{km.args}), "\code{random}" initialisation, and a full run of \code{\link[mclust]{Mclust}}, although this last option "\code{mclust}" is only permitted if there are \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}}.
+#'
+#' When \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded, the \code{init.z} argument instead governs the method by which a call to \code{\link[clustMD]{clustMD}} is initialised. In this instance, "\code{quantile}" will instead default to "\code{\link[mclust]{hc}}", and the arguments to \code{hc.args} and \code{km.args} will be ignored.
 #' @param exp.init A list supplying select parameters to control the initialisation routine in the presence of \emph{expert} network covariates (otherwise ignored):
 #' \describe{
-#' \item{\code{joint}}{A logical indicating whether the initial partition is obtained on the joint distribution of the response and (continuous only) expert network covariates (defaults to \code{TRUE}) or just the response variables (\code{FALSE}). Only relevant when \code{init.z} is not \code{"random"}. This will render the \code{"quantile"} option to \code{init.z} for univariate data unusable if continuous expert network covariates are supplied.}
+#' \item{\code{joint}}{A logical indicating whether the initial partition is obtained on the joint distribution of the response and expert network covariates (defaults to \code{TRUE}) or just the response variables (\code{FALSE}). By default, only continuous expert network covariates are considered (see \code{exp.init$clustMD} below). Only relevant when \code{init.z} is not \code{"random"} (unless \code{isTRUE(exp.init$clustMD)}, in which case \code{init.z} specifies the initialisation routine for a call to \code{\link[clustMD]{clustMD}}). This will render the \code{"quantile"} option to \code{init.z} for univariate data unusable if continuous expert network covariates are supplied &/or categorical/ordinal expert network covariates are supplied when \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded.}
+#' \item{\code{\link[clustMD]{clustMD}}}{A logical indicating whether categorical/ordinal covariates should be incorporated when using the joint distribution of the response and expert network covariates for initialisation (defaults to \code{FALSE}). Only relevant when \code{isTRUE(exp.init$joint)}. Requires the use of the \code{\link[clustMD]{clustMD}} library. Supplying this argument as \code{TRUE} when the \code{\link[clustMD]{clustMD}} library is loaded has the effect of superseding the \code{init.z} argument: this argument now governs instead how the call to \code{\link[clustMD]{clustMD}} is initialised. Similarly, the \code{criterion} argument now doubles as the criterion for choosing the optimum \code{\link[clustMD]{clustMD}} model type to initialise with, and the arguments \code{hc.args} and \code{km.args} will be ignored. Note that initialising in this manner may be slow (all \code{\link[clustMD]{clustMD}} model types are tried!), and may even fail in the presence of nominal expert network covariates.}
 #' \item{\code{mahalanobis}}{A logical indicating whether to iteratively reallocate observations during the initialisation phase to the component corresponding to the expert network regression to which it's closest to the fitted values of in terms of Mahalanobis distance (defaults to \code{TRUE}). This will ensure that each component can be well modelled by a single expert prior to running the EM algorithm.}
 #' \item{\code{max.init}}{The maximum number of iterations for the Mahalanobis distance-based reallocation procedure when \code{exp.init$mahalanobis} is \code{TRUE}. Defaults to \code{100}.}
-#' \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given componenet's expert regression (particularly for categorical covariates). It may also occur due to this partitioning that "unseen" data, when calculating the residuals, will have new factor levels. When \code{drop.break} is \code{TRUE}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios. Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{drop.break}.}
+#' \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given componenet's expert regression (particularly for categorical covariates). It may also occur due to this partitioning that "unseen" data, when calculating the residuals, will have new factor levels. When \code{isTRUE(exp.init$drop.break)}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios. Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{exp.init$drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{exp.init$drop.break}.}
 #' }
 #' @param eps A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of \code{eps} allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.
 #' @param tol A vector of length three giving relative convergence tolerances for 1) the log-likelihood of the EM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step ("VEI", "EVE", "VEE", "VVE", "VEV"), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.
@@ -1169,12 +1215,12 @@
 #' \item{\code{noise.gate}}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
 #' \item{\code{noise.meth}}{The method used to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively.}
 #' }
-#' @param hc.args A list supplying select parameters to control the initialisation of the cluster allocations when \code{init.z="hc"} (otherwise irrelevant):
+#' @param hc.args A list supplying select parameters to control the initialisation of the cluster allocations when \code{init.z="hc"}, unless \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded (otherwise irrelevant):
 #' \describe{
 #' \item{\code{hcUse}}{A string specifying the type of input variables to be used. Unlike \code{mclust}, this defaults to "\code{VARS}" here.}
 #' \item{\code{hc.meth}}{A character string indicating the model to be used when hierarchical clustering (see \code{\link[mclust]{hc}} is employed for initialisation. Defaults to \code{"EII"} for high-dimensional data, or \code{"VVV"} otherwise.}
 #' }
-#' @param km.args A list supplying select parameters to control the initialisation of the cluster allocations when \code{init.z="kmeans"} (otherwise irrelevant):
+#' @param km.args A list supplying select parameters to control the initialisation of the cluster allocations when \code{init.z="kmeans"}, unless \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded (otherwise irrelevant):
 #' \describe{
 #' \item{\code{kstarts}}{The number of random initialisations to use. Defaults to 10.}
 #' \item{\code{kiters}}{The maximum number of K-Means iterations allowed. Defaults to 10.}
@@ -1187,9 +1233,7 @@
 #'
 #' While the \code{criterion} argument controls the choice of the optimal number of components and GPCM/\pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
 #' @importFrom mclust "hc" "mclust.options"
-#' @note When initialising using the \code{"hc"} option for the \code{init.z} argument, the \code{"EII"} model is used for high-dimensional data, otherwise \code{"VVV"} is used.
-#'
-#' Note also that, unlike \code{mclust}, the \code{hcUse} argument to \code{\link[mclust]{mclust.options}} is set to "\code{VARS}" by default.
+#' @note Note that successfully invoking \code{exp.init$clustMD} (though it defaults to \code{FALSE}) effects the role of the arguments \code{criterion}, \code{init.z}, \code{hc.args}, and \code{km.args}. Please read the documentation above carefully in this instance.
 #' @return A named list in which the names are the names of the arguments and the values are the values supplied to the arguments.
 #' @export
 #' @keywords control
@@ -1212,19 +1256,26 @@
 #'             verbose = interactive(),
 #'             ...)
 #' @examples
-#' ctrl <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random")
+#' \dontrun{
+#' ctrl1 <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random")
 #'
 #' data(CO2data)
-#' GNP  <- CO2data$GNP
-#' res  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl)
+#' GNP   <- CO2data$GNP
+#' res   <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1)
 #'
 #' # Alternatively, specify control arguments directly
-#' res2 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
+#' res2  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
 #'
-#' # Supplying ctrl without naming it as control throws an error,
+#' # Supplying ctrl1 without naming it as control throws an error,
 #' # when any of {modelNames, gating, expert} are not supplied
-#' \dontrun{
-#' res3 <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl)}
+#' res3  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl1)
+#'
+#' # Initialise via the mixed-type joint distribution of response & covariates
+#' ctrl2 <- MoE_control(exp.init=list(clustMD=TRUE, mahalanobis=FALSE))
+#' data(ais)
+#' library(clustMD)
+#' res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
+#'                    network.data=ais, control=ctrl2)}
   MoE_control     <- function(criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
                               exp.init = list(...), eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08), itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
                               equalPro = FALSE, noise.args = list(...), hc.args = list(...), km.args = list(...), warn.it = 0L, verbose = interactive(), ...) {
@@ -1243,6 +1294,10 @@
       exp.init$joint       <- TRUE
     } else if(length(exp.init$joint)        > 1 ||
               !is.logical(exp.init$joint))        stop("'exp.init$joint' must be a single logical indicator", call.=FALSE)
+    if(is.null(exp.init$clustMD)) {
+      exp.init$clustMD     <- FALSE
+    } else if(length(exp.init$clustMD)      > 1 ||
+              !is.logical(exp.init$clustMD))      stop("'exp.init$clustMD' must be a single logical indicator", call.=FALSE)
     if(is.null(exp.init$mahalanobis))       {
       exp.init$mahalanobis <- TRUE
     } else if(length(exp.init$mahalanobis)  > 1 ||
@@ -1546,6 +1601,7 @@
         best.model$gating              <- best.mod$gating
         best.model$expert              <- best.mod$expert
         best.model$loglik              <- best.mod$loglik
+        best.model$linf                <- best.mod$linf
         best.model$df                  <- best.mod$df
         best.model$hypvol              <- best.mod$hypvol
         best.model$parameters          <- best.mod$parameters
