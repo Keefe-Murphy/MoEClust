@@ -189,7 +189,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   zc    <- function(x) length(unique(x)) <= 1
   saxzc <- vapply(x, zc, logical(1L))
   nrm   <- sum(saxzc, na.rm=TRUE)
-  if(any(saxzc, na.rm=TRUE)) {                        warning(paste(nrm, "column", ifelse(nrm > 1, "s", ""), " with less than two distinct values eliminated"), call.=FALSE)
+  if(any(saxzc, na.rm=TRUE)) {                        warning(paste(nrm, "column", ifelse(nrm > 1, "s", ""), " with less than two distinct values eliminated\n"), call.=FALSE)
    dcol <- sum(which(saxzc) < dcol)
    x    <- x[,!saxzc]
   }
@@ -227,10 +227,10 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
       colors[G + 1]             <- "grey65"
     }
   } else if(length(colors) == 1) colors <- rep(colors, L)
-  if(length(symbols) < L) {                           warning("More symbols needed to show classification", call.=FALSE)
+  if(length(symbols) < L) {                           warning("More symbols needed to show classification\n", call.=FALSE)
     symbols <- rep(16, L)
   }
-  if(length(colors)  < L) {                           warning("More colors needed to show classification", call.=FALSE)
+  if(length(colors)  < L) {                           warning("More colors needed to show classification\n",  call.=FALSE)
     colors <- rep("black", L)
   }
   scatter.type <- if(length(scatter.type) == 1) rep(scatter.type, 2) else scatter.type
@@ -354,7 +354,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(axis.pars$axis.fontsize))   {
     axis.pars$fontsize  <- 9
   } else axis.pars$fontsize       <- axis.pars$axis.fontsize
-  if(axis.pars$n.ticks   < 3)        {                warning("Fewer than 3 axis ticks might cause problems", call.=FALSE)
+  if(axis.pars$n.ticks   < 3)        {                warning("Fewer than 3 axis ticks might cause problems\n", call.=FALSE)
     axis.pars$n.ticks   <- 3
   }
   if(is.null(diag.pars$diag.fontsize))   {
@@ -652,7 +652,7 @@ MoE_plotLogLik.MoEClust  <- function(res, type = "l", xlab = "Iteration", ylab =
   on.exit(suppressWarnings(graphics::par(oldpar)))
   suppressWarnings(graphics::par(pty="m"))
   xll        <- res$loglik
-  if(all(xll != cummax(xll)))                         warning("Log-likelihoods are not strictly increasing", call.=FALSE)
+  if(all(xll != cummax(xll)))                         warning("Log-likelihoods are not strictly increasing\n", call.=FALSE)
   graphics::plot(xll, type = ifelse(length(xll) == 1, "p", type), xlab = xlab, ylab = ylab, xaxt = xaxt)
   if(length(xaxt) == 1   && is.character(xaxt))  {
     seqll    <- seq_along(xll)
@@ -1289,7 +1289,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
       if(reference)  panel.abline(v=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
       panel.rect(x=rep(origin, length(y)), y=y, height=rep(height, length(y)), width=x - origin, border=border, col=col, lty=lty, lwd=lwd, just=c("left", "centre"), identifier=identifier)
     } else if(stack)      {
-      if(!is.null(origin) && origin != 0)             warning("'origin' forced to 0 for stacked bars", call.=FALSE)
+      if(!is.null(origin) && origin != 0)             warning("'origin' forced to 0 for stacked bars\n", call.=FALSE)
       col       <- rep(col,    length.out=nvals)
       border    <- rep(border, length.out=nvals)
       lty       <- rep(lty,    length.out=nvals)
@@ -1342,7 +1342,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
         panel.text(x=x, y=y.fix, label=show.counts, adj=c(0.5, -0.5), identifier=identifier, gp=grid::gpar(fontsize=fontsize), cex=0.8)
       }
     } else if(stack) {
-      if(!is.null(origin) && origin != 0)             warning("'origin' forced to 0 for stacked bars", call.=FALSE)
+      if(!is.null(origin) && origin != 0)             warning("'origin' forced to 0 for stacked bars\n", call.=FALSE)
       col       <- rep(col,    length.out=nvals)
       border    <- rep(border, length.out=nvals)
       lty       <- rep(lty,    length.out=nvals)

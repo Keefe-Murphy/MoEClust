@@ -23,6 +23,7 @@ __with Gating and Expert Network Covariates__
 * Sped-up `MoE_dens` for the `EEE` & `VVV` models by using already available Cholesky factors.
 * New `MoE_control` arg. `km.args` specifies `kstarts` & `kiters` when `init.z="kmeans"`.
     * Consolidated args. related to `init.z="hc"` & noise into `hc.args` & `noise.args`.
+    * `hc.args` now also passed to call to `mclust` when `init.z="mclust"`.
 
 ### Bug Fixes & Miscellaneous Edits
 * Fixed point-size, transparency, & plotting symbols when `response.type="uncertainty"`  
@@ -35,19 +36,22 @@ __with Gating and Expert Network Covariates__
   variables `d` & `modelName` is inferred from this object: the arg. `modelName` was removed.
 * `resid.data` now returned by `MoE_clust` as a list, to better conform to `MoE_dens`.
 * Renamed functions `MoE_aitken` & `MoE_qclass` to `aitken` & `quant_clust`, respectively.
+* Rows of `data` w/ missing values now dropped for gating/expert covariates too (`MoE_clust`).
+* Logical covariates in gating/expert networks now coerced to factors.
 * Fixed small bug calculating `linf` within `aitken` & the associated stopping criterion.
 * Final `linf` estimate now returned for optimal model when `stopping="aitken"` & G > 1.
 * Removed redundant extra M-step after convergence for models without expert covariates.
 * Removed redundant & erroneous `resid` & `residuals` args. to `as.Mclust` & `MoE_gpairs`.
 * `MoE_plotCrit`, `MoE_plotGate` & `MoE_plotLogLik` now invisibly return revelant quantities.
 * Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
-* Improved `drop_levels` to handle alphanumeric variable names and ordinal variables.
+* Fixed `drop_levels` to handle alphanumeric variable names and ordinal variables.
 * Interactions and higher-order terms are now accounted for within `drop_constants`.
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.
 * Added `mclust::clustCombi/clustCombiOptim` examples to `as.Mclust` documentation.
 * Added extra precautions for empty clusters: during initialisation & during EM.
 * Added utility function `MoE_news` for accessing this `NEWS` file.
+* Tidied indentation/line-breaks for message/warning calls for printing clarity.
 * Added line-breaks to `usage` sections of multi-argument functions.
 * Corrected `MoEClust-package` help file (formerly just `MoEClust`).
 * Many documentation clarifications.
