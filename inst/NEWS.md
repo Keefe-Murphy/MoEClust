@@ -13,17 +13,21 @@ __with Gating and Expert Network Covariates__
   allowing reference to be made to the true labels, or not, in both cases.
 * Specifying `response.type="density"` to `MoE_gpairs` now works properly for models with  
   gating &/or expert network covariates. Previous approach which evaluated the density using  
-  averaged gates &/or average means replaced by more computationally expensive but correct  
+  averaged gates &/or averaged means replaced by more computationally expensive but correct  
   approach, which evaluates MVN density for every observation individually and then averages.
 * Added `clustMD` package to `Suggests:`. New `MoE_control` argument `exp.init$clustMD`  
   governs whether categorical/ordinal covariates are also incorporated into the initialisation  
-  when `isTRUE(exp.init$joint)` and `clustMD` is loaded (defaults to `FALSE`). 
+  when `isTRUE(exp.init$joint)` & `clustMD` is loaded (defaults to `FALSE`, works with noise). 
 * Added `drop.break` arg. to `MoE_control` for further control over the extra initialisation  
   step invoked in the presence of expert covariates (see Documentation for details).
 * Sped-up `MoE_dens` for the `EEE` & `VVV` models by using already available Cholesky factors.
-* New `MoE_control` arg. `km.args` specifies `kstarts` & `kiters` when `init.z="kmeans"`.
+* Other new `MoE_control` arguments:  
+    * `km.args` specifies `kstarts` & `kiters` when `init.z="kmeans"`.
     * Consolidated args. related to `init.z="hc"` & noise into `hc.args` & `noise.args`.
     * `hc.args` now also passed to call to `mclust` when `init.z="mclust"`.
+    * `init.crit` (`"bic"`/`"icl"`) controls selection of optimal `mclust`/`clustMD`  
+       model type to initialise with (if `init.z="mclust"` or `isTRUE(exp.init$clustMD)`);  
+       relatedly, initialisation now sped-up when `init.z="mclust"`.
 
 ### Bug Fixes & Miscellaneous Edits
 * Fixed point-size, transparency, & plotting symbols when `response.type="uncertainty"`  
@@ -34,6 +38,8 @@ __with Gating and Expert Network Covariates__
 * `sigs` arg. to `MoE_dens` and `MoE_estep` must now be a variance object, as per `variance`  
   in the  parameters list from `MoE_clust` & `mclust` output, the number of  clusters `G`,  
   variables `d` & `modelName` is inferred from this object: the arg. `modelName` was removed.
+* `MoE_clust` no longer returns an error if `init.z="mclust"` when no gating/expert network  
+   covariates are supplied; instead, `init.z="hc"` to better reproduce `Mclust` output.
 * `resid.data` now returned by `MoE_clust` as a list, to better conform to `MoE_dens`.
 * Renamed functions `MoE_aitken` & `MoE_qclass` to `aitken` & `quant_clust`, respectively.
 * Rows of `data` w/ missing values now dropped for gating/expert covariates too (`MoE_clust`).
@@ -45,13 +51,15 @@ __with Gating and Expert Network Covariates__
 * `MoE_plotCrit`, `MoE_plotGate` & `MoE_plotLogLik` now invisibly return revelant quantities.
 * Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
 * Fixed `drop_levels` to handle alphanumeric variable names and ordinal variables.
+* Fixed `MoE_compare` when a mix of models with and without a noise component are supplied.
 * Interactions and higher-order terms are now accounted for within `drop_constants`.
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.
 * Added `mclust::clustCombi/clustCombiOptim` examples to `as.Mclust` documentation.
 * Added extra precautions for empty clusters: during initialisation & during EM.
 * Added utility function `MoE_news` for accessing this `NEWS` file.
-* Tidied indentation/line-breaks for message/warning calls for printing clarity.
+* Added message if optimum `G` is at either end of the range considered.
+* Tidied indentation/line-breaks for `cat`/`message`/`warning` calls for printing clarity.
 * Added line-breaks to `usage` sections of multi-argument functions.
 * Corrected `MoEClust-package` help file (formerly just `MoEClust`).
 * Many documentation clarifications.

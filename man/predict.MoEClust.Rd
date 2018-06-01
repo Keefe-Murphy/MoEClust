@@ -33,7 +33,7 @@ When \code{newdata} is not supplied in any way, the covariates and response vari
 \item{...}{Catches unused arguments.}
 }
 \value{
-A list with the following components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
+A list with the following named components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
 \item{\code{y}}{Fitted values of the response variables.}
 \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belonds to the \emph{k}-th component..}
 \item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}.}

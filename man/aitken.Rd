@@ -10,7 +10,7 @@ aitken(loglik)
 \item{loglik}{A vector of three consecutive log-likelihood values. These three values should be in ascending order, though this is not checked.}
 }
 \value{
-A list with the following components:
+A list with the following named components:
 \item{\code{ll}}{The most current estimate for the log-likelihood.}
 \item{\code{linf}}{The most current estimate of the final converged maxmised log-likelihood.}
 \item{\code{a}}{The Aitken acceleration value where typically \code{0 <= a <= 1}. When \code{a < 0}, a numerical issue or bug has occured; when \code{a > 1}, the algorithm is accelerating and should not be stopped.}

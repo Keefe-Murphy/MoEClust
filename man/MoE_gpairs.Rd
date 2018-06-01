@@ -122,7 +122,7 @@ where \code{hist.color} is a vector of length 4, giving the colours for the resp
 A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
 }
 \description{
-Produces a matrix of plots showing pairwise relationships between continuous response variables and continuous/categorical associated covariates, as well as the clustering achieved, according to fitted MoEClust mixture models.
+Produces a matrix of plots showing pairwise relationships between continuous response variables and continuous/categorical/logical/ordinal associated covariates, as well as the clustering achieved, according to fitted MoEClust mixture models.
 }
 \note{
 For \code{MoEClust} models with more than one associated covariate (entering either network), fitted lines produced in continuous covariate vs. continuous response scatter plots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
