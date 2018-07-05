@@ -33,18 +33,21 @@ MoE_compare(...,
 If any of the compared models do have a noise component, this switch also controls whether the influence (or not) of gating covariates on the noise component's mixing proportion is indicated (either by \code{TRUE} or \code{FALSE} for models with a noise component, or else a blank entry for those without), for the models among those being compared which have gating covariates.}
 }
 \value{
-A list of class \code{"MoECompare"}, for which a dedicated print function exists, containing the following elements, each of \code{length(pick)}:
+A list of class \code{"MoECompare"}, for which a dedicated print function exists, containing the following elements (each of length \code{pick}, and ranked according to \code{criterion}, where appropriate):
 \item{\code{optimal}}{The single optimal model (an object of class \code{"MoEClust"}) among those supplied, according to the chosen \code{criterion}.}
 \item{\code{pick}}{The final number of ranked models. May be different (i.e. less than) the supplied \code{pick} value.}
 \item{\code{MoENames}}{The names of the supplied \code{"MoEClust"} objects.}
 \item{\code{modelNames}}{The \code{\link[mclust]{mclustModelNames}}.}
 \item{\code{G}}{The optimal numbers of components.}
-\item{\code{bic}}{The ranked BIC values.}
-\item{\code{icl}}{The ranked ICL values.}
-\item{\code{aic}}{The ranked AIC values.}
+\item{\code{df}}{The numbers of estimated parameters.}
+\item{\code{iters}}{The numbers of EM iterations.}
+\item{\code{bic}}{BIC values, ranked according to \code{criterion}.}
+\item{\code{icl}}{TCL values, ranked according to \code{criterion}.}
+\item{\code{aic}}{AIC values, ranked according to \code{criterion}.}
 \item{\code{gating}}{The gating formulas.}
 \item{\code{expert}}{The expert formulas.}
 \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
+\item{\code{hypvol}}{Hypervolume parameters for the noise component if required, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
 \item{\code{noise}}{Either a logical indicating the presence/absence of a noise component, or the type of noise component fitted (if any). Depends on the supplied value of \code{noise}. Only displayed if at least one of the compared models has a noise component.}
 \item{\code{noise.gate}}{Logical indicating whether gating covariates were allowed to influence the noise component's mixing proportion. Only printed for models with a noise component, when at least one of the compared models has gating covariates, and even then only when \code{noise} is supplied as \code{TRUE}.}
 }

@@ -1494,3 +1494,10 @@ plot.mclustAIC  <- function (x, ylab = "AIC", ...) {
 plot.mclustDF   <- function (x, ylab = "DF", ...)  {
   plot.mclustBIC(x, ylab = ylab, ...)
 }
+
+#' @method plot mclustITER
+#' @importFrom mclust "plot.mclustBIC"
+#' @export
+plot.mclustITER <- function (x, ylab = "Iterations", ...)  {
+  plot.mclustBIC(x, ylab = ylab, ...)
+}

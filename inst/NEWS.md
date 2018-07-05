@@ -30,6 +30,11 @@ __with Gating and Expert Network Covariates__
        relatedly, initialisation now sped-up when `init.z="mclust"`.
 
 ### Bug Fixes & Miscellaneous Edits
+* `ITERS` replaces `iters` as the matrix of the number of EM iterations in `MoE_clust` output:  
+    * `iters` now gives this number for the optimal model.  
+	  * `ITERS` now behaves like `BIC`/`ICL` etc. in inheriting the `"MoECriterion"` class.  
+	  * `iters` now filters down to `summary.MoEClust` and the associated printing function.  
+	  * `ITERS` now filters down to `MoE_compare` and the associated printing function.
 * Fixed point-size, transparency, & plotting symbols when `response.type="uncertainty"`  
   within `MoE_gpairs` to better conform to `mclust`: previously no transparency.
 * `subset` arg. to `MoE_gpairs` now allows `data.ind=0` or `cov.ind=0`, allowing plotting of  
@@ -52,6 +57,7 @@ __with Gating and Expert Network Covariates__
 * Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
 * Fixed `drop_levels` to handle alphanumeric variable names and ordinal variables.
 * Fixed `MoE_compare` when a mix of models with and without a noise component are supplied.
+* Fixed `MoE_compare` when optimal model has to be re-fit due to mismatched `criterion`.
 * Interactions and higher-order terms are now accounted for within `drop_constants`.
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.
