@@ -20,8 +20,8 @@
 #' \itemize{
 #' \item{Type: }{Package}
 #' \item{Package: }{MoEClust}
-#' \item{Version: }{1.1.0}
-#' \item{Date: }{2018-02-06 (this version), 2017-11-28 (original release)}
+#' \item{Version: }{1.2.0}
+#' \item{Date: }{2018-08-24 (this version), 2017-11-28 (original release)}
 #' \item{Licence: }{GPL (>=2)}
 #' }
 #'
@@ -56,9 +56,9 @@
 .onAttach <- function(lib, pkg) {
   version <- read.dcf(file.path(lib, pkg, "DESCRIPTION"), "Version")
   if(interactive()) {
-    packageStartupMessage(paste("\n___  ___      _____ _____ _           _   \n|  \\/  |     |  ___/  __ \\ |         | |     Gaussian Parsimonious\n| .  . | ___ | |__ | /  \\/ |_   _ ___| |_        Clustering Models\n| |\\/| |/ _ \\|  __|| |   | | | | / __| __|         with covariates\n| |  | | (_) | |___| \\__/\\ | |_| \\__ \\ |_ \n\\_|  |_/\\___/\\____/ \\____/_|\\__,_|___/\\__|           version", version, "\n"))
+    packageStartupMessage(paste("\n___  ___      _____ _____ _           _   \n|  \\/  |     |  ___/  __ \\ |         | |     Gaussian Parsimonious\n| .  . | ___ | |__ | /  \\/ |_   _ ___| |_        Clustering Models\n| |\\/| |/ _ \\|  __|| |   | | | | / __| __|         with Covariates\n| |  | | (_) | |___| \\__/\\ | |_| \\__ \\ |_ \n\\_|  |_/\\___/\\____/ \\____/_|\\__,_|___/\\__|           version", version, "\n"))
   } else   {
     packageStartupMessage("\nPackage 'MoEClust' version ", version, ".")
   }
-  packageStartupMessage(paste("Type '?MoEClust' to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote("MoEClust"),")")) ,"for citing the package in publications.\nType 'MoE_news()' to see new features recent changes and bug fixes."))
+  packageStartupMessage(paste("Type '?MoEClust' to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote("MoEClust"),")")) ,"for citing the package in publications.\nType 'MoE_news()' to see new features recent changes and bug fixes.\n"))
 }

@@ -61,7 +61,7 @@ GNP   <- CO2data[,1]
 CO2   <- CO2data[,2]
 ```
 
-Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. For the model with no covariates, we can only fit a model with only a noise component by including `G=0`.
+Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither, via a formula interface. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. For the model with no covariates, we can only fit a model with only a noise component by including `G=0`.
 
 ```{r, results='hide'}
 m1    <- MoE_clust(CO2, G=0:2, verbose=FALSE)
@@ -149,7 +149,7 @@ data(ais)
 hema  <- ais[,3:7]
 ```
 
-Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within AIS data, with `sex` in the expert network and `bmi` in the gating network. This time, allow the printing of messages to the screen.
+Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within AIS data, supplying `sex` in the expert network and `bmi` in the gating network via formula interfaces. This time, allow the printing of messages to the screen.
 ```{r}
 mod   <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais)
 ```

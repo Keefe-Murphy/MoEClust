@@ -3,11 +3,11 @@ __MoEClust: Gaussian Parsimonious Clustering Models -__
 __with Gating and Expert Network Covariates__  
 =======================================================
 
-## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-02-18_)
+## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-08-24_)
 ### New Features & Improvements
 * New `predict.MoEClust` function added: predicts cluster membership probability,  
   MAP classification, and fitted response, using only new covariates or new covariates &  
-  new response data with noise components (and the `noise.gate` option) accounted for.
+  new response data, with noise components (and the `noise.gate` option) accounted for.
 * New plotting function `MoE_Uncertainty` added (callable within `plot.MoEClust`):  
   visualises clustering uncertainty in the form of a barplot or an ordered profile plot,  
   allowing reference to be made to the true labels, or not, in both cases.
@@ -44,7 +44,7 @@ __with Gating and Expert Network Covariates__
   in the  parameters list from `MoE_clust` & `mclust` output, the number of  clusters `G`,  
   variables `d` & `modelName` is inferred from this object: the arg. `modelName` was removed.
 * `MoE_clust` no longer returns an error if `init.z="mclust"` when no gating/expert network  
-   covariates are supplied; instead, `init.z="hc"` to better reproduce `Mclust` output.
+   covariates are supplied; instead, `init.z="hc"` is used to better reproduce `mclust` output.
 * `resid.data` now returned by `MoE_clust` as a list, to better conform to `MoE_dens`.
 * Renamed functions `MoE_aitken` & `MoE_qclass` to `aitken` & `quant_clust`, respectively.
 * Rows of `data` w/ missing values now dropped for gating/expert covariates too (`MoE_clust`).
@@ -58,6 +58,9 @@ __with Gating and Expert Network Covariates__
 * Fixed `drop_levels` to handle alphanumeric variable names and ordinal variables.
 * Fixed `MoE_compare` when a mix of models with and without a noise component are supplied.
 * Fixed `MoE_compare` when optimal model has to be re-fit due to mismatched `criterion`.
+* Fixed y-axis labelling of `MoE_Uncertainty` plots.
+* `print.MoECompare` now has a `digits` arg. to control rounding of printed output.
+* Better handling of tied model-selection criteria values in `MoE_clust` & `MoE_compare`.
 * Interactions and higher-order terms are now accounted for within `drop_constants`.
 * Replaced certain instances of `is.list(x)` with `inherits(x, "list")` for stricter checking.
 * Added extra checks for invalid gating &/or expert covariates within `MoE_clust`.

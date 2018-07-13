@@ -5,7 +5,7 @@
 \title{Convert MoEClust objects to the Mclust class}
 \usage{
 as.Mclust(x,
-          signif = 0,
+          signif = 0L,
           ...)
 }
 \arguments{

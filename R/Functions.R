@@ -54,7 +54,7 @@
 #' \item{\code{mean}}{The means of each component. If there is more than one component, this is a matrix whose \emph{k}-th column is the mean of the \emph{k}-th component of the mixture model.
 #'
 #' For models with expert network covariates, this is given by the posterior mean of the fitted values, otherwise the posterior mean of the response is reported. For models with expert network covariates, the \emph{observation-specific} means can be accessed by calling \code{predict} on each object in the list given by \code{expert}.}
-#' \item{\code{variance}}{A list of variance parameters of each component of the model. The components of this list depend on the model type specification. See the help file for \code{\link[mclust]{mclustVariance}} for details. Also see \code{\link{expert_covar}} for an alternative approach to summarising the variance parameters in the presence of expert covariates.}
+#' \item{\code{variance}}{A list of variance parameters of each component of the model. The components of this list depend on the model type specification. See the help file for \code{\link[mclust]{mclustVariance}} for details. Also see \code{\link{expert_covar}} for an alternative approach to summarising the variance parameters in the presence of expert network covariates.}
 #' \item{\code{Vinv}}{The inverse of the hypervolume parameter for the noise component if required, otherwise set to \code{NULL} (see \code{\link{MoE_control}}).}
 #' }}
 #' \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component. If there is a noise component, its values are found in the \emph{last} column.}
@@ -139,11 +139,11 @@
     do.joint      <- exp.init$joint   && init.z != "random"
     max.init      <- exp.init$max.init
     drop.exp      <- exp.init$drop.break
-    tol           <- control$tol[1]
-    g.reltol      <- control$tol[3]
-    max.it        <- control$itmax[1]
+    tol           <- control$tol[1L]
+    g.reltol      <- control$tol[3L]
+    max.it        <- control$itmax[1L]
     max.it        <- ifelse(max.it == .Machine$integer.max, max.it, max.it + 2L)
-    g.itmax       <- control$itmax[3]
+    g.itmax       <- control$itmax[3L]
     equalPro      <- control$equalPro
     noise.args    <- control$noise.args
     noise         <- noise.args$noise.init
@@ -157,13 +157,13 @@
     kstarts       <- km.args$kstarts
     init.crit     <- control$init.crit
     warnit        <- control$warn.it
-    itwarn        <- warnit > 2
+    itwarn        <- warnit > 2L
     verbose       <- control$verbose
     miss.init     <- control$miss.init
     miss.hc       <- control$miss.hc
     control       <- control[names(control) %in% c("eps", "tol", "itmax", "equalPro")]
-    control$itmax <- control$itmax[-3]
-    control$tol   <- control$tol[-3]
+    control$itmax <- control$itmax[-3L]
+    control$tol   <- control$tol[-3L]
     netmiss       <- missing(network.data)
     if(!multi     &&
        !all(is.character(modelNames)))            stop("'modelNames' must be a vector of character strings", call.=FALSE)
@@ -187,7 +187,7 @@
     }
     X             <- as.matrix(data)
     n             <- nrow(X)
-    if((d         <- ncol(X))  == 0)              stop("'data' is empty!", call.=FALSE)
+    if((d         <- ncol(X))  == 0L)             stop("'data' is empty!", call.=FALSE)
     Nseq          <- seq_len(n)
     comp.x        <- if(isTRUE(comp.x)) Nseq else comp.x
     noise.null    <- is.null(noise)
@@ -216,7 +216,7 @@
      if(any(G      > noisen)) range.G <- range.G[range.G <= noisen]
     } else   {
       noise       <- vector("logical", n)
-      nnoise      <- 0
+      nnoise      <- 0L
       noisen      <- n
       Vinv        <- NULL
     }
@@ -229,10 +229,10 @@
        noise.null <- FALSE
        noise      <- rep(TRUE, n)
        nnoise     <- n
-       noisen     <- 0
+       noisen     <- 0L
       }
     }
-    if((uni <- d  == 1))       {
+    if((uni <- d  == 1L))       {
       mfg         <- c("E", "V")
       mf1         <- mf0       <- "E"
       colnames(X) <- tmp.nam[length(tmp.nam)]
@@ -242,7 +242,7 @@
         mfg       <- mod.fam
         mf1       <- c("EII", "EEI", "EEE")
       } else      {
-        mfg       <- mod.fam[1:6]
+        mfg       <- mod.fam[1L:6L]
         mf1       <- c("EII", "EEI")
       }
     }
@@ -269,7 +269,7 @@
     mf1           <- unique(mf1)
     mfg           <- unique(mfg)
     all.mod       <- if(all(multi, !uni, Gany)) mclust.options("emModelNames") else unique(c(if(anyg0) mf0, if(any(G == 1)) mf1, if(any(G > 1)) mfg))
-    multi         <- length(all.mod)    > 1
+    multi         <- length(all.mod)    > 1L
     BICs          <- ICLs      <-
     AICs          <- DF.x      <- IT.x <- provideDimnames(matrix(NA, nrow=len.G, ncol=length(all.mod)), base=list(as.character(range.G), all.mod))
     crit.tx       <- crit.gx   <- -sqrt(.Machine$double.xmax)
@@ -287,15 +287,16 @@
       gating      <- tryCatch(stats::update.formula(stats::as.formula(gating), zN ~ .),
                               error=function(e)   stop("Invalid 'gating' network formula supplied", call.=FALSE))
       environment(gating)      <- environment()
-      if(gating[[3]] == 1)      { if(verbose)     message("Not including gating network covariates with only intercept on gating formula RHS\n")
+      if(gating[[3L]]   == 1)   { if(verbose)     message("Not including gating network covariates with only intercept on gating formula RHS\n")
         gate.x    <- FALSE
         gate.G    <- rep(gate.x, len.G)
       }
       Gn          <- G + !noise.null - !noise.gate
-      if(any(Gn   <= 1))        { if(verbose)     message(paste0("Can't include gating network covariates ", ifelse(noise.gate, "in a single component mixture", "where G is less than 3 when 'noise.args$noise.gate' is FALSE\n")))
+      if(any(Gn   <= 1))        {
+        if(all(Gn <= 1) && verbose)               message(paste0("Can't include gating network covariates ", ifelse(noise.gate, "in a single component mixture", "where G is less than 3 when 'noise.args$noise.gate' is FALSE\n")))
         gate.G[Gn <= 1]        <- FALSE
       }
-      gate.names  <- all.vars(gating)[-1]
+      gate.names  <- all.vars(gating)[-1L]
     } else gating <- stats::as.formula(zN ~ 1)
     noise.gate    <- ifelse(gate.x, noise.gate, TRUE)
     if(equalPro   && gate.x)    { if(verbose)     message("Can't constrain mixing proportions to be equal when gating covariates are supplied\n")
@@ -315,10 +316,10 @@
       expert      <- tryCatch(stats::update.formula(stats::as.formula(expert), X ~ .),
                               error=function(e)   stop("Invalid 'expert' network formula supplied", call.=FALSE))
       environment(expert)      <- environment()
-      if(expert[[3]]   == 1)    { if(verbose)     message("Not including expert network covariates with only intercept on expert formula RHS\n")
+      if(expert[[3L]]   == 1)   { if(verbose)     message("Not including expert network covariates with only intercept on expert formula RHS\n")
         exp.x     <- FALSE
       }
-      expx.names  <- all.vars(expert)[-1]
+      expx.names  <- all.vars(expert)[-1L]
     } else expert <- stats::as.formula(X ~ 1)
     one.G         <- all(G == 1)
 
@@ -332,12 +333,12 @@
       if(!is.data.frame(netdat))                  stop("'network.data' must be a data.frame if supplied",          call.=FALSE)
       if(!all(netnames %in% colnames(netdat)))    stop("Supplied covariates not found in supplied 'network.data'", call.=FALSE)
       netdat      <- netdat[comp.x,netnames,          drop=FALSE]
-      gate.covs   <- if(gate.x)   netdat[,gate.names, drop=FALSE]      else as.data.frame(matrix(0, nrow=n, ncol=0))
-      expx.covs   <- if(exp.x)    netdat[,expx.names, drop=FALSE]      else as.data.frame(matrix(0, nrow=n, ncol=0))
+      gate.covs   <- if(gate.x)   netdat[,gate.names, drop=FALSE]      else as.data.frame(matrix(0L, nrow=n, ncol=0L))
+      expx.covs   <- if(exp.x)    netdat[,expx.names, drop=FALSE]      else as.data.frame(matrix(0L, nrow=n, ncol=0L))
     } else {
       if(any(grepl("\\$", netnames)))             stop("Don't supply covariates to gating or expert networks using the $ operator: use the 'network.data' argument instead", call.=FALSE)
-      gate.covs   <- if(gate.x)   stats::model.frame(gating[-2])       else as.data.frame(matrix(0, nrow=n, ncol=0))
-      expx.covs   <- if(exp.x)    stats::model.frame(expert[-2])       else as.data.frame(matrix(0, nrow=n, ncol=0))
+      gate.covs   <- if(gate.x)   stats::model.frame(gating[-2L])      else as.data.frame(matrix(0L, nrow=n, ncol=0L))
+      expx.covs   <- if(exp.x)    stats::model.frame(expert[-2L])      else as.data.frame(matrix(0L, nrow=n, ncol=0L))
     }
     if(nrow(gate.covs) != n)                      stop("'gating' covariates must contain the same number of rows as 'data'", call.=FALSE)
     if(nrow(expx.covs) != n)                      stop("'expert' covariates must contain the same number of rows as 'data'", call.=FALSE)
@@ -364,31 +365,31 @@
        drop_constants(expx.covs, expert)))        stop("Constant columns exist in expert formula; remove offending expert covariate(s) and try again", call.=FALSE)
     jo.cts        <- names(which(!vapply(expx.covs, is.factor, logical(1L))))
     nct           <- length(jo.cts)
-    do.joint      <- do.joint  && nct >= 1
+    do.joint      <- do.joint  && nct >= 1L
     someG         <- !one.G    && !allg0
     if(!any(gate.x, exp.x)     && someG        &&
        is.element(init.z, c("hc", "mclust")))   {
       clustMD     <- FALSE
-      if(init.z   != "hc")      {                 message("Initialisation method coerced from \"mclust\" to \"hc\" as there are no gating/expert network covariates\n")
+      if(init.z   != "hc")      { if(verbose)     message("Initialisation method coerced from \"mclust\" to \"hc\" as there are no gating/expert network covariates\n")
         init.z    <- "hc"
       }
     }
     if(clust.MD   <- exp.init$clustMD) {
       exp.fac     <- ncol(expx.covs)   - nct
-      if(!exp.init$joint)                         message("'exp.init$clustMD' not invoked - exp.init$joint not set to TRUE\n")
-      if(!(do.md  <- exp.fac    > 0))             message("'exp.init$clustMD' not invoked - no categorical or ordinal expert network covariates\n")
+      if(!exp.init$joint              && verbose) message("'exp.init$clustMD' not invoked - exp.init$joint not set to TRUE\n")
+      if(!(do.md  <- exp.fac    > 0)  && verbose) message("'exp.init$clustMD' not invoked - no categorical or ordinal expert network covariates\n")
       if(!(has.md <- suppressMessages(requireNamespace("clustMD",
                      quietly=TRUE))))             warning("'exp.init$clustMD' not invoked - 'clustMD' library not loaded\n", call.=FALSE, immediate.=TRUE)
     }
     if((mdind     <- clust.MD  && all(do.md, has.md))  && someG) {
       expx.facs   <- expx.covs[,setdiff(colnames(expx.covs), jo.cts), drop=FALSE]
-      b.ind       <- which(vapply(expx.facs, nlevels,    integer(1L)) == 2)
+      b.ind       <- which(vapply(expx.facs, nlevels,    integer(1L)) == 2L)
       o.ind       <- which(vapply(expx.facs, is.ordered, logical(1L)))
       n.ind       <- setdiff(seq_len(ncol(expx.facs)),  c(b.ind, o.ind))
       XY          <- cbind(X,  expx.covs[,jo.cts, drop=FALSE])
       XY          <- cbind(XY, vapply(expx.facs[,c(b.ind, o.ind, n.ind), drop=FALSE], as.numeric, numeric(n)))[!noise,, drop=FALSE]
       mods        <- c("EII", "VII", "EEI", "VEI", "EVI", "VVI", "BD")
-      startCL     <- switch(init.z, kmeans="kmeans", mclust="mclust", random="random", "hc_mclust")
+      startCL     <- switch(EXPR=init.z, kmeans="kmeans", mclust="mclust", random="random", "hc_mclust")
       mdinf       <- rep(-Inf,  length(mods))
       mderr       <- matrix(FALSE, nrow=len.G, ncol=length(mods))
     }
@@ -423,8 +424,8 @@
         if(init.z == "mclust")  {
           if(!mdind)            {
             mcarg <- list(data=XI, G=g.range, verbose=FALSE, control=emControl(equalPro=equalPro), initialization=list(hcPairs=Zhc))
-            mcl   <- suppressWarnings(switch(init.crit, icl=do.call(mclustICL, mcarg), bic=do.call(mclustBIC, mcarg)))
-            mcerr <- apply(is.na(mcl), 1, all)
+            mcl   <- suppressWarnings(switch(EXPR=init.crit, icl=do.call(mclustICL, mcarg), bic=do.call(mclustBIC, mcarg)))
+            mcerr <- apply(is.na(mcl), 1L, all)
             if(any(mcerr))                        stop(paste0("Mclust initialisation failed for the G=", paste(g.range[mcerr], collapse="/"), " model", ifelse(sum(mcerr) > 1, "s", "")), call.=FALSE)
             class(mcl)         <- "mclustBIC"
           }
@@ -449,8 +450,8 @@
       exp.g       <- exp.x && g > 0
       init.exp    <- exp.g && exp.init$mahalanobis
       Gseq        <- seq_len(g)
-      gN          <- max(g  + !noise.null, 1)
-      z           <- matrix(0, n, gN)
+      gN          <- max(g  + !noise.null, 1L)
+      z           <- matrix(0L, n, gN)
       stopGx      <- g > 1 && stopaX
       noiseG      <- !noise.null || g == 0
       Xinv        <- if(noiseG) Vinv else NULL
@@ -468,7 +469,7 @@
         mderr[h,] <- mdh
         if(all(mdh))              {              warning(paste0("\tInvoking 'exp.init$clustMD' failed for ALL clustMD model types where G=",  g, ",\n\t\tprobably due to the presence of nominal expert network covariates,\n\t\tor the 'init.z' method used to initialise the call to clustMD\n"), call.=FALSE, immediate.=TRUE)
         } else     {
-          z.tmp   <- unmap(md[[which.max(replace(mdinf, !mdh, sapply(md[!mdh], "[[", switch(init.crit, icl="ICLhat", bic="BIChat"))))]]$cl, groups=Gseq)
+          z.tmp   <- unmap(md[[which.max(replace(mdinf, !mdh, sapply(md[!mdh], "[[", switch(EXPR=init.crit, icl="ICLhat", bic="BIChat"))))]]$cl, groups=Gseq)
           if(any(mdh))                           warning(paste0("\tInvoking 'exp.init$clustMD' failed for SOME clustMD model types where G=", g, ",\n\t\tprobably due to the presence of nominal expert network covariates,\n\t\tor the 'init.z' method used to initialise the call to clustMD\n"), call.=FALSE, immediate.=TRUE)
         }
       }
@@ -477,29 +478,29 @@
         if(g > 1)  {
           if(all(indmd, init.z == "mclust")) {
             mcarg <- list(data=XI, G=g, verbose=FALSE, control=emControl(equalPro=equal.pro), initialization=list(hcPairs=Zhc))
-            mcl   <- suppressWarnings(switch(init.crit, icl=do.call(mclustICL, mcarg), bic=do.call(mclustBIC, mcarg)))
+            mcl   <- suppressWarnings(switch(EXPR=init.crit, icl=do.call(mclustICL, mcarg), bic=do.call(mclustBIC, mcarg)))
             if(mcfail[h]       <- all(is.na(mcl))) next
             class(mcl)         <- "mclustBIC"
           }
-          z.tmp   <- unmap(switch(init.z,
+          z.tmp   <- unmap(switch(EXPR     = init.z,
                                   hc       = hcZ[,h - anyg0 - hc1],
                                   kmeans   = stats::kmeans(x=XI, centers=g, iter.max=kiters, nstart=kstarts)$cluster,
                                   mclust   = suppressWarnings(Mclust(XI, G=g, x=mcl))$classification,
                                   quantile = quant_clust(x=XI, G=g),
                                   random   = sample(x=Gseq, size=noisen, replace=TRUE)), groups=Gseq)
         } else     {
-          z.tmp   <- unmap(rep(1, ifelse(noisen == 0 || g == 0, n, noisen)))
+          z.tmp   <- unmap(rep(1L, ifelse(noisen == 0 || g == 0, n, noisen)))
         }
       }
       zc          <- ncol(z.tmp)
       if(zc != g  && g > 0) {
-        z.tmp     <- cbind(z.tmp, matrix(0, ncol=g - zc, nrow=n))
+        z.tmp     <- cbind(z.tmp, matrix(0L, ncol=g - zc, nrow=n))
       }
 
     # Invoke Iterative Mahalanobis Step?
       if(exp.g)    {
-        z.mat     <- z.alloc   <- matrix(0, nrow=n * g,  ncol=g)
-        muX       <- if(uni)      vector("numeric",  g)  else matrix(0, nrow=d, ncol=g)
+        z.mat     <- z.alloc   <- matrix(0L, nrow=n * g,  ncol=g)
+        muX       <- if(uni)      vector("numeric",   g)  else matrix(0L, nrow=d, ncol=g)
       } else {
         exp.pen   <- g * d
       }
@@ -510,11 +511,11 @@
         xN        <- X[!noise,, drop=FALSE]
         expnoise  <- expx.covs[!noise,, drop=FALSE]
         expN      <- stats::update.formula(expert, xN ~ .)
-        ix        <- 0
+        ix        <- 0L
         ne        <- ncol(expnoise)
         while(!identical(tmp.z, z.tmp) && ix <= max.init) {
           tmp.z   <- z.tmp
-          ix      <- ix  + 1
+          ix      <- ix  + 1L
           for(k in Gseq) {
             sub   <- z.tmp[,k] == 1
             exp   <- tryCatch(stats::lm(expN, data=expnoise, subset=sub),              error=function(e) try(if(drop.exp) stop("DROP") else stats::lm(drop_constants(expnoise, expN, sub), data=expnoise, subset=sub), silent=TRUE))
@@ -594,15 +595,15 @@
       if(eNO      <- expold    != init.exp)       warning(paste0("\tExtra initialisation step with expert covariates failed where G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE\n", ", even with 'drop_constants' and 'drop_levels' invoked:\n\t\tTry suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates\n")), call.=FALSE, immediate.=TRUE)
 
       # Account for Noise Component
-      z.tmp       <- 0 + z.tmp
+      z.tmp       <- 0L + z.tmp
       if(noise.null) {
         z         <- z.init    <- z.tmp
       } else   {
         if(g   > 0)  {
           z[!noise,-gN]        <- z.tmp
-          z[noise,  gN]        <- 1
+          z[noise,  gN]        <- 1L
         } else {
-          z[]     <- 1
+          z[]     <- 1L
         }
         z.init    <- z
       }
@@ -631,7 +632,7 @@
           g.init  <- multinom(gating, trace=FALSE, data=gate.covs[!noise,, drop=FALSE], maxit=g.itmax, reltol=g.reltol)
           tau     <- .tau_noise(stats::predict(g.init, type="probs", newdata=gate.covs), z[,gN], rZn)
         }
-        gate.pen  <- length(stats::coef(g.init))  + ifelse(noise.null, 0, 1) + ifelse(noise.gate, 0, 1)
+        gate.pen  <- length(stats::coef(g.init))  + ifelse(noise.null, 0L, 1L) + ifelse(noise.gate, 0L, 1L)
        #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1], family="multinomial", type.multinomial="grouped")
        #tau       <- stats::predict(g.init, type="response", newx=model.matrix(gating, data=gate.covs)[,-1], s="lambda.1se")[,,1]
        #gate.pen  <- g.init$glmnet.fit$df[which(g.init$glmnet.fit$lambda == g.init$lambda.1se)] + ifelse(noise.null, 1, 2)
@@ -641,10 +642,10 @@
           t0      <- mean(z.init[,gN])
           tau     <- c(rep((1 - t0)/g, g), t0)
         } else    {
-          tau     <- if(equal.pro) rep(1/gN, gN) else colMeans2(z.init)
+          tau     <- if(equal.pro) rep(1/gN, gN) else col.z/n
         }
         ltau      <- .mat_byrow(log(tau), nrow=n, ncol=gN)
-        gate.pen  <- ifelse(equal.pro, noiseG, gN - 1) + ifelse(noiseG, 1, 0)
+        gate.pen  <- ifelse(equal.pro, noiseG, gN - 1L) + ifelse(noiseG, 1L, 0L)
       }
       ltau.init   <- ltau
       failedM     <- NULL
@@ -660,7 +661,7 @@
         if(isTRUE(verbose))     { cat(paste0("\n\tModel: ", modtype, "\n"))
           last.T  <- modtype   == T.last
         }
-        x.df      <- ifelse(g   > 0, nVarParams(modtype, d, g), 0) + gate.pen
+        x.df      <- ifelse(g   > 0, nVarParams(modtype, d, g), 0L) + gate.pen
         if(g > 0  && expinitG)  {
          Mstep    <- try(mstep(modtype, G.res, z.alloc, control=control), silent=TRUE)
          init.exp <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
@@ -676,14 +677,14 @@
           mus     <- if(init.exp) muX     else Mstep$parameters$mean
           vari    <- Mstep$parameters$variance
         } else     {
-          mus     <- matrix(NA, nrow=n, ncol=0)
-          vari    <- list(modelName=modtype, d=d, G=0)
+          mus     <- matrix(NA, nrow=n, ncol=0L)
+          vari    <- list(modelName=modtype, d=d, G=0L)
         }
 
         medens    <- try(MoE_dens(data=if(init.exp) res.G else x.dat, mus=mus, sigs=vari, log.tau=ltau.init, Vinv=Xinv), silent=TRUE)
         if((ERR   <- ERR || ((g > 0 && attr(Mstep, "returnCode") < 0) || (inherits(medens, "try-error")) || any(medens > 0)))) {
           ll      <- NA
-          j       <- 1
+          j       <- 1L
           if(isTRUE(verbose))     cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, ifelse(last.G && last.T, "\n\n", "\n")))
           BICs[h,modtype]      <-
           ICLs[h,modtype]      <-
@@ -696,7 +697,7 @@
           z       <- zN        <- Estep$z
           if((ERR <- any(is.nan(z))))             next
           ll      <- c(-Inf, ifelse(gN <= 1 && !exp.g, Estep$loglik, -sqrt(.Machine$double.xmax)))
-          j       <- 2
+          j       <- 2L
           stX     <- gN  > 1   || exp.g
         }
 
@@ -767,13 +768,13 @@
             ERR   <- any(is.nan(z))
             if(isTRUE(ERR))                       break
             ll    <- c(ll, Estep$loglik)
-            j     <- j + 1
+            j     <- j + 1L
             if(stopaX) {
-             ait  <- aitken(ll[seq(j - 2, j, 1)])
-             dX   <- ifelse(is.numeric(ait$a)  && ait$a < 0, 0, abs(ait$linf - ll[j - 1]))
+             ait  <- aitken(ll[seq(j - 2L, j, 1L)])
+             dX   <- ifelse(is.numeric(ait$a)  && ait$a < 0, 0L, abs(ait$linf - ll[j - 1L]))
              dX[is.nan(dX)]    <- Inf
             } else     {
-             dX   <- abs(ll[j]  - ll[j - 1])/(1 + abs(ll[j]))
+             dX   <- abs(ll[j]  - ll[j - 1L])/(1 + abs(ll[j]))
             }
             stX   <- dX >= tol && j  < max.it  && gN    > 1
             if(itwarn && !m0X)  {
@@ -787,7 +788,7 @@
         } # while (j)
 
       # Store values corresponding to the maximum BIC/ICL/AIC so far
-        j2        <- max(1, j   - 2)
+        j2        <- max(1L, j  - 2L)
         if(isTRUE(verbose))       cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j2, ifelse(last.G && last.T, "\n\n", "\n")))
        #pen.exp   <- ifelse(exp.g, g * d * (fitE$glmnet.fit$df[which(fitE$glmnet.fit$lambda == fitE$lambda.1se)] + 1), exp.pen)
         pen.exp   <- ifelse(exp.g, g * length(stats::coef(fitE)), exp.pen)
@@ -796,15 +797,13 @@
         bics      <- choose["bic",]
         icls      <- choose["icl",]
         aics      <- choose["aic",]
-        crit.t    <- switch(criterion, bic=bics, icl=icls, aic=aics)
+        crit.t    <- switch(EXPR=criterion, bic=bics, icl=icls, aic=aics)
         crit.t    <- ifelse(is.na(crit.t) || ERR, -Inf, crit.t)
         if(crit.t  > crit.tx)   {
           crit.tx <- crit.t
           tau.x   <- tau
           z.x     <- z
           ll.x    <- ll
-          df.x    <- x.df
-          it.x    <- j2
           gp.x    <- gate.pen
           ep.x    <- pen.exp
           sig.x   <- vari
@@ -827,7 +826,7 @@
         DF.x[h,modtype]        <- ifelse(ERR, -Inf, x.df)
         IT.x[h,modtype]        <- ifelse(ERR,  Inf, j2)
       } # for (modtype)
-      if((faillen <- length(failedM)) > 1)        warning(paste0("\tExtra initialisation step with expert covariates worked,\n\t\tbut expert networks themselves couldn't be properly initialised for the G=", g, " ", paste(shQuote(failedM), collapse=" + "), " model", ifelse(faillen == 1, "", "s"), ifelse(drop.exp, ": try setting 'drop.exp' to FALSE\n", ",\n\t\teven with 'drop_constants' and 'drop_levels' invoked:\n\t\tTry suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates\n")), call.=FALSE, immediate.=TRUE)
+      if((faillen <- length(failedM)) > 1L)       warning(paste0("\tExtra initialisation step with expert covariates worked,\n\t\tbut expert networks themselves couldn't be properly initialised for the G=", g, " ", paste(shQuote(failedM), collapse=" + "), " model", ifelse(faillen == 1, "", "s"), ifelse(drop.exp, ": try setting 'drop.exp' to FALSE\n", ",\n\t\teven with 'drop_constants' and 'drop_levels' invoked:\n\t\tTry suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates\n")), call.=FALSE, immediate.=TRUE)
 
     # Pull out mclust model corresponding to highest BIC/ICL/AIC
       if(crit.tx   > crit.gx)   {
@@ -835,8 +834,6 @@
         x.tau     <- tau.x
         x.z       <- z.x
         x.ll      <- ll.x
-        x.DF      <- df.x
-        x.it      <- it.x
         x.gp      <- gp.x
         x.ep      <- ep.x
         x.sig     <- sig.x
@@ -854,7 +851,7 @@
         }
       }
     } # for (g)
-    if(any(warnmd <- apply(mderr, 1, all)))  {
+    if(any(warnmd <- apply(mderr, 1L, all))) {
       mdwarn      <- paste0("\nInitialisation failed for ", ifelse(all(warnmd), "ALL", "SOME"), " G values due to invocation of 'exp.init$clustMD'")
       if(any(is.element(init.z,
          c("hc", "mclust"))    &&
@@ -869,25 +866,30 @@
     if(all(is.infinite(BICs[!is.na(BICs)])))      stop("All models failed!", call.=FALSE)
 
   # Gather results + fit extra gating & expert networks
-    CRITs         <- switch(criterion, bic=BICs, icl=ICLs, aic=AICs)
+    CRITs         <- switch(EXPR=criterion, bic=BICs, icl=ICLs, aic=AICs)
     best.ind      <- which(CRITs == crit.gx, arr.ind=TRUE)
-    best.G        <- best.ind[1]
+    if(nrow(best.ind) > 1)      {                 warning(paste0("Ties for the optimal model exist according to the '", criterion, "' criterion: choosing the most parsimonious model\n"), call.=FALSE, immediate.=TRUE)
+      best.ind    <- which(DF.x  == min(DF.x[best.ind]), arr.ind=TRUE)
+      best.ind    <- best.ind[which.min(best.ind[,1L]),]
+    }
+    best.G        <- best.ind[1L]
     G             <- G[best.G]
-    if(len.G > 1)  {
+    if(len.G > 1  && verbose)   {
       if(G        == min(range.G))                message("Best model occurs at the min of the number of components considered\n")
       if(G        == max(range.G))                message("Best model occurs at the max of the number of components considered\n")
     }
     Gseq          <- seq_len(G)
-    GN            <- max(G + !noise.null, 1)
+    GN            <- max(G + !noise.null, 1L)
     zN       <- z <- x.z
     rownames(z)   <- as.character(Nseq)
-    best.mod      <- colnames(CRITs)[best.ind[2]]
+    best.mod      <- colnames(CRITs)[best.ind[2L]]
     bic.fin       <- BICs[best.ind]
     icl.fin       <- ICLs[best.ind]
     aic.fin       <- AICs[best.ind]
+    df.fin        <- DF.x[best.ind]
     uncert        <- if(GN > 1) 1     - rowMaxs(z)             else vector("numeric", n)
     exp.x         <- exp.x & G  != 0
-    x.ll          <- x.ll[if(GN == 1 && !exp.x) 2 else if(GN == 1 && exp.x) seq_len(3)[-1] else -c(1:2)]
+    x.ll          <- x.ll[if(GN == 1 && !exp.x) 2L else if(GN == 1 && exp.x) seq_len(3L)[-1L] else -c(1L:2L)]
     x.ll          <- x.ll[!is.na(x.ll)]
 
     if(!(bG       <- gate.G[range.G  == G])) {
@@ -914,7 +916,7 @@
       }
     }
     if(noise.gate && !noise.null && GN > 1)  {
-      x.fitG$lab  <- c(Gseq, 0)
+      x.fitG$lab  <- c(Gseq, 0L)
     }
     gnames        <- if(G >= 1) paste0("Cluster", Gseq)
     if(!exp.x)    {
@@ -922,7 +924,7 @@
      for(k in seq_len(max(G, 1))) {
       x.fitE[[k]] <- stats::lm(expert, weights=z[,k], data=expx.covs)
      }
-     residX       <- stats::setNames(replicate(G, matrix(0, nrow=n, ncol=0)), gnames)
+     residX       <- stats::setNames(replicate(G, matrix(0L, nrow=n, ncol=0L)), gnames)
     } else residX <- stats::setNames(x.resE, gnames)
     x.fitE        <- stats::setNames(x.fitE, if(G == 0) "NoiseComponent" else gnames)
     colnames(z)   <- if(G == 0) "Cluster0" else if(!noise.null) c(gnames, "Cluster0") else gnames
@@ -939,6 +941,7 @@
       if(exp.x)   {
         fitdat    <- Reduce("+",  lapply(Gseq, function(g) z[,g] * stats::predict(x.fitE[[g]])))
         mean.fin  <- covw(fitdat, if(noise.null) z else z[,-GN, drop=FALSE], normalize=FALSE)$mean
+        rownames(mean.fin)     <- names(data)
       } else       {
         mean.fin  <- x.mu
       }
@@ -946,9 +949,11 @@
       mean.fin    <- vari.fin  <- NULL
     }
 
+    if(all(x.ll   != cummax(x.ll)))               warning("Log-likelihoods are not strictly increasing\n", call.=FALSE)
+    if(any(IT.x[!is.na(IT.x)]  == max.it))        warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")\n"), call.=FALSE)
     if(isTRUE(verbose))           cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
                                       paste0(G, " component", ifelse(G > 1, "s", ""))), ifelse(any(exp.gate) || (!noise.null && G != 0), paste0("\n\t\t\t   ", net.msg), ""), "\n\t\t",
-                                      switch(criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
+                                      switch(EXPR=criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(EXPR=criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
     if(gate.x     && (G + !noise.null - !noise.gate) <= 1) {
       if(attr(x.fitG, "Formula") != "None") tmpnet                    <- netdat
       netdat      <- expx.covs
@@ -957,8 +962,6 @@
       attr(netdat, "Expert")   <- expx.names
       if(attr(x.fitG, "Formula") != "None") attr(netdat, "Discarded") <- tmpnet
     }
-    if(all(x.ll   != cummax(x.ll)))               warning("Log-likelihoods are not strictly increasing\n", call.=FALSE)
-    if(any(IT.x[!is.na(IT.x)]  == max.it))        warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")\n"), call.=FALSE)
     class(BICs)   <- c("MoECriterion", "mclustBIC")
     class(ICLs)   <- c("MoECriterion", "mclustICL")
     class(AICs)   <- c("MoECriterion", "mclustAIC")
@@ -1023,27 +1026,27 @@
     attr(AICs, "criterion")    <- "AIC"
     attr(DF.x, "criterion")    <- "DF"
     attr(IT.x, "criterion")    <- "ITERS"
-    attr(BICs, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(BICs) | is.infinite(BICs), -1, 0)), base=list(rownames(BICs), colnames(BICs)))
-    attr(ICLs, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(ICLs) | is.infinite(ICLs), -1, 0)), base=list(rownames(ICLs), colnames(ICLs)))
-    attr(AICs, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(AICs) | is.infinite(AICs), -1, 0)), base=list(rownames(AICs), colnames(AICs)))
-    attr(DF.x, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(DF.x) | is.infinite(DF.x), -1, 0)), base=list(rownames(DF.x), colnames(DF.x)))
-    attr(IT.x, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(IT.x) | is.infinite(IT.x), -1, 0)), base=list(rownames(IT.x), colnames(IT.x)))
+    attr(BICs, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(BICs) | is.infinite(BICs), -1L, 0L)), base=list(rownames(BICs), colnames(BICs)))
+    attr(ICLs, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(ICLs) | is.infinite(ICLs), -1L, 0L)), base=list(rownames(ICLs), colnames(ICLs)))
+    attr(AICs, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(AICs) | is.infinite(AICs), -1L, 0L)), base=list(rownames(AICs), colnames(AICs)))
+    attr(DF.x, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(DF.x) | is.infinite(DF.x), -1L, 0L)), base=list(rownames(DF.x), colnames(DF.x)))
+    attr(IT.x, "returnCodes")  <- provideDimnames(unname(ifelse(is.na(IT.x) | is.infinite(IT.x), -1L, 0L)), base=list(rownames(IT.x), colnames(IT.x)))
     attr(BICs, "initialization")      <-
     attr(ICLs, "initialization")      <-
     attr(AICs, "initialization")      <-
     attr(DF.x, "initialization")      <-
     attr(IT.x, "initialization")      <- list(hcPairs = if((init.z == "hc" && someG && !hcfail) && (!mdind || isTRUE(warnmd[best.G]))) Zhc, subset = NULL, noise = if(!noise.null) noise)
-    attr(x.DF, "Gate.Penalty")        <- x.gp
-    attr(x.DF, "Expert.Penalty")      <- x.ep
-    attr(x.DF, "nVar.Penalty")        <- nVarParams(best.mod, d, G)
+    attr(df.fin, "Gate.Penalty")      <- x.gp
+    attr(df.fin, "Expert.Penalty")    <- x.ep
+    attr(df.fin, "nVar.Penalty")      <- nVarParams(best.mod, d, G)
     claX       <- max.col(z)
-    claX[claX  == G + 1]       <- 0
+    claX[claX  == G + 1]       <- 0L
     results       <- list(call = call, data = as.data.frame(X), modelName = best.mod,
                           n = n, d = d, G = G, BIC = BICs, ICL = ICLs, AIC = AICs, bic = bic.fin,
                           icl = icl.fin, aic = aic.fin, gating = x.fitG, expert = x.fitE, loglik = x.ll,
-                          linf = if(stopaX && G > 1) x.linf else x.ll[length(x.ll)], df = x.DF, iters = x.it, hypvol = hypvol,
-                          parameters = list(pro = x.tau, mean = mean.fin, variance = vari.fin, Vinv = Vinv), z = z,
-                          classification = stats::setNames(claX, Nseq), uncertainty = stats::setNames(uncert, Nseq),
+                          linf = if(stopaX && G > 1) x.linf else x.ll[length(x.ll)], df = df.fin, iters = IT.x[best.ind],
+                          hypvol = hypvol, parameters = list(pro = x.tau, mean = mean.fin, variance = vari.fin, Vinv = Vinv),
+                          z = z, classification = stats::setNames(claX, Nseq), uncertainty = stats::setNames(uncert, Nseq),
                           net.covs = netdat, resid.data = residX, DF = DF.x, ITERS = IT.x)
     class(results)             <- "MoEClust"
     attr(results, "Details")   <- paste0(best.mod, ": ", ifelse(G == 0, "only a noise component", paste0(G, " component", ifelse(G > 1, "s", ""), net.msg)))
@@ -1106,15 +1109,15 @@
     Vnul          <- is.null(Vinv)
     Ldat          <- inherits(data, "list")
     if(!Ldat      || (Ldat &&
-       length(data)        != max(G, 1)))        {
+       length(data)        != max(G, 1L)))       {
       data        <- replicate(G, as.matrix(data), simplify=FALSE)
     } else data   <- lapply(data, as.matrix)
-    dat1          <- data[[1]]
+    dat1          <- data[[1L]]
     n             <- ifelse(is.matrix(dat1), nrow(dat1), length(dat1))
     if(G > 0) {
       modelName   <- sigs$modelName
       d           <- sigs$d
-      mu.tmp      <- matrix(0, nrow=d, ncol=G)
+      mu.tmp      <- matrix(0L, nrow=d, ncol=G)
       mu.tmp[]    <- mus
       mus         <- mu.tmp
       Gseq        <- seq_len(G)
@@ -1205,7 +1208,7 @@
     } else if(!is.matrix(Dens) ||
               !is.numeric(Dens))                  stop("'Dens' must be a numeric matrix", call.=FALSE)
     norm          <- rowLogSumExps(Dens)
-    z             <- provideDimnames(exp(sweep(Dens, 1, norm, FUN="-", check.margin=FALSE)), base=list("", paste0("Cluster", seq_len(ncol(Dens)))))
+    z             <- provideDimnames(exp(sweep(Dens, 1L, norm, FUN="-", check.margin=FALSE)), base=list("", paste0("Cluster", seq_len(ncol(Dens)))))
    #ll            <- sum(z * Dens)              # complete log-likelihood
       return(list(z = z, loglik = sum(norm)))
   }
@@ -1273,7 +1276,7 @@
     double.ll     <- 2 * loglik
     bic.x         <- double.ll  - df * log(n)
     aic.x         <- double.ll  - df * 2
-      return(c(bic = bic.x, icl = if(!missing(z)) bic.x + 2 * sum(log(rowMaxs(z)), na.rm = TRUE), aic = aic.x, df = df))
+      return(c(bic = bic.x, icl = if(!missing(z)) bic.x + 2L * sum(log(rowMaxs(z)), na.rm=TRUE), aic = aic.x, df = df))
   }, vectorize.args = c("modelName", "loglik"), SIMPLIFY="array")
 
 #' Set control values for use with MoEClust
@@ -1421,7 +1424,7 @@
     if(any(tol     < 0))                          stop("'tol' is negative", call.=FALSE)
     if(any(tol    >= 1))                          stop("'tol' is not less than 1", call.=FALSE)
     if(any(itmax  <= 0))                          stop("'itmax' is not strictly positive", call.=FALSE)
-    if(len.tol    == 1)        tol <- rep(tol, 3)
+    if(len.tol    == 1)        tol <- rep(tol, 3L)
     if((len.itmax <- length(itmax)) > 3)          stop("'itmax' can be of length at most 3", call.=FALSE)
     if(len.itmax  == 1)      itmax <- c(itmax, .Machine$integer.max, 100)
     inf           <- is.infinite(itmax)
@@ -1442,8 +1445,8 @@
         noise.args$noise.gate      <- TRUE
       } else if(length(noise.args$noise.gate)    > 1   ||
         !is.logical(noise.args$noise.gate))       stop("'noise.args$noise.gate' must be a single logical indicator", call.=FALSE)
-      has.lib     <- switch(noise.args$noise.meth, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
-      if(!has.lib)                                stop(paste0("Use of the ", noise.args$noise.meth, " option for 'noise.args$noise.meth' requires loading the ", switch(noise.args$noise.meth, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"), call.=FALSE)
+      has.lib     <- switch(EXPR=noise.args$noise.meth, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
+      if(!has.lib)                                stop(paste0("Use of the ", noise.args$noise.meth, " option for 'noise.args$noise.meth' requires loading the ", switch(EXPR=noise.args$noise.meth, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"), call.=FALSE)
     }
 
     if(!(miss.hc  <- is.null(hc.args$hc.meth)))  {
@@ -1484,7 +1487,7 @@
 
     if(!missing(init.crit)  && (length(init.crit) > 1   ||
        !is.character(init.crit)))                 stop("'init.crit' must be a single character string", call.=FALSE)
-    init.crit     <- ifelse(missing(init.crit),   switch(criterion, icl="icl", "bic"), init.crit)
+    init.crit     <- ifelse(missing(init.crit),   switch(EXPR=criterion, icl="icl", "bic"), init.crit)
     init.crit     <- match.arg(init.crit)
     if(length(warn.it)  > 1 ||
        !is.numeric(warn.it) ||
@@ -1527,16 +1530,16 @@
   aitken          <- function(loglik) {
     if(!is.numeric(loglik) ||
        length(loglik)      != 3)                  stop("'loglik' must be a numeric vector of length 3", call.=FALSE)
-    l1            <- loglik[1]
-    l2            <- loglik[2]
-    l3            <- loglik[3]
+    l1            <- loglik[1L]
+    l2            <- loglik[2L]
+    l3            <- loglik[3L]
     if(any(is.infinite(loglik))) {
       linf        <- Inf
       a           <- NA
     } else {
-      a           <- ifelse(l2 > l1, (l3 - l2) / (l2 - l1),     0)
-      denom       <- max(1 - a,  .Machine$double.eps)
-      linf        <- ifelse(a  < 1,   l2 + (l3 - l2) / denom, Inf)
+      a           <- ifelse(l2 > l1, (l3 - l2) / (l2 - l1),    0L)
+      denom       <- max(1L - a, .Machine$double.eps)
+      linf        <- ifelse(a  < 1L,  l2 + (l3 - l2) / denom, Inf)
     }
       return(list(ll = l3, linf = linf, a = a))
   }
@@ -1548,12 +1551,14 @@
 #' @param criterion The criterion used to determine the ranking. Defaults to \code{"bic"}.
 #' @param pick The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied. Setting \code{pick=Inf} is a valid way to select all models.
 #' @param optimal.only Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}
-#' @param x An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.
-#' @param index A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.
-#' @param noise A logical which determines whether presence of a noise-component should be indicated by the method employed to estimate the hypervolume (defaults to \code{TRUE}) or, if \code{FALSE}, simply by \code{TRUE}. In the absence of a noise component, \code{FALSE} will be printed regardless. Only relevant if at least one of the models being compared has a noise component.
+#' @param x,index,noise,digits Arguments required for the associated \code{print} function:
+#' \describe{
+#' \item{\code{x}}{An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.}
+#' \item{\code{index}}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
+#' \item{\code{noise}}{A logical which determines whether presence of a noise-component should be indicated by the method employed to estimate the hypervolume (defaults to \code{TRUE}) or, if \code{FALSE}, simply by \code{TRUE}. In the absence of a noise component, \code{FALSE} will be printed regardless. Only relevant if at least one of the models being compared has a noise component.
 #'
-#' If any of the compared models do have a noise component, this switch also controls whether the influence (or not) of gating covariates on the noise component's mixing proportion is indicated (either by \code{TRUE} or \code{FALSE} for models with a noise component, or else a blank entry for those without), for the models among those being compared which have gating covariates.
-#'
+#' If any of the compared models do have a noise component, this switch also controls whether the influence (or not) of gating covariates on the noise component's mixing proportion is indicated (either by \code{TRUE} or \code{FALSE} for models with a noise component, or else a blank entry for those without), for the models among those being compared which have gating covariates.}
+#' \item{\code{digits}}{The number of decimal places to round model selection criteria to (defaults to 3).}}
 #' @note The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.
 #'
 #' A dedicated \code{print} function exists for objects of class \code{"MoECompare"}.
@@ -1624,7 +1629,7 @@
        !is.numeric(pick))                         stop("'pick' must be a single number", call.=FALSE)
     if(floor(pick)     != pick         ||
        pick        < 1)                           stop("'pick' must be a strictly positive integer", call.=FALSE)
-    if(length(optimal.only)    > 1     ||
+    if(length(optimal.only)      > 1   ||
        !is.logical(optimal.only))                 stop("'optimal.only' must be a single logical indicator", call.=FALSE)
     call          <- match.call(expand.dots=TRUE)[-1]
     call          <- if(crit.miss) call else call[-which(names(call) == "criterion")]
@@ -1632,31 +1637,32 @@
     call          <- if(opt.miss)  call else call[-which(names(call) == "optimal.only")]
     len.call      <- length(as.list(call))
     if(len.call   == 1 && inherits(..., "list") && !inherits(..., "MoEClust")) {
-      mod.names   <- names(...)
-      MoEs        <- as.list(...)
+      mod.names   <- unique(names(...))
+      MoEs        <- as.list(...)[mod.names]
       if(is.null(mod.names))                      stop("When supplying models as a list, every element of the list must be named", call.=FALSE)
     } else {
-      mod.names   <- unique(vapply(call, deparse, character(1L)))
-      MoEs        <- unique(list(...))
+      mod.names   <- vapply(call, deparse, character(1L))
+      MoEs        <- stats::setNames(list(...), mod.names)
+      mod.names   <- unique(mod.names)
+      MoEs        <- MoEs[mod.names]
     }
-    MoEs          <- stats::setNames(MoEs, mod.names)
-    Mclass        <- vapply(MoEs, class, character(1L))
+    Mclass        <- vapply(MoEs, class,          character(1L))
     if(any(Mclass != "MoEClust"))                 stop("All models must be of class 'MoE_clust'!", call.=FALSE)
     if(length(unique(lapply(MoEs,
-       "[[", "data")))         != 1)              stop("All models being compared must have been fit to the same data set!", call.=FALSE)
+       "[[", "data")))          != 1)             stop("All models being compared must have been fit to the same data set!", call.=FALSE)
     title         <- "Comparison of Gaussian finite mixture of experts models fitted by EM algorithm"
-    dat.name      <- deparse(MoEs[[1]]$call$data)
+    dat.name      <- deparse(MoEs[[1L]]$call$data)
     gate.x        <- lapply(MoEs, "[[", "gating")
     gating        <- lapply(gate.x, attr, "Formula")
     noise.gate    <- sapply(gate.x, attr, "NoiseGate", logical(1L))
     expert        <- lapply(lapply(MoEs, "[[", "expert"), attr, "Formula")
-    hypvol        <- hypvol0   <- lapply(MoEs, "[[", "hypvol")
+    hypvol        <- hypvol0    <- lapply(MoEs, "[[", "hypvol")
     noise.meth    <- sapply(hypvol, attr, "Meth")
     noise.g0only  <- sapply(hypvol, attr, "g0only")
     noise.null    <- vapply(noise.meth,   is.null,     logical(1L))
     noise.onlyg0  <- vapply(noise.g0only, isTRUE,      logical(1L))
-    noise.gate[noise.null]     <- NA
-    noise.meth[noise.null]     <- FALSE
+    noise.gate[noise.null]      <- NA
+    noise.meth[noise.null]      <- FALSE
     hypvol        <- unlist(hypvol)
     noise.meth    <- unlist(noise.meth)
     BICs          <- lapply(MoEs, "[[", "BIC")
@@ -1664,14 +1670,14 @@
     AICs          <- lapply(MoEs, "[[", "AIC")
     DFxs          <- lapply(MoEs, "[[", "DF")
     ITxs          <- lapply(MoEs, "[[", "ITERS")
-    choice        <- max(lengths(switch(criterion, bic=BICs, icl=ICLs, aic=AICs)))
+    choice        <- max(lengths(switch(EXPR=criterion, bic=BICs, icl=ICLs, aic=AICs)))
     bics          <- lapply(BICs, function(x) .pick_MoECrit(x, choice)$crits)
     icls          <- lapply(ICLs, function(x) .pick_MoECrit(x, choice)$crits)
     aics          <- lapply(AICs, function(x) .pick_MoECrit(x, choice)$crits)
     dfxs          <- lapply(DFxs, function(x) .pick_MoECrit(x, choice)$crits)
     itxs          <- lapply(ITxs, function(x) .pick_MoECrit(x, choice)$crits)
     if(optimal.only) {
-      opt.names   <- names(.crits_names(lapply(switch(criterion, bic=bics, icl=icls, aic=aics), "[", 1)))
+      opt.names   <- names(.crits_names(lapply(switch(EXPR=criterion, bic=bics, icl=icls, aic=aics), "[", 1L)))
     }
     bics          <- .crits_names(bics)
     icls          <- .crits_names(icls)
@@ -1685,9 +1691,19 @@
       dfxs        <- dfxs[names(dfxs) %in% opt.names]
       itxs        <- itxs[names(itxs) %in% opt.names]
     }
-    crits         <- switch(criterion, bic=bics, icl=icls, aic=aics)
+    crits         <- switch(EXPR=criterion, bic=bics, icl=icls, aic=aics)
     pick          <- min(pick, length(crits))
     max.crits     <- sort(crits, decreasing=TRUE)[seq_len(pick)]
+    if(length(unique(max.crits)) < pick) {
+      ties        <- max.crits  == max.crits[1L]
+      if(any(ties[-1L]))         {                warning(paste0("Ties for the optimal model exist according to the '", criterion, "' criterion: choosing the most parsimonious model\n"), call.=FALSE, immediate.=TRUE)
+        df.ties     <- dfxs[names(max.crits)][which(ties)]
+        max.crits   <- max.crits[order(df.ties)]
+        if(any((df.ties == df.ties[1L])[-1L])) {
+          max.crits <- max.crits[order(as.numeric(gsub(".*,", "", names(max.crits))))]
+        }
+      } else                                      warning(paste0("Ties exist according to the '", criterion, "' criterion\n"), call.=FALSE, immediate.=TRUE)
+    }
     max.names     <- names(max.crits)
     crit.names    <- gsub("\\|.*", "",          max.names)
     G             <- as.numeric(gsub(".*,", "", max.names))
@@ -1695,15 +1711,15 @@
     gating        <- unname(unlist(gating[crit.names]))
     expert        <- unname(unlist(expert[crit.names]))
     modelNames    <- gsub(",.*", "", gsub(".*\\|", "", max.names))
-    best.model    <- MoEs[[crit.names[1]]]
-    if(best.model$modelName    != modelNames[1] || best.model$G != G[1]) {
-      bestGN      <- gating[1] != "~1" && (best.model$G + !noise.null[crit.names[1]]  - !noise.gate[crit.names[1]]) <= 1
-      best.model$net.covs      <- if(bestGN) attr(best.model$net.covs, "Discarded") else best.model$net.covs
+    best.model    <- MoEs[[crit.names[1L]]]
+    if(best.model$modelName     != modelNames[1L] || best.model$G != G[1L]) {
+      bestGN      <- gating[1L] != "~1" && (best.model$G + !noise.null[crit.names[1L]]  - !noise.gate[crit.names[1L]]) <= 1
+      best.model$net.covs       <- if(bestGN) attr(best.model$net.covs, "Discarded") else best.model$net.covs
       cat("Re-fitting optimal model due to mismatched 'criterion'...\n\n")
       old.call    <- best.model$call
-      old.call    <- c(as.list(old.call)[1], list(criterion=criterion), as.list(old.call)[-1])
+      old.call    <- c(as.list(old.call)[1L], list(criterion=criterion), as.list(old.call)[-1L])
       old.call    <- as.call(old.call[!duplicated(names(old.call))])
-      best.call   <- c(list(data=best.model$data, modelNames=modelNames[1], G=G[1], verbose=FALSE, network.data=best.model$net.covs), as.list(old.call[-1]))
+      best.call   <- c(list(data=best.model$data, modelNames=modelNames[1L], G=G[1L], verbose=FALSE, network.data=best.model$net.covs), as.list(old.call[-1L]))
       best.mod    <- try(do.call(MoE_clust, best.call[!duplicated(names(best.call))]), silent=TRUE)
       if(!inherits(best.model, "try-error")) {
         best.model$call                <- old.call
@@ -1728,20 +1744,18 @@
         attributes(best.model)         <- attributes(best.mod)
       } else best.model                <- paste0("Failed to re-fit the optimal model: ", gsub("\"", "'", deparse(old.call, width.cutoff=500L), fixed=TRUE))
     }
-    gating[gating == "~1" | G  == 1]   <- "None"
+    gating[gating == "~1" | G   == 1]  <- "None"
     expert[expert == "~1"]             <- "None"
     if(any(G == 0,  !noise.null))       {
       noise.meth0 <- sapply(hypvol0, attr, "Meth0")
       hypvol0     <- sapply(hypvol0, attr, "Hypvol0")
     }
-    hypvol        <- ifelse(G  == 0, hypvol0[crit.names], ifelse(noise.onlyg0[crit.names], NA, hypvol[crit.names]))
+    hypvol        <- ifelse(G   == 0, hypvol0[crit.names], ifelse(noise.onlyg0[crit.names], NA, hypvol[crit.names]))
     noise.meth    <- ifelse(is.na(hypvol), "FALSE",       noise.meth0[crit.names])
     noise.gate    <- ifelse(is.na(hypvol), NA,            noise.gate[crit.names])
-    comp          <- list(title = title, data = dat.name, optimal = best.model, pick = pick, MoENames = crit.names, modelNames = modelNames, G = G,
-                          df = round(unname(dfxs[max.names]), 2), iters = round(unname(itxs[max.names]), 2), bic = round(unname(bics[max.names]), 2),
-                          icl = round(unname(icls[max.names]), 2), aic = round(unname(aics[max.names]), 2), gating = gating, expert = expert,
-                          equalPro = G == 1 | unname(equalPro[crit.names]), hypvol = unname(hypvol), noise.meth = unname(noise.meth),
-                          noise.gate = unname(replace(noise.gate, gating == "None", NA)))
+    comp          <- list(title = title, data = dat.name, optimal = best.model, pick = pick, MoENames = crit.names, modelNames = modelNames, G = as.integer(G), df = as.integer(unname(dfxs[max.names])),
+                          iters = as.integer(unname(itxs[max.names])), bic = unname(bics[max.names]), icl = unname(icls[max.names]), aic = unname(aics[max.names]), gating = gating, expert = expert,
+                          equalPro = G == 1 | unname(equalPro[crit.names]), hypvol = unname(hypvol), noise.meth = unname(noise.meth), noise.gate = unname(replace(noise.gate, gating == "None", NA)))
     class(comp)   <- c("MoECompare", "MoEClust")
     bic.tmp       <- sapply(BICs, as.vector)
     attr(comp, "NMods")  <- c(tried = sum(vapply(bic.tmp, function(x) length(x[!is.na(x)]),    numeric(1L))),
@@ -1889,8 +1903,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
   Gseq            <- seq_len(G)
   params          <- object$parameters
   if(G == 0)   {
-    return(list(classification=rep(0, nr),
-                zstar=provideDimnames(matrix(1, nrow=nr, ncol=1), base=list(as.character(nrseq), "Cluster0"))))
+    return(list(classification=rep(0L, nr),
+                zstar=provideDimnames(matrix(1L, nrow=nr, ncol=1L), base=list(as.character(nrseq), "Cluster0"))))
   }
   pred.exp        <- lapply(object$expert, stats::predict, newdata=newexpx)
   if(nmiss)    {
@@ -1932,14 +1946,14 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     } else     {
       Xexp        <- attr(object, "Expert")
       newdata.y   <- if(Xexp) lapply(pred.exp, "-", newdata.y) else newdata.y
-      mus         <- if(Xexp) 0                                else params$mean
+      mus         <- if(Xexp) 0L                               else params$mean
       zstar       <- MoE_estep(Dens=MoE_dens(data=newdata.y, mus=mus, sigs=params$variance, log.tau=log(new.tau), Vinv=params$Vinv))$z
     }
   }
-  zstar2          <- if(!nmiss && !yM && noise) (function(zu) sweep(zu, 1, FUN="/", rowSums2(zu)))(zstar[,-GN, drop=FALSE]) else zstar
+  zstar2          <- if(!nmiss && !yM && noise) (function(zu) sweep(zu, 1L, FUN="/", rowSums2(zu), check.margin=FALSE))(zstar[,-GN, drop=FALSE]) else zstar
   ystar           <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar2[,g] * pred.exp[[g]])))
   claX            <- stats::setNames(max.col(zstar), nrseq)
-  claX[claX   == G + 1]  <- 0
+  claX[claX   == G + 1]  <- 0L
   rownames(ystar) <- nrseq
   colnames(ystar) <- datnames
   gnames          <- paste0("Cluster", Gseq)
@@ -1958,7 +1972,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #'           ...)
 #' @export
   residuals.MoEClust     <- function(object, newdata = list(...), ...) {
-    do.call(predict.MoEClust, c(as.list(match.call())[-1], list(resid=TRUE)))$resids
+    do.call(predict.MoEClust, c(as.list(match.call())[-1L], list(resid=TRUE)))$resids
   }
 
 #' Convert MoEClust objects to the Mclust class
@@ -1989,7 +2003,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' @keywords utility
 #' @usage
 #' as.Mclust(x,
-#'           signif = 0,
+#'           signif = 0L,
 #'           ...)
 #' @examples
 #' \dontrun{
@@ -2015,15 +2029,15 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' data(CO2data)
 #' res <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, network.data=CO2data)
 #' plot(as.Mclust(res))}
-  as.Mclust       <- function(x, signif = 0, ...) {
+  as.Mclust       <- function(x, signif = 0L, ...) {
     UseMethod("as.Mclust")
   }
 
 #' @method as.Mclust MoEClust
 #' @importFrom matrixStats "colMeans2"
-#' @importFrom mclust "covw" "sigma2decomp"
+#' @importFrom mclust "sigma2decomp"
 #' @export
-  as.Mclust.MoEClust      <- function(x, signif = 0, ...) {
+  as.Mclust.MoEClust      <- function(x, signif = 0L, ...) {
     if(length(signif) > 1 || !is.numeric(signif) ||
        signif < 0 || signif   >= 1)               stop("'signif' must be a single number in the interval [0, 1)", call.=FALSE)
     x             <- if(inherits(x, "MoECompare")) x$optimal else x
@@ -2034,11 +2048,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     x$loglik      <- x$loglik[length(x$loglik)]
     x$BIC         <- replace(x$BIC, !is.finite(x$BIC), NA)
     class(x$BIC)  <- "mclustBIC"
-    x$parameters$pro      <- if(gating)                    colMeans2(x$z) else x$parameters$pro
-    x$uncertainty         <- if(uni)                unname(x$uncertainty) else x$uncertainty
-    x$classification      <- if(uni)             unname(x$classification) else x$classification
-    x$parameters$variance <- if(expert) suppressWarnings(expert_covar(x)) else x$parameters$variance
-    x$data        <- if(signif > 0)   apply(x$data, 2, .trim_out, signif) else x$data
+    x$parameters$pro      <- if(gating)                     colMeans2(x$z) else x$parameters$pro
+    x$uncertainty         <- if(uni)                 unname(x$uncertainty) else x$uncertainty
+    x$classification      <- if(uni)              unname(x$classification) else x$classification
+    x$parameters$variance <- if(expert)  suppressWarnings(expert_covar(x)) else x$parameters$variance
+    x$data        <- if(signif > 0)   apply(x$data, 2L, .trim_out, signif) else x$data
     colnames(x$z) <- NULL
     x             <- x[-which(is.element(names(x), c("ICL", "icl", "AIC", "aic", "gating", "expert", "linf", "iters", "net.covs", "resid.data", "DF", "ITERS")))]
     name.x        <- names(x)
@@ -2147,10 +2161,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     n             <- G
     while(length(q) < (G + 1)) {
       n           <- n + 1
-      q           <- unique(stats::quantile(x, seq(from=0, to=1, length=n)))
+      q           <- unique(stats::quantile(x, seq(from=0L, to=1L, length=n)))
     }
     if(length(q)   > (G + 1))  {
-      q           <- q[-order(diff(q))[seq_len(length(q) - G - 1)]]
+      q           <- q[-order(diff(q))[seq_len(length(q) - G - 1L)]]
     }
     q[1]          <- min(x) - eps
     q[length(q)]  <- max(x) + eps
@@ -2204,7 +2218,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
        any(match(sub, Nseq, nomatch = 0)  == 0))  stop("Numeric 'sub' must correspond to row indices of data", call.=FALSE)
     if(!inherits(formula, "formula"))             stop("'formula' must actually be a formula!", call.=FALSE)
     dat           <- dat[sub,colnames(dat) %in% all.vars(stats::update.formula(formula, 0 ~ .)), drop=FALSE]
-    ind           <- names(which(!apply(dat, 2, function(x) all(x == x[1], na.rm=TRUE))))
+    ind           <- names(which(!apply(dat, 2L, function(x) all(x == x[1L], na.rm=TRUE))))
     fterms        <- attr(stats::terms(formula), "term.labels")
     ind           <- c(ind[ind %in% fterms], fterms[grepl(":", fterms) | grepl("I\\(", fterms)])
     response      <- all.vars(stats::update.formula(formula, . ~ 0))
@@ -2294,9 +2308,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
       covar[!stats::complete.cases((covar))]   <- .Machine$double.eps
       if(diff(dim(resids))   >= 0)     {
         covsvd    <- svd(covar)
-        posi      <- covsvd$d > max(sqrt(.Machine$double.eps) * covsvd$d[1L], 0)
+        posi      <- covsvd$d > max(sqrt(.Machine$double.eps) * covsvd$d[1L], 0L)
         icov      <- if(all(posi)) covsvd$v   %*% (t(covsvd$u)/covsvd$d) else if(any(posi))
-        covsvd$v[,posi, drop=FALSE]   %*% (t(covsvd$u[,posi, drop=FALSE])/covsvd$d[posi]) else array(0, dim(covar)[2L:1L])
+        covsvd$v[,posi, drop=FALSE]   %*% (t(covsvd$u[,posi, drop=FALSE])/covsvd$d[posi]) else array(0L, dim(covar)[2L:1L])
       } else icov <- chol2inv(.chol(covar))
       res         <- rowSums2(resids  %*% icov * resids)
     } else if(inherits(fit, "lm"))     {
@@ -2327,11 +2341,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' noise_vol(ais[,3:7], reciprocal=TRUE)
   noise_vol       <- function(data, method = c("hypvol", "convexhull", "ellipsoidhull"), reciprocal = FALSE) {
     method        <- match.arg(method)
-    has.lib       <- switch(method, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
-    if(!has.lib)                                  stop(paste0("Use of the ", method, " 'method' option requires loading the ", switch(method, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"), call.=FALSE)
+    has.lib       <- switch(EXPR=method, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
+    if(!has.lib)                                  stop(paste0("Use of the ", method, " 'method' option requires loading the ", switch(EXPR=method, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"), call.=FALSE)
     if(length(reciprocal) != 1 ||
        !is.logical(reciprocal))                   stop("'reciprocal' must be a single logical indicator", call.=FALSE)
-    vol           <- ifelse(ncol(as.data.frame(data)) == 1, abs(diff(range(data))), switch(method, hypvol=hypvol(data, reciprocal=FALSE),
+    vol           <- ifelse(ncol(as.data.frame(data)) == 1, abs(diff(range(data))), switch(EXPR=method, hypvol=hypvol(data, reciprocal=FALSE),
                      convexhull=geometry::convhulln(data, options=c("Pp", "FA"))$vol, ellipsoidhull=cluster::volume(cluster::ellipsoidhull(data))))
       ifelse(reciprocal, 1/vol, vol)
 
@@ -2358,7 +2372,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     eigs          <- eigen(x, symmetric = TRUE)
     eval          <- eigs$values
     evec          <- eigs$vectors
-     return(chol(x + evec %*% tcrossprod(diag(pmax.int(0, 2 * max(abs(eval)) * d * .Machine$double.eps - eval), d), evec)))
+     return(chol(x + evec %*% tcrossprod(diag(pmax.int(0L, 2 * max(abs(eval)) * d * .Machine$double.eps - eval), d), evec)))
     }
   )
 
@@ -2383,9 +2397,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     x.val         <- sort(x[x.ind],   decreasing=decrease)
     ind.x         <- order(x[x.ind],  decreasing=decrease)
     x.ind         <- x.ind[ind.x,,    drop=FALSE]
-    x.ind[,1]     <- gsub(".*= ", "", rownames(x)[x.ind[,1]])
-    x.ind[,2]     <- colnames(x)[as.numeric(x.ind[,2])]
-      return(list(crits = stats::setNames(x.val, vapply(seq_len(pick), function(p, b=x.ind[p,]) paste0(b[2], ",", b[1]), character(1L))), pick = pick))
+    x.ind[,1L]    <- gsub(".*= ", "", rownames(x)[x.ind[,1]])
+    x.ind[,2L]    <- colnames(x)[as.numeric(x.ind[,2L])]
+      return(list(crits = stats::setNames(x.val, vapply(seq_len(pick), function(p, b=x.ind[p,]) paste0(b[2L], ",", b[1L]), character(1L))), pick = pick))
   }
 
   .sq_mat       <- function(x) diag(sqrt(diag(x)))
@@ -2434,7 +2448,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
                ifelse(G == 0 || is.na(hypvol),    "\n", " (and a noise component)\n"),
                ifelse(!equalP, "",   paste0("Equal Mixing Proportions\n")),
                ifelse(is.na(hypvol), "",    paste0("Hypervolume of Noise Component: ", round(hypvol, digits), "\n")),
-               "BIC = ", crit[1], " | ICL = ", crit[2], " | AIC = ",  crit[3],
+               "BIC = ", crit[1L], " | ICL = ", crit[2L], " | AIC = ",  crit[3L],
                ifelse(any(net.x),    paste0("\nIncluding",  ifelse(all(net.x), " gating and expert", ifelse(!gate.x, " gating", ifelse(!exp.x, " expert", ""))), " network covariates:\n"), "\nNo covariates\n"),
                ifelse(gate.x,  "",   paste0("\tGating: ",  gating,  ifelse(exp.x,  "", "\n"))),
                ifelse(exp.x,   "",   paste0("\tExpert: ",  expert, ""))))
@@ -2501,14 +2515,18 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' \method{print}{MoECompare}(x,
 #'       index = seq_len(x$pick),
 #'       noise = TRUE,
+#'       digits = 3L,
 #'       ...)
 #' @export
-  print.MoECompare       <- function(x, index=seq_len(x$pick), noise = TRUE, ...) {
+  print.MoECompare       <- function(x, index=seq_len(x$pick), noise = TRUE, digits = 3L, ...) {
     index                <- if(is.logical(index)) which(index) else index
     if(length(index) < 1 || (!is.numeric(index) &&
-       (any(index    < 1  | index > x$pick))))    stop("Invalid 'index'", call.=FALSE)
+       (any(index    < 1  | index > x$pick))))    stop("Invalid 'index'",  call.=FALSE)
     if(length(noise) > 1 ||
        !is.logical(noise))                        stop("'noise' must be a single logical indicator", call.=FALSE)
+    if(length(digits)     > 1    ||
+       !is.numeric(digits)       ||
+       digits            <= 0)                    stop("Invalid 'digits'", call.=FALSE)
     noise.ind            <- is.na(x$hypvol)
     n.all                <- all(noise.ind)
     noise.gate           <- if(!noise || n.all)           NULL else replace(x$noise.gate, is.na(x$noise.gate), "")
@@ -2518,9 +2536,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     x$noise              <- if(n.all)                     NULL else x$noise.meth
     x$noise.gate         <- if(all(x$gating == "None"))   NULL else noise.gate
     x$noise.meth         <- NULL
+    x$bic                <- round(x$bic, digits)
+    x$icl                <- round(x$icl, digits)
+    x$aic                <- round(x$aic, digits)
     cat(paste0("------------------------------------------------------------------------------\n", x$title, "\nData: ",
                x$data,"\n", "------------------------------------------------------------------------------\n\n"))
-    comp.res             <- data.frame(do.call(cbind, x[-c(1:4)]))[index,]
+    comp.res             <- data.frame(do.call(cbind, x[-c(1L:4L)]))[index,]
     comp.res             <- cbind(rank = rownames(comp.res), comp.res)
     rownames(comp.res)   <- NULL
     print(comp.res, row.names = FALSE)
@@ -2568,7 +2589,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' @export
   print.MoE_expert       <- function(x, ...) {
     formula       <- attr(x, "Formula")
-    attributes(x)[-1]    <- NULL
+    attributes(x)[-1L]   <- NULL
     class(x)      <- "listof"
     print(x, ...)
     cat(paste("Formula:", formula))

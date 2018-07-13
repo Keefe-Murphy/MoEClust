@@ -28,7 +28,7 @@ A plot showing the clustering uncertainty of each observation (sorted in increas
 Plots the clustering uncertainty for every observation from a fitted \code{"MoEClust"} model, including models with a noise component.
 }
 \details{
-The y-axis of this plot runs from \code{0} to \code{1 - 1/res$G}, with a horizontal line also drawn at \code{1/res$G}. When \code{type="barplot"}, uncertainties greater than this value are given a different colour when \code{truth} is not supplied, otherwise misclassified observations are given a different colour. Note, however, that \eqn{\texttt{G^{(0)}}}{G^(0)} = \code{res$G + 1} is used in place of \code{res$G} for models with a noise component.
+The y-axis of this plot runs from \code{0} to \code{1 - 1/res$G}, with a horizontal line also drawn at \code{1/res$G}. When \code{type="barplot"}, uncertainties greater than this value are given a different colour when \code{truth} is not supplied, otherwise misclassified observations are given a different colour. Note, however, that \eqn{G^{(0)}}{G^(0)} = \code{res$G + 1} is used in place of \code{res$G} for models with a noise component.
 }
 \note{
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_Uncertainty}} which accepts the default arguments, and also produces other types of plots.
