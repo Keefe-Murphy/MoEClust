@@ -3,6 +3,13 @@ __MoEClust: Gaussian Parsimonious Clustering Models -__
 __with Gating and Expert Network Covariates__  
 =======================================================
 
+## MoEClust v1.2.0 - (_4<sup>th</sup> release [minor update]: 2018-08-25_)
+### New Features & Improvements
+* New `MoE_control` arg. `algo` allows model fitting using the `"EM"` or `"CEM"` algorithm:  
+    * Related new function `MoE_cstep` added.
+
+### Bug Fixes & Miscellaneous Edits
+
 ## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-08-24_)
 ### New Features & Improvements
 * New `predict.MoEClust` function added: predicts cluster membership probability,  

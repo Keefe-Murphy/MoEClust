@@ -22,7 +22,7 @@ MoE_dens(data,
 
 \item{Vinv}{An estimate of the reciprocal hypervolume of the data region. The default is determined by applying the function \code{\link[mclust]{hypvol}} to the data. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.}
 
-\item{logarithm}{A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}}.}
+\item{logarithm}{A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}} or \code{\link{MoE_cstep}}.}
 }
 \value{
 A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions. These densities are unnormalised.
@@ -31,7 +31,7 @@ A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of ob
 Computes densities (or log-densities) of observations in MoEClust mixture models.
 }
 \note{
-This function is intended for joint use with \code{\link{MoE_estep}}, using the \strong{log}-densities. Note that models with a noise component are facilitated here too.
+This function is intended for joint use with \code{\link{MoE_estep}} or \code{\link{MoE_cstep}}, using the \strong{log}-densities. Note that models with a noise component are facilitated here too.
 }
 \examples{
 data(ais)
@@ -54,7 +54,7 @@ Dens2 <- MoE_dens(data=m2$resid.data, sigs=m2$parameters$variance,
                   mus=0, log.tau=log(m2$parameters$pro))
 }
 \seealso{
-\code{\link{MoE_estep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}
+\code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustVariance}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

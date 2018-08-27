@@ -42,7 +42,7 @@ A list of class \code{"MoECompare"}, for which a dedicated print function exists
 \item{\code{modelNames}}{The \code{\link[mclust]{mclustModelNames}}.}
 \item{\code{G}}{The optimal numbers of components.}
 \item{\code{df}}{The numbers of estimated parameters.}
-\item{\code{iters}}{The numbers of EM iterations.}
+\item{\code{iters}}{The numbers of EM/CEM iterations.}
 \item{\code{bic}}{BIC values, ranked according to \code{criterion}.}
 \item{\code{icl}}{TCL values, ranked according to \code{criterion}.}
 \item{\code{aic}}{AIC values, ranked according to \code{criterion}.}
