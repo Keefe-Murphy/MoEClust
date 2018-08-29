@@ -7,6 +7,7 @@ __with Gating and Expert Network Covariates__
 ### New Features & Improvements
 * New `MoE_control` arg. `algo` allows model fitting using the `"EM"` or `"CEM"` algorithm:  
     * Related new function `MoE_cstep` added.
+* New `MoE_control` arg. `nstarts` allows for multiple random starts when `init.z="random"`.
 * If `clustMD` is invoked for initialisation, models are now run more quickly in parallel.
 
 ### Bug Fixes & Miscellaneous Edits

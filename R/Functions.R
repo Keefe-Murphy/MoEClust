@@ -135,6 +135,9 @@
     criterion     <- control$criterion
     stopaX        <- control$stopping == "aitken"
     init.z        <- control$init.z
+    nstarts       <- switch(EXPR=init.z, random=control$nstarts, 1L)
+    startseq      <- seq_len(nstarts)
+    multstart     <- all(init.z  == "random", nstarts > 1)
     algo          <- control$algo
     exp.init      <- control$exp.init
     do.joint      <- exp.init$joint   && init.z != "random"
@@ -273,6 +276,8 @@
     multi         <- length(all.mod)    > 1L
     BICs          <- ICLs      <-
     AICs          <- DF.x      <- IT.x <- provideDimnames(matrix(NA, nrow=len.G, ncol=length(all.mod)), base=list(as.character(range.G), all.mod))
+    LL.x          <- replicate(nstarts  + 1L, list(BICs))
+    LL.x[[1L]][]  <- -Inf
     crit.tx       <- crit.gx   <- -sqrt(.Machine$double.xmax)
 
   # Define the gating formula
@@ -485,15 +490,23 @@
             if(mcfail[h]       <- all(is.na(mcl))) next
             class(mcl)         <- "mclustBIC"
           }
-          z.tmp   <- unmap(switch(EXPR     = init.z,
-                                  hc       = hcZ[,h - anyg0 - hc1],
-                                  kmeans   = stats::kmeans(x=XI, centers=g, iter.max=kiters, nstart=kstarts)$cluster,
-                                  mclust   = suppressWarnings(Mclust(XI, G=g, x=mcl))$classification,
-                                  quantile = quant_clust(x=XI, G=g),
-                                  random   = sample(x=Gseq, size=noisen, replace=TRUE)), groups=Gseq)
+          if(multstart)         {
+            zg        <- replicate(nstarts, list(unmap(sample(x=Gseq, size=noisen, replace=TRUE), groups=Gseq)))
+          } else       {
+            z.tmp     <- unmap(switch(EXPR     = init.z,
+                                      hc       = hcZ[,h - anyg0 - hc1],
+                                      kmeans   = stats::kmeans(x=XI, centers=g, iter.max=kiters, nstart=kstarts)$cluster,
+                                      mclust   = suppressWarnings(Mclust(XI, G=g, x=mcl))$classification,
+                                      quantile = quant_clust(x=XI, G=g)), groups=Gseq)
+          }
         } else     {
           z.tmp   <- unmap(rep(1L, ifelse(noisen == 0 || g == 0, n, noisen)), groups=1L)
         }
+      }
+    for(i in if(g > 1) startseq else 1L)       {
+      if(isTRUE(multstart)     && g > 1)       {
+        if(isTRUE(verbose))                      cat(paste0("\n\tRandom Start: #", i, "...\n"))
+        z.tmp     <- zg[[i]]
       }
       zc          <- ncol(z.tmp)
       if(zc != g  && g > 0)     {
@@ -595,7 +608,7 @@
         }
         G.res     <- if(uni) as.matrix(do.call(base::c, res.G)) else do.call(rbind, res.G)
       }
-      if(eNO      <- expold    != init.exp)       warning(paste0("\tExtra initialisation step with expert covariates failed where G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE\n", ", even with 'drop_constants' and 'drop_levels' invoked:\n\t\tTry suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates")), call.=FALSE, immediate.=TRUE)
+      if(eNO      <- expold    != init.exp)       warning(paste0("\tExtra initialisation step with expert covariates failed where G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE\n", ", even with 'drop_constants' and 'drop_levels' invoked:\n\t\tTry suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates\n")), call.=FALSE, immediate.=TRUE)
 
       # Account for Noise Component
       z.tmp       <- 0L + z.tmp
@@ -622,9 +635,9 @@
       }
       col.z       <- colSums2(z.init)
       emptyinit   <- FALSE
-      if(any(col.z < 1))  {                       warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were empty after initialisation\n"),          call.=FALSE)
+      if(any(col.z < 1))  {                       warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were empty after initialisation\n"),          call.=FALSE, immediate.=TRUE)
         emptyinit <- TRUE
-      } else if(any(col.z < 2))                   warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were initialised with only 1 observation\n"), call.=FALSE)
+      } else if(any(col.z < 2))                   warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were initialised with only 1 observation\n"), call.=FALSE, immediate.=TRUE)
 
     # Initialise gating network
       if(gate.g)  {
@@ -694,8 +707,9 @@
           AICs[h,modtype]      <-
           DF.x[h,modtype]      <- -Inf
           IT.x[h,modtype]      <- Inf
+          LL.x[[i  + 1L]][h,modtype]   <- -Inf
           next
-        } else    {
+        } else     {
           Estep   <- switch(EXPR=algo, EM=MoE_estep(Dens=medens), CEM=MoE_cstep(Dens=medens))
           z       <- zN        <- Estep$z
           if((ERR <- any(is.nan(z))))             next
@@ -796,7 +810,8 @@
        #pen.exp   <- ifelse(exp.g, g * d * (fitE$glmnet.fit$df[which(fitE$glmnet.fit$lambda == fitE$lambda.1se)] + 1), exp.pen)
         pen.exp   <- ifelse(exp.g, g * length(stats::coef(fitE)), exp.pen)
         x.df      <- pen.exp + x.df
-        choose    <- MoE_crit(modelName=modtype, loglik=ll[j], n=n, G=g, z=z, df=x.df)
+        max.ll    <- ll[j]
+        choose    <- MoE_crit(modelName=modtype, loglik=max.ll, n=n, G=g, z=z, df=x.df)
         bics      <- choose["bic",]
         icls      <- choose["icl",]
         aics      <- choose["aic",]
@@ -823,11 +838,17 @@
             mu.x  <- mus
           }
         }
-        BICs[h,modtype]        <- ifelse(ERR, -Inf, bics)
-        ICLs[h,modtype]        <- ifelse(ERR, -Inf, icls)
-        AICs[h,modtype]        <- ifelse(ERR, -Inf, aics)
-        DF.x[h,modtype]        <- ifelse(ERR, -Inf, x.df)
-        IT.x[h,modtype]        <- ifelse(ERR,  Inf, j2)
+        max.ll                 <- ifelse(ERR, -Inf, max.ll)
+        if(!multstart || LL.x[[i]][h,modtype] <     max.ll) {
+          BICs[h,modtype]      <- ifelse(ERR, -Inf, bics)
+          ICLs[h,modtype]      <- ifelse(ERR, -Inf, icls)
+          AICs[h,modtype]      <- ifelse(ERR, -Inf, aics)
+          DF.x[h,modtype]      <- ifelse(ERR, -Inf, x.df)
+          IT.x[h,modtype]      <- ifelse(ERR,  Inf, j2)
+        }
+        if(isTRUE(multstart))   {
+          LL.x[[i + 1L]][h,modtype]  <- max(max.ll, LL.x[[i]][h,modtype])
+        }
       } # for (modtype)
       if((faillen <- length(failedM)) > 1L)       warning(paste0("\tExtra initialisation step with expert covariates worked,\n\t\tbut expert networks themselves couldn't be properly initialised for the G=", g, " ", paste(shQuote(failedM), collapse=" + "), " model", ifelse(faillen == 1, "", "s"), ifelse(drop.exp, ": try setting 'drop.exp' to FALSE\n", ",\n\t\teven with 'drop_constants' and 'drop_levels' invoked:\n\t\tTry suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates\n")), call.=FALSE, immediate.=TRUE)
 
@@ -853,6 +874,7 @@
           x.mu    <- mu.x
         }
       }
+    } # for (i)
     } # for (g)
     if(any(warnmd <- apply(mderr, 1L, all))) {
       mdwarn      <- paste0("\nInitialisation failed for ", ifelse(all(warnmd), "ALL", "SOME"), " G values due to invocation of 'exp.init$clustMD'")
@@ -1358,6 +1380,7 @@
 #' When \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded, the \code{init.z} argument instead governs the method by which a call to \code{\link[clustMD]{clustMD}} is initialised. In this instance, "\code{quantile}" will instead default to "\code{\link[mclust]{hc}}", and the arguments to \code{hc.args} and \code{km.args} will be ignored (unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components).
 #'
 #' When \code{init.z="mclust"} or \code{\link[clustMD]{clustMD}} is successfully invoked (via \code{exp.init$clustMD}), the argument \code{init.crit} (see below) specifies the model-selection criterion ("\code{bic}" or "\code{icl}") by which the optimal \code{\link[mclust]{Mclust}} or \code{\link[clustMD]{clustMD}} model type to initialise with is determined, and \code{criterion} remains unaffected.
+#' @param nstarts The number of random initialisations to use when \code{init.z="random"}. Defaults to 1. Results will be based on the random start yielding the highest estimated log-likelihood. Note that all \code{nstarts} random initialisations are affected by \code{exp.init$mahalanobis}, if invoked in the presence of expert network covariates, which may remove some of the randomness.
 #' @param exp.init A list supplying select named parameters to control the initialisation routine in the presence of \emph{expert} network covariates (otherwise ignored):
 #' \describe{
 #' \item{\code{joint}}{A logical indicating whether the initial partition is obtained on the joint distribution of the response and expert network covariates (defaults to \code{TRUE}) or just the response variables (\code{FALSE}). By default, only continuous expert network covariates are considered (see \code{exp.init$clustMD} below). Only relevant when \code{init.z} is not \code{"random"} (unless \code{isTRUE(exp.init$clustMD)}, in which case \code{init.z} specifies the initialisation routine for a call to \code{\link[clustMD]{clustMD}}). This will render the \code{"quantile"} option to \code{init.z} for univariate data unusable if continuous expert network covariates are supplied &/or categorical/ordinal expert network covariates are supplied when \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded.}
@@ -1413,6 +1436,7 @@
 #'             criterion = c("bic", "icl", "aic"),
 #'             stopping = c("aitken", "relative"),
 #'             init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
+#'             nstarts = 1L,
 #'             exp.init = list(...),
 #'             eps = .Machine$double.eps,
 #'             tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08),
@@ -1447,7 +1471,7 @@
 #' library(clustMD)
 #' res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
 #'                    network.data=ais, control=ctrl2)}
-  MoE_control     <- function(algo = c("EM", "CEM"), criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
+  MoE_control     <- function(algo = c("EM", "CEM"), criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), init.z = c("hc", "quantile", "kmeans", "mclust", "random"), nstarts = 1L,
                               exp.init = list(...), eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08), itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
                               equalPro = FALSE, noise.args = list(...), hc.args = list(...), km.args = list(...), init.crit = c("bic", "icl"), warn.it = 0L, verbose = interactive(), ...) {
     if(!missing(algo)       && length(algo) > 1 ||
@@ -1463,6 +1487,12 @@
     if(!miss.init && (length(init.z)        > 1 ||
        !is.character(init.z)))                    stop("'init.z' must be a single character string",    call.=FALSE)
     init.z        <- match.arg(init.z)
+    if(init.z     == "random")      {
+      if(length(nstarts)    != 1   ||
+         !is.numeric(nstarts)      ||
+         (nstarts            < 1   ||
+          floor(nstarts)    != nstarts))          stop(paste0("'nstarts' must be a single integer >= 1 if when 'init.z'=", init.z), call.=FALSE)
+    }
 
     if(is.null(exp.init$joint))     {
       exp.init$joint        <- TRUE
@@ -1568,9 +1598,8 @@
        warn.it    != floor(warn.it))              stop("'warn.it' must be a single strictly non-negative integer",      call.=FALSE)
     if(length(verbose)  < 1 ||
        !is.logical(verbose))                      stop("'verbose' must be a single logical indicator",  call.=FALSE)
-      list(algo = algo, criterion = criterion, stopping = stopping, init.z = init.z, exp.init = exp.init, eps = eps,
-           tol = tol, itmax = itmax, equalPro = equalPro, noise.args = noise.args, hc.args = hc.args, km.args = km.args,
-           init.crit = init.crit, warn.it = warn.it, verbose = verbose, miss.init = miss.init, miss.hc = miss.hc)
+      list(algo = algo, criterion = criterion, stopping = stopping, init.z = init.z, nstarts = nstarts, exp.init = exp.init, eps = eps, tol = tol, itmax = itmax, equalPro = equalPro,
+           noise.args = noise.args, hc.args = hc.args, km.args = km.args, init.crit = init.crit, warn.it = warn.it, verbose = verbose, miss.init = miss.init, miss.hc = miss.hc)
   }
 
 #' Aitken Acceleration

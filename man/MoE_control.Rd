@@ -8,6 +8,7 @@ MoE_control(algo = c("EM", "CEM"),
             criterion = c("bic", "icl", "aic"),
             stopping = c("aitken", "relative"),
             init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
+            nstarts = 1L,
             exp.init = list(...),
             eps = .Machine$double.eps,
             tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08),
@@ -35,6 +36,8 @@ Other options include "\code{kmeans}" (see \code{km.args}), "\code{random}" init
 When \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded, the \code{init.z} argument instead governs the method by which a call to \code{\link[clustMD]{clustMD}} is initialised. In this instance, "\code{quantile}" will instead default to "\code{\link[mclust]{hc}}", and the arguments to \code{hc.args} and \code{km.args} will be ignored (unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components).
 
 When \code{init.z="mclust"} or \code{\link[clustMD]{clustMD}} is successfully invoked (via \code{exp.init$clustMD}), the argument \code{init.crit} (see below) specifies the model-selection criterion ("\code{bic}" or "\code{icl}") by which the optimal \code{\link[mclust]{Mclust}} or \code{\link[clustMD]{clustMD}} model type to initialise with is determined, and \code{criterion} remains unaffected.}
+
+\item{nstarts}{The number of random initialisations to use when \code{init.z="random"}. Defaults to 1. Results will be based on the random start yielding the highest estimated log-likelihood. Note that all \code{nstarts} random initialisations are affected by \code{exp.init$mahalanobis}, if invoked in the presence of expert network covariates, which may remove some of the randomness.}
 
 \item{exp.init}{A list supplying select named parameters to control the initialisation routine in the presence of \emph{expert} network covariates (otherwise ignored):
 \describe{
