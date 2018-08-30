@@ -155,7 +155,7 @@ Examine the various additional options around initialisation of the algorithm:
 ?MoE_control
 ```
 
-Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within AIS data, supplying `sex` in the expert network and `bmi` in the gating network via formula interfaces. This time, allow the printing of messages to the screen.
+Accept the defaults, and fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within AIS data, supplying `sex` in the expert network and `bmi` in the gating network via formula interfaces. This time, allow the printing of messages to the screen.
 ```{r}
 mod   <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais)
 ```

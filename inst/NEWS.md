@@ -7,10 +7,12 @@ __with Gating and Expert Network Covariates__
 ### New Features & Improvements
 * New `MoE_control` arg. `algo` allows model fitting using the `"EM"` or `"CEM"` algorithm:  
     * Related new function `MoE_cstep` added.
+    * Extra `algo` option `"cemEM"` allows running EM starting from convergence of CEM.
 * New `MoE_control` arg. `nstarts` allows for multiple random starts when `init.z="random"`.
 * If `clustMD` is invoked for initialisation, models are now run more quickly in parallel.
 
 ### Bug Fixes & Miscellaneous Edits
+* Fixed bug in checking for strictly increasing log-likelihood estimates.
 
 ## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-08-24_)
 ### New Features & Improvements

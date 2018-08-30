@@ -696,6 +696,7 @@
           mus     <- matrix(NA, nrow=n, ncol=0L)
           vari    <- list(modelName=modtype, d=d, G=0L)
         }
+        alG       <- ifelse(gN  > 1, algo, "EM")
 
         medens    <- try(MoE_dens(data=if(init.exp) res.G else x.dat, mus=mus, sigs=vari, log.tau=ltau.init, Vinv=Xinv), silent=TRUE)
         if((ERR   <- ERR || ((g > 0 && attr(Mstep, "returnCode") < 0) || (inherits(medens, "try-error")) || any(medens > 0)))) {
@@ -710,13 +711,15 @@
           LL.x[[i  + 1L]][h,modtype]   <- -Inf
           next
         } else     {
-          Estep   <- switch(EXPR=algo, EM=MoE_estep(Dens=medens), CEM=MoE_cstep(Dens=medens))
+          Estep   <- switch(EXPR=alG, EM=MoE_estep(Dens=medens), MoE_cstep(Dens=medens))
           z       <- zN        <- Estep$z
           if((ERR <- any(is.nan(z))))             next
           ll      <- c(-Inf, ifelse(gN <= 1 && !exp.g, Estep$loglik, -sqrt(.Machine$double.xmax)))
           j       <- 2L
-          stX     <- gN  > 1   || exp.g
+          stX     <- gN    > 1 || exp.g
         }
+        nW        <- 1L
+        alW       <- switch(EXPR=alG, cemEM="CEM", alG)
 
       # Run the EM/CEM algorithm
         while(stX)    {
@@ -780,7 +783,7 @@
             ll    <- c(ll, NA)
             break
           } else  {
-            Estep <- switch(EXPR=algo, EM=MoE_estep(Dens=medens), CEM=MoE_cstep(Dens=medens))
+            Estep <- switch(EXPR=alW, EM=MoE_estep(Dens=medens), CEM=MoE_cstep(Dens=medens))
             z     <- zN        <- Estep$z
             ERR   <- any(is.nan(z))
             if(isTRUE(ERR))                       break
@@ -801,11 +804,17 @@
               m0X <- TRUE
              }
             }
+            if(alG == "cemEM"  && !stX  && nW  == 1L)   {
+              ll  <- c(ll[j - 1L], ll[j])
+              alW <- "EM"
+              j   <- nW        <- 2L
+              stX <- TRUE
+            }
           }
         } # while (j)
 
       # Store values corresponding to the maximum BIC/ICL/AIC so far
-        j2        <- max(1L, j  - 2L)
+        j2        <- max(1L, j  - switch(EXPR=algo, cemEM=1L, 2L))
         if(isTRUE(verbose))       cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j2, ifelse(last.G && last.T, "\n\n", "\n")))
        #pen.exp   <- ifelse(exp.g, g * d * (fitE$glmnet.fit$df[which(fitE$glmnet.fit$lambda == fitE$lambda.1se)] + 1), exp.pen)
         pen.exp   <- ifelse(exp.g, g * length(stats::coef(fitE)), exp.pen)
@@ -914,7 +923,7 @@
     df.fin        <- DF.x[best.ind]
     uncert        <- if(GN > 1) 1     - rowMaxs(z)             else vector("numeric", n)
     exp.x         <- exp.x & G  != 0
-    x.ll          <- x.ll[if(GN == 1 && !exp.x) 2L else if(GN == 1 && exp.x) seq_len(3L)[-1L] else -c(1L:2L)]
+    x.ll          <- x.ll[if(GN == 1 && !exp.x) 2L else if(GN == 1 && exp.x) seq_len(3L)[-1L] else switch(EXPR=algo, EM=, CEM=-c(1L:2L), -1L)]
     x.ll          <- x.ll[!is.na(x.ll)]
 
     if(!(bG       <- gate.G[range.G  == G])) {
@@ -974,9 +983,9 @@
       mean.fin    <- vari.fin  <- NULL
     }
 
-    if(all(x.ll   != cummax(x.ll)))               warning("Log-likelihoods are not strictly increasing\n", call.=FALSE)
+    if(any(x.ll   != cummax(x.ll)))               warning("Log-likelihoods are not strictly increasing\n", call.=FALSE)
     if(any(IT.x[!is.na(IT.x)]  == max.it))        warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")\n"), call.=FALSE)
-    if(isTRUE(verbose))           cat(paste0("\n\t\tBest Model: ", mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
+    if(isTRUE(verbose))           cat(paste0("\n\t\tBest Model", ifelse(length(CRITs) > 1, paste0(" (according to ", toupper(criterion), "): "), ": "), mclustModelNames(best.mod)$type, " (", best.mod, "), with ", ifelse(G == 0, "only a noise component",
                                       paste0(G, " component", ifelse(G > 1, "s", ""))), ifelse(any(exp.gate) || (!noise.null && G != 0), paste0("\n\t\t\t   ", net.msg), ""), "\n\t\t",
                                       switch(EXPR=criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(EXPR=criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
     if(gate.x     && (G + !noise.null - !noise.gate) <= 1) {
@@ -1080,6 +1089,7 @@
                           net.covs = netdat, resid.data = residX, DF = DF.x, ITERS = IT.x)
     class(results)             <- "MoEClust"
     attr(results, "Algo")      <- algo
+    attr(results, "Criterion") <- criterion
     attr(results, "Details")   <- paste0(best.mod, ": ", ifelse(G == 0, "only a noise component", paste0(G, " component", ifelse(G > 1, "s", ""), net.msg)))
     attr(results, "EqualPro")  <- equal.pro
     attr(results, "Expert")    <- exp.x
@@ -1370,7 +1380,7 @@
 #' Set control values for use with MoEClust
 #'
 #' Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
-#' @param algo Switch controlling whether models are fit using the \code{"EM"} (the default) or \code{"CEM"} algorithm.
+#' @param algo Switch controlling whether models are fit using the \code{"EM"} (the default) or \code{"CEM"} algorithm. The option \code{"cemEM"} allows running the EM algorithm starting from convergence of the CEM algorithm.
 #' @param criterion When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.
 #' @param stopping The criterion used to assess convergence of the EM/CEM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the asymptotic estimate of the final converged maximised log-likelihood is also returned as \code{linf} for models with 2 or more components, though the largest element of the returned vector \code{loglik} still gives the log-likelihood value achieved by the parameters returned at convergence, under both \code{stopping} methods (see \code{\link{MoE_clust}}).
 #' @param init.z The method used to initialise the cluster labels. Defaults to a model-based agglomerative hierarchical clustering tree as per "\code{\link[mclust]{hc}}" for multivariate data (see \code{hc.args}), or "\code{quantile}"-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are expert network covariates incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, in which case the default is again "\code{\link[mclust]{hc}}"). The \code{"quantile"} option is thus only available for univariate data when expert network covariates are not incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, or when expert network covariates are not supplied.
@@ -1432,7 +1442,7 @@
 #'
 #' @seealso \code{\link{MoE_clust}}, \code{\link{aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{mclust.options}}, \code{\link{quant_clust}}, \code{\link[clustMD]{clustMD}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}
 #' @usage
-#' MoE_control(algo = c("EM", "CEM"),
+#' MoE_control(algo = c("EM", "CEM", "cemEM"),
 #'             criterion = c("bic", "icl", "aic"),
 #'             stopping = c("aitken", "relative"),
 #'             init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
@@ -1471,8 +1481,8 @@
 #' library(clustMD)
 #' res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
 #'                    network.data=ais, control=ctrl2)}
-  MoE_control     <- function(algo = c("EM", "CEM"), criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), init.z = c("hc", "quantile", "kmeans", "mclust", "random"), nstarts = 1L,
-                              exp.init = list(...), eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08), itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
+  MoE_control     <- function(algo = c("EM", "CEM", "cemEM"), criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
+                              nstarts = 1L, exp.init = list(...), eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08), itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
                               equalPro = FALSE, noise.args = list(...), hc.args = list(...), km.args = list(...), init.crit = c("bic", "icl"), warn.it = 0L, verbose = interactive(), ...) {
     if(!missing(algo)       && length(algo) > 1 ||
        !is.character(algo))                       stop("'algo' must be a single character string",      call.=FALSE)
@@ -2576,7 +2586,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     net.x         <- !c(gate.x, exp.x)
     crit          <- round(unname(c(x$bic, x$icl, x$aic)), digits)
     hypvol        <- x$hypvol
-    cat(paste0("\nBest Model: ",     mclustModelNames(name)$type,   " (", name, "), with ",
+    cat(paste0("\nBest Model", ifelse(length(x$BIC) > 1, paste0(" (according to ", toupper(attr(x, "Criterion")), "): "), ": "), mclustModelNames(name)$type, " (", name, "), with ",
                ifelse(G == 0, "only a noise component", paste0(G, " component", ifelse(G > 1,   "s",   ""))),
                ifelse(G == 0 || is.na(hypvol),    "\n", " (and a noise component)\n"),
                ifelse(!equalP, "",   paste0("Equal Mixing Proportions\n")),

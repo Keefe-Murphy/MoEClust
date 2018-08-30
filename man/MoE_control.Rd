@@ -4,7 +4,7 @@
 \alias{MoE_control}
 \title{Set control values for use with MoEClust}
 \usage{
-MoE_control(algo = c("EM", "CEM"),
+MoE_control(algo = c("EM", "CEM", "cemEM"),
             criterion = c("bic", "icl", "aic"),
             stopping = c("aitken", "relative"),
             init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
@@ -23,7 +23,7 @@ MoE_control(algo = c("EM", "CEM"),
             ...)
 }
 \arguments{
-\item{algo}{Switch controlling whether models are fit using the \code{"EM"} (the default) or \code{"CEM"} algorithm.}
+\item{algo}{Switch controlling whether models are fit using the \code{"EM"} (the default) or \code{"CEM"} algorithm. The option \code{"cemEM"} allows running the EM algorithm starting from convergence of the CEM algorithm.}
 
 \item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the "\code{bic}" (Bayesian Information Criterion), "\code{icl}" (Integrated Complete Likelihood), "\code{aic}" (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.}
 
