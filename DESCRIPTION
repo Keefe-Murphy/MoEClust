@@ -25,5 +25,5 @@ Suggests:
     geometry,
     knitr,
     rmarkdown
-RoxygenNote: 6.1.0.9000
+RoxygenNote: 6.1.0
 VignetteBuilder: knitr

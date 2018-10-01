@@ -12,7 +12,6 @@ MoE_gpairs(res,
            addEllipses = c("outer", "yes", "no", "inner", "both"),
            border.col = c("purple", "black", "brown", "brown", "navy"),
            bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-           diagonal = TRUE,
            outer.margins = list(bottom = grid::unit(2, "lines"),
                                 left = grid::unit(2, "lines"),
                                 top = grid::unit(2, "lines"),
@@ -63,8 +62,6 @@ Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.}
 
 Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk")}.}
 
-\item{diagonal}{By default (\code{TRUE}), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
-
 \item{outer.margins}{A list of length 4 with units as components named bottom, left, top, and right, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).}
 
 \item{outer.labels}{The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.}
@@ -112,9 +109,11 @@ The argument \code{n.ticks} will be overwritten for categorical variables with f
 \item{diag.pars}{A list supplying select parameters for panels along the diagonal.
 
 \code{NULL} is equivalent to:
-\preformatted{list(diag.fontsize=9, show.hist=TRUE,
+\preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
 hist.color=hist.color, show.counts=TRUE),}
-where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.}
+where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
+
+When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
 
 \item{...}{Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}.}
 }

@@ -35,7 +35,7 @@ For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_
 \note{
 Caution is advised producing generalised pairs plots when the dimension of the data is large.
 
-Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results.
+Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. These can be especially useful for univariate data.
 }
 \examples{
 \dontrun{

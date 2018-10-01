@@ -151,6 +151,7 @@
     equalPro      <- control$equalPro
     noise.args    <- control$noise.args
     noise         <- noise.args$noise.init
+    tau0          <- noise.args$tau0
     noise.gate    <- noise.args$noise.gate
     noise.meth    <- noise.args$noise.meth
     hc.args       <- control$hc.args
@@ -194,9 +195,9 @@
     if((d         <- ncol(X))  == 0L)             stop("'data' is empty!", call.=FALSE)
     Nseq          <- seq_len(n)
     comp.x        <- if(isTRUE(comp.x)) Nseq else comp.x
-    noise.null    <- is.null(noise)
-    noise.gate    <- (!noise.null     && noise.gate) || noise.null
-    if(missing(G) && !noise.null) G   <- 0:9
+    noise.null    <- all(nnull <- is.null(noise), tnull <- is.null(tau0))
+    noise.gate    <- (!noise.null     && noise.gate)    || noise.null
+    if(missing(G) && !noise.null) G   <- 0L:9L
     if(any(G      != floor(G))        &&
        any(G < ifelse(noise.null, 1, 0)))         stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")), call.=FALSE)
     if(any(G      >= n))        {
@@ -207,22 +208,28 @@
 
     mod.fam       <- mclust.options("emModelNames")
     range.G       <- sort(as.integer(unique(G)))
-    if(!noise.null)   {
+    Vinv          <- if(!noise.null) noise_vol(X, noise.meth, reciprocal=TRUE)
+    if(!nnull)     {
      if(length(noise)          != n)              stop("'noise.args$noise.init' must be a vector of length n", call.=FALSE)
      if(!is.logical(noise))     {
        if(any(match(noise, Nseq,
               nomatch=0)       == 0))             stop("Numeric 'noise.args$noise.init' must correspond to row indices of data", call.=FALSE)
        noise      <- as.logical(match(Nseq, noise, nomatch=0))
      }
-     Vinv         <- noise_vol(X, noise.meth, reciprocal=TRUE)
-     nnoise       <- sum(as.numeric(noise))
-     noisen       <- n - nnoise
-     if(any(G      > noisen)) range.G <- range.G[range.G <= noisen]
+     if(!tnull)    {
+       tau0       <- tau0 * noise
+       noise      <- vector("logical", n)
+       nnoise     <- 0L
+       noisen     <- n
+     } else  {
+       nnoise     <- sum(as.numeric(noise))
+       noisen     <- n - nnoise
+       if(any(G    > noisen)) range.G <- range.G[range.G <= noisen]
+     }
     } else   {
       noise       <- vector("logical", n)
       nnoise      <- 0L
       noisen      <- n
-      Vinv        <- NULL
     }
     len.G         <- length(range.G)
     Gall          <- ifelse(noise.null, all(G > 1), all(G[G > 0] > 1))
@@ -574,7 +581,7 @@
           }
         }
         if(ix     >= max.init)                    warning(paste0("\tMahalanobis initialisation step failed to converge in max.init=", max.init, " iterations for the ", g, " cluster models\n"), call.=FALSE, immediate.=TRUE)
-        if(noiseG && init.exp)  {
+        if(noiseG && init.exp  && tnull)  {
          nRG      <- replicate(g, matrix(NA, nrow=n, ncol=d), simplify=FALSE)
          nX       <- X[noise,, drop=FALSE]
          noisexp  <- expx.covs[noise,, drop=FALSE]
@@ -616,8 +623,14 @@
         z         <- z.init    <- z.tmp
       } else   {
         if(g   > 0)  {
-          z[!noise,-gN]        <- z.tmp
-          z[noise,  gN]        <- 1L
+          z[!noise, -gN]       <- z.tmp
+          if(tnull)  {
+            z[noise, gN]       <- 1L
+          } else if(nnull)      {
+            z                  <- cbind(z[,-gN] * (1 - tau0), tau0)
+          } else     {
+            z[tau0 > 0,]       <- cbind(z[tau0  > 0,-gN] * (1 - max(tau0)), tau0[tau0 > 0])
+          }
         } else {
           z[]     <- 1L
         }
@@ -626,7 +639,7 @@
       if(noise.gate)      {
         zN        <- z
       } else   {
-        zN        <- z[,-gN, drop=FALSE]
+        zN        <- z[,-gN,     drop=FALSE]
         rZn       <- row(zN)
         zN        <- zN[!noise,, drop=FALSE]
       }
@@ -921,7 +934,7 @@
     icl.fin       <- ICLs[best.ind]
     aic.fin       <- AICs[best.ind]
     df.fin        <- DF.x[best.ind]
-    uncert        <- if(GN > 1) 1     - rowMaxs(z)             else vector("numeric", n)
+    uncert        <- if(GN > 1) 1     - rowMaxs(z)             else vector("integer", n)
     exp.x         <- exp.x & G  != 0
     x.ll          <- x.ll[if(GN == 1 && !exp.x) 2L else if(GN == 1 && exp.x) seq_len(3L)[-1L] else switch(EXPR=algo, EM=, CEM=-c(1L:2L), -1L)]
     x.ll          <- x.ll[!is.na(x.ll)]
@@ -1411,9 +1424,10 @@
 #' @param equalPro Logical variable indicating whether or not the mixing proportions are to be constrained to be equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored. In the presence of a noise component (see \code{noise.args}), only the mixing proportions for the non-noise components are constrained to be equal, after accounting for the noise component.
 #' @param noise.args A list supplying select named parameters to control inclusion of a noise component in the estimation of the mixture:
 #' \describe{
-#' \item{\code{noise.init}}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation.}
+#' \item{\code{noise.init}}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise term will be added to the model in the estimation. This argument can be used in conjunction with \code{tau0} below, or can be replaced by that argument also.}
+#' \item{\code{tau0}}{Prior mixing proportion for the noise component. This provides an alternative to \code{noise.init} as a means to invoke a noise component, by instead specifying the prior probability of belonging to the noise component for \emph{all} observations. If supplied, must be a scalar in the interval (0, 1). Additionally, both \code{noise.init} and \code{tau0} can be supplied together, in which case observations corresponding to \code{noise.init} have probability \code{tau0} (rather than 1) of belonging to the noise component.}
 #' \item{\code{noise.gate}}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
-#' \item{\code{noise.meth}}{The method used to estimate the volume when observations are labelled as noise via \code{noise.init}. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively.}
+#' \item{\code{noise.meth}}{The method used to estimate the volume when a noise component is invoked. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead. The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively.}
 #' }
 #' @param hc.args A list supplying select named parameters to control the initialisation of the cluster allocations when \code{init.z="hc"} (or when \code{init.z="mclust"}, which itself relies on \code{\link[mclust]{hc}}), unless \code{isTRUE(exp.init$clustMD)}, the \code{\link[clustMD]{clustMD}} library is loaded, and none of the \code{\link[clustMD]{clustMD}} model types fail (otherwise irrelevant):
 #' \describe{
@@ -1480,7 +1494,10 @@
 #' data(ais)
 #' library(clustMD)
 #' res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
-#'                    network.data=ais, control=ctrl2)}
+#'                    network.data=ais, control=ctrl2)
+#'
+#' # Include a noise component by specifying its prior mixing proportion
+#' res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", tau0=0.1)}
   MoE_control     <- function(algo = c("EM", "CEM", "cemEM"), criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), init.z = c("hc", "quantile", "kmeans", "mclust", "random"),
                               nstarts = 1L, exp.init = list(...), eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08), itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
                               equalPro = FALSE, noise.args = list(...), hc.args = list(...), km.args = list(...), init.crit = c("bic", "icl"), warn.it = 0L, verbose = interactive(), ...) {
@@ -1543,7 +1560,13 @@
     if(length(equalPro) > 1 ||
        !is.logical(equalPro))                     stop("'equalPro' must be a single logical indicator", call.=FALSE)
 
-    if(!is.null(noise.args$noise.init))          {
+    if(!is.null(noise.args$noise.init)          ||
+       !is.null(noise.args$tau0))                {
+      if(!is.null(noise.args$tau0)              &&
+        (length(noise.args$tau0)    > 1         ||
+        !is.numeric(noise.args$tau0)            ||
+        noise.args$tau0     <= 0   ||
+        noise.args$tau0     >= 1))                stop("'noise.args$tau0' must be a scalar in the interval (0, 1)",     call.=FALSE)
       if(is.null(noise.args$noise.meth))         {
         noise.args$noise.meth      <- "hypvol"
       } else {
@@ -2271,16 +2294,16 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     eps           <- stats::sd(x) * sqrt(.Machine$double.eps)
     q             <- NA
     n             <- G
-    while(length(q) < (G + 1)) {
-      n           <- n + 1
+    while(length(q) < (G + 1L))   {
+      n           <- n   + 1L
       q           <- unique(stats::quantile(x, seq(from=0L, to=1L, length=n)))
     }
-    if(length(q)   > (G + 1))  {
+    if(length(q)   > (G + 1L))    {
       q           <- q[-order(diff(q))[seq_len(length(q) - G - 1L)]]
     }
-    q[1]          <- min(x) - eps
+    q[1L]         <- min(x) - eps
     q[length(q)]  <- max(x) + eps
-    cl            <- vector("numeric", length(x))
+    cl            <- vector("integer", length(x))
     for(i in seq_len(G)) {
       cl[x >= q[i] & x < q[i + 1]] <- i
     }
@@ -2460,7 +2483,6 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     vol           <- ifelse(ncol(as.data.frame(data)) == 1, abs(diff(range(data))), switch(EXPR=method, hypvol=hypvol(data, reciprocal=FALSE),
                      convexhull=geometry::convhulln(data, options=c("Pp", "FA"))$vol, ellipsoidhull=cluster::volume(cluster::ellipsoidhull(data))))
       ifelse(reciprocal, 1/vol, vol)
-
   }
 
 #' Show the NEWS file
@@ -2540,7 +2562,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     x.val         <- sort(x[x.ind],   decreasing=decrease)
     ind.x         <- order(x[x.ind],  decreasing=decrease)
     x.ind         <- x.ind[ind.x,,    drop=FALSE]
-    x.ind[,1L]    <- gsub(".*= ", "", rownames(x)[x.ind[,1]])
+    x.ind[,1L]    <- gsub(".*= ", "", rownames(x)[x.ind[,1L]])
     x.ind[,2L]    <- colnames(x)[as.numeric(x.ind[,2L])]
       return(list(crits = stats::setNames(x.val, vapply(seq_len(pick), function(p, b=x.ind[p,]) paste0(b[2L], ",", b[1L]), character(1L))), pick = pick))
   }
@@ -2555,10 +2577,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 
   .trim_out       <- function(x, signif = 0.01, na.rm = TRUE, replace = TRUE, ...) {
     qnt           <- stats::quantile(x, probs=c(signif, 2 - signif)/2, na.rm=na.rm, ...)
-    H             <- 1.5    * stats::IQR(x, na.rm=na.rm)
+    H             <- 1.5     * stats::IQR(x, na.rm=na.rm)
     y             <- x
-    li.qnt        <- qnt[1] - H
-    ui.qnt        <- qnt[2] + H
+    li.qnt        <- qnt[1L] - H
+    ui.qnt        <- qnt[2L] + H
     y[x < li.qnt] <- ifelse(replace, li.qnt, NA)
     y[x > ui.qnt] <- ifelse(replace, ui.qnt, NA)
       y

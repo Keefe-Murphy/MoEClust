@@ -25,7 +25,6 @@
 #' @param bg.col A vector of length 5 (or 1) containing \emph{background} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 #'
 #' Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk")}.
-#' @param diagonal By default (\code{TRUE}), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
 #' @param outer.margins A list of length 4 with units as components named bottom, left, top, and right, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).
 #' @param outer.labels The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.
 #' @param outer.rot A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels. Defaults to \code{c(0, 90)}.
@@ -62,9 +61,11 @@
 #' @param diag.pars A list supplying select parameters for panels along the diagonal.
 #'
 #' \code{NULL} is equivalent to:
-#' \preformatted{list(diag.fontsize=9, show.hist=TRUE,
+#' \preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
 #' hist.color=hist.color, show.counts=TRUE),}
 #' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
+#'
+#' When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
 #' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}.
 #'
 #' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
@@ -92,7 +93,6 @@
 #'            addEllipses = c("outer", "yes", "no", "inner", "both"),
 #'            border.col = c("purple", "black", "brown", "brown", "navy"),
 #'            bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-#'            diagonal = TRUE,
 #'            outer.margins = list(bottom = grid::unit(2, "lines"),
 #'                                 left = grid::unit(2, "lines"),
 #'                                 top = grid::unit(2, "lines"),
@@ -131,7 +131,7 @@
 #'            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))}
 MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-                                diagonal = TRUE, outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
+                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
                                 gap = 0.05, buffer = 0.02, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
   UseMethod("MoE_gpairs")
 }
@@ -140,7 +140,7 @@ MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", 
 #' @export
 MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-                                diagonal = TRUE, outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
+                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
                                 gap = 0.05, buffer = 0.02, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
 
   res   <- if(inherits(res, "MoECompare")) res$optimal else res
@@ -265,8 +265,6 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   low.exp  <- ifelse(low.gate, substr(scatter.type[2L], 1L, nchar(scatter.type[2L]) - 1L), scatter.type[2L])
   upr.cond <- conditional[1L]
   low.cond <- conditional[2L]
-  if(length(diagonal)    > 1 ||
-     !is.logical(diagonal))                           stop("'diagonal' must be a single logical indicator", call.=FALSE)
   if(!inherits(outer.margins, "list")) {
     if(length(outer.margins) == 4)     {
       outer.margins     <- if(inherits(outer.margins[1], "units")) list(bottom=outer.margins[1], left=outer.margins[2], top=outer.margins[3], right=outer.margins[4]) else list(bottom=grid::unit(outer.margins[1], "lines"), left=grid::unit(outer.margins[2], "lines"), top=grid::unit(outer.margins[3], "lines"), right=grid::unit(outer.margins[4], "lines"))
@@ -357,6 +355,11 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(axis.pars$n.ticks   < 3)        {                warning("Fewer than 3 axis ticks might cause problems\n", call.=FALSE)
     axis.pars$n.ticks   <- 3
   }
+  diagonal              <- diag.pars$diagonal
+  if(is.null(diagonal))    {
+    diagonal            <- TRUE
+  } else if(length(diagonal)  > 1 ||
+            !is.logical(diagonal))                    stop("'diag.pars$diagonal' must be a single logical indicator", call.=FALSE)
   if(is.null(diag.pars$diag.fontsize))   {
     diag.pars$fontsize  <- 9
   } else diag.pars$fontsize       <- diag.pars$diag.fontsize
@@ -740,7 +743,7 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
     graphics::plot(ucert, type="h", ylim=range(yx), col=cu, yaxt="n", ylab="", xlab="Observations", lend=1)
     graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3L])
     graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression('1 - 1/G'^{'(0)'}), "1 - 1/G")), las=2, xpd=TRUE)
-    graphics::axis(2, at=oneG, labels=ifelse(noise, expression('1/G'^{'(0)'}), "1/G"), las=2, xpd=TRUE, side=4, xpd=TRUE)
+    graphics::axis(2, at=oneG, labels=ifelse(noise, expression('1/G'^{'(0)'}), "1/G"), las=2, xpd=TRUE, side=4)
   } else      {
     ord      <- order(ucert, decreasing=decreasing)
     ucord    <- ucert[ord]
@@ -751,7 +754,7 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
     graphics::points(ucord, pch=15, cex=if(tmiss) replace(rep(0.5, n.obs), mcO, 0.75) else 0.5, col=if(tmiss) replace(rep(1, n.obs), mcO, cm[2L]) else 1)
     graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3L])
     graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression('1 - 1/G'^{'(0)'}), "1 - 1/G")), las=2, xpd=TRUE)
-    graphics::axis(2, at=oneG, labels=ifelse(noise, expression('1/G'^{'(0)'}), "1/G"), las=2, xpd=TRUE, side=4, xpd=TRUE)
+    graphics::axis(2, at=oneG, labels=ifelse(noise, expression('1/G'^{'(0)'}), "1/G"), las=2, xpd=TRUE, side=4)
     if(tmiss) {
       Nseq   <- (seq_len(n.obs))
       for(i in mC)  {
@@ -786,7 +789,7 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #' @importFrom vcd "strucplot"
 #' @note Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #'
-#' Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results.
+#' Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. These can be especially useful for univariate data.
 #' @return The visualisation according to \code{"what"} of the results of a fitted \code{MoEClust} model.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
 #' @references K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
