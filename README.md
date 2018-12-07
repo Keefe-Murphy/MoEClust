@@ -57,4 +57,4 @@ devtools::install_github('Keefe-Murphy/MoEClust', build_vignettes = TRUE)
 Alternatively, the vignette is available on the package's CRAN page.
 
 ### References
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. _To appear_. <[arXiv:1711.05632](https://arxiv.org/abs/1711.05632)>
+K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. _To appear_. <[arXiv:1711.05632](https://arxiv.org/abs/1711.05632)>

@@ -151,7 +151,7 @@ hema  <- ais[,3:7]
 
 Examine the various additional options around initialisation of the algorithm:
 
-```{r}
+```{r, eval=FALSE}
 ?MoE_control
 ```
 
@@ -219,6 +219,6 @@ splom(~ hema | z, groups=ais$sex, xlab=NULL)
 ```
 
 ## References
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. _To appear_. Pre-print available at [arXiv:1711.05632](https://arxiv.org/abs/1711.05632).
+K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. _To appear_. Pre-print available at [arXiv:1711.05632](https://arxiv.org/abs/1711.05632).
 
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97:611-631.

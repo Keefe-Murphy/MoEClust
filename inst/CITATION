@@ -3,7 +3,7 @@ citHeader("To cite the 'MoEClust' package in publications, please use:")
 citEntry(entry  = "Article",
   author  = personList(person(given="Keefe", family="Murphy"),
                        person(given=c("Thomas", "Brendan"), family="Murphy")),
-  title   = "Parsimonious Model-Based Clustering with Covariates",
+  title   = "Gaussian Parsimonious Clustering Models with Covariates",
   year    = "2017",
   journal = "To appear",
   volume  = "",
@@ -15,11 +15,11 @@ citEntry(entry  = "Article",
   primaryClass  = "stat.ME",
 
   textVersion   =
-    paste("Keefe Murphy and T. Brendan Murphy (2017).",
-    "Parsimonious Model-Based Clustering with Covariates.",
-    "To appear.",
-    "Pre-print available at arXiv.",
-    "URL: https://arxiv.org/abs/1711.05632.")
+    paste0("Keefe Murphy and T. Brendan Murphy (2017). ",
+           "Gaussian Parsimonious Clustering Models with Covariates. ",
+           "To appear. ",
+           "Pre-print available at arXiv. ",
+           "URL: https://arxiv.org/abs/1711.05632.")
 )
 
 year     <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
@@ -28,13 +28,13 @@ vers     <- paste("package version", meta$Version)
 citEntry(entry  = "Manual",
   author  = personList(person(given="Keefe", family="Murphy"),
                        person(given=c("Thomas", "Brendan"), family="Murphy")),
-  title   = "{MoEClust}: Gaussian Parsimonious Clustering Models with Covariates",
+  title   = "\\texttt{\\textup{MoEClust}}: Gaussian Parsimonious Clustering Models with Covariates",
   year    = year,
   note    = paste0("{R} ", vers),
   url     = "https://cran.r-project.org/package=MoEClust",
 
   textVersion   =
     paste0("Keefe Murphy and T. Brendan Murphy (", year, "). ",
-    "MoEClust: Gaussian Parsimonious Clustering Models with Covariates. ",
-    "URL: https://cran.r-project.org/package=MoEClust ", "R ", vers)
+           "MoEClust: Gaussian Parsimonious Clustering Models with Covariates. ",
+           "URL: https://cran.r-project.org/package=MoEClust ", "R ", vers)
 )

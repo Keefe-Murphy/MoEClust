@@ -78,7 +78,7 @@ pred3   <- predict(res2, newdata=list(new.x=ais[ind,c("BMI", "sex")]))
 pred3$z
 }
 \references{
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 }
 \seealso{
 \code{\link{MoE_clust}}

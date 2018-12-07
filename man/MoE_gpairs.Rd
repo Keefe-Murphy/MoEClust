@@ -19,7 +19,7 @@ MoE_gpairs(res,
            outer.labels = NULL,
            outer.rot = c(0, 90),
            gap = 0.05,
-           buffer = 0.02,
+           buffer = 0.025,
            scatter.pars = list(...),
            density.pars = list(...),
            stripplot.pars = list(...),
@@ -70,7 +70,7 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \item{gap}{The gap between the tiles; defaulting to 0.05 of the width of a tile.}
 
-\item{buffer}{The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to 2 percent of range currently.}
+\item{buffer}{The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to 2.5 percent of the range.}
 
 \item{scatter.pars}{A list supplying select parameters for the continuous vs. continuous scatter plots.
 
@@ -150,7 +150,7 @@ MoE_gpairs(res, response.type="density", show.labels=FALSE,
            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))}
 }
 \references{
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 
 Emerson, J.W., Green, W.A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The Generalized Pairs Plot. \emph{Journal of Computational and Graphical Statistics}, 22(1):79-91.
 }

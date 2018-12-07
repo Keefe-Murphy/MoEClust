@@ -3,14 +3,28 @@ __MoEClust: Gaussian Parsimonious Clustering Models -__
 __with Gating and Expert Network Covariates__  
 =======================================================
 
-## MoEClust v1.2.0 - (_4<sup>th</sup> release [minor update]: 2018-08-25_)
+## MoEClust v1.2.2 - (_5<sup>th</sup> release [patch update]: 2019-01-10_)
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Fixed bug for `equalPro` models with noise component, and also added `equalNoise` arg.  
+  to `MoE_control`, further controlling `equalPro` in the presence of a noise component.
+* Accounted for models with equal mixing proportions in `predict.MoEClust`.
+* Accounted for categorical covariates in the `x.axis` arg. to `MoE_plotGate`.
+* Sped-up `MoE_gpairs` when `response.type="density"` for models with only expert covariates.
+* Improved printing of output, especially for `MoE_compare`.
+
+## MoEClust v1.2.1 - (_4<sup>th</sup> release [patch update]: 2018-12-11_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * New `MoE_control` arg. `algo` allows model fitting using the `"EM"` or `"CEM"` algorithm:  
     * Related new function `MoE_cstep` added.
     * Extra `algo` option `"cemEM"` allows running EM starting from convergence of CEM.
+* Added `LOGLIK` to `MoE_clust` output, giving maximal log-likelihood values for all fitted models.
+    * Behaves exactly as per `DF/ITERS`, etc., with associated printing/plotting functions.
+    * Edited `MoE_compare`, `summary.MoEClust`, and `MoE_plotCrit` accordingly.
 * New `MoE_control` arg. `nstarts` allows for multiple random starts when `init.z="random"`.
 * New `MoE_control` arg. `tau0` provides another means of initialising the noise component.
 * If `clustMD` is invoked for initialisation, models are now run more quickly in parallel.
+* Allowed `gating` and `expert` formulas without intercept terms (`drop_constants` also edited).
+* `MoE_plotGate` now allows a user-specified x-axis against which mixing proportions are plotted.
 * Fixed bug in checking for strictly increasing log-likelihood estimates.
 
 ## MoEClust v1.2.0 - (_3<sup>rd</sup> release [minor update]: 2018-08-24_)

@@ -30,8 +30,8 @@ The package also contains two data sets: \code{ais} and \code{CO2data}.
 \itemize{
 \item{Type: }{Package}
 \item{Package: }{MoEClust}
-\item{Version: }{1.2.0}
-\item{Date: }{2018-08-24 (this version), 2017-11-28 (original release)}
+\item{Date: }{2018-12-11 (this version), 2017-11-28 (original release)}
+\item{Version: }{1.2.2}
 \item{Licence: }{GPL (>=2)}
 }
 }
@@ -59,7 +59,7 @@ m4    <- MoE_clust(CO2, G=2, gating= ~ GNP, expert= ~ GNP)
 MoE_compare(m1, m2, m3, m4)}
 }
 \references{
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 }
 \seealso{
 Useful links:

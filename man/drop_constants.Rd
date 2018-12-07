@@ -21,12 +21,17 @@ The updated formula with constant variables removed.
 \description{
 Drops constant variables from the RHS of a formula taking the data set (\code{dat}), the formula (\code{formula}), and an optional subset vector (\code{sub}) as arguments.
 }
+\note{
+Formulas with and without intercepts are accommodated.
+}
 \examples{
 data(ais)
 hema  <- as.matrix(ais[,3:7])
 sex   <- ais$sex
 BMI   <- ais$BMI
-form1 <- as.formula(hema ~ sex + BMI)
+
+# Set up a no-intercept regression formula with constant column 'sex'
+form1 <- as.formula(hema ~ sex + BMI - 1)
 sub   <- ais$sex == "male"
 
 # Try fitting a linear model

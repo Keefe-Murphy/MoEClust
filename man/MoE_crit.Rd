@@ -9,7 +9,7 @@ MoE_crit(modelName,
          n,
          d,
          G,
-         gating.pen = G - 1,
+         gating.pen = G - 1L,
          expert.pen = G * d,
          z = NULL,
          df = NULL)

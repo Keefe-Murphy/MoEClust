@@ -22,10 +22,12 @@ MoE_plotLogLik(res,
 A plot of the log-likelihood versus the number EM iterations. A list with the vector of log-likelihood values and the final value at convergence can also be returned invisibly.
 }
 \description{
-Plots the log-likelihood at every iteration of the EM algorithm used to fit a MoEClust mixture model.
+Plots the log-likelihood at every iteration of the EM/CEM algorithm used to fit a MoEClust mixture model.
 }
 \note{
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotLogLik}} which accepts the default arguments, and also produces other types of plots.
+
+\code{res$LOGLIK} can also be plotted, to compare maximal log-likelihood values for all fitted models.
 }
 \examples{
 data(ais)

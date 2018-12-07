@@ -7,7 +7,7 @@
 \usage{
 MoE_compare(...,
             criterion = c("bic", "icl", "aic"),
-            pick = 3L,
+            pick = 10L,
             optimal.only = FALSE)
 
 \method{print}{MoECompare}(x,
@@ -21,7 +21,7 @@ MoE_compare(...,
 
 \item{criterion}{The criterion used to determine the ranking. Defaults to \code{"bic"}.}
 
-\item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{3L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied. Setting \code{pick=Inf} is a valid way to select all models.}
+\item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{10L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied. Setting \code{pick=Inf} is a valid way to select all models.}
 
 \item{optimal.only}{Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}}
 
@@ -46,6 +46,7 @@ A list of class \code{"MoECompare"}, for which a dedicated print function exists
 \item{\code{bic}}{BIC values, ranked according to \code{criterion}.}
 \item{\code{icl}}{TCL values, ranked according to \code{criterion}.}
 \item{\code{aic}}{AIC values, ranked according to \code{criterion}.}
+\item{\code{loglik}}{Maximal log-likelihood values, ranked according to \code{criterion}.}
 \item{\code{gating}}{The gating formulas.}
 \item{\code{expert}}{The expert formulas.}
 \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
@@ -92,7 +93,7 @@ comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=18)
 print(comp2, comp2$expert != "None" & comp2$G > 1)
 }
 \references{
-K. Murphy and T. B. Murphy (2017). Parsimonious Model-Based Clustering with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
