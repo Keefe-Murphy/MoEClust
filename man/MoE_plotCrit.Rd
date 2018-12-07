@@ -5,7 +5,7 @@
 \title{Model Selection Criteria Plot for MoEClust Mixture Models}
 \usage{
 MoE_plotCrit(res,
-             criterion = c("bic", "icl", "aic"),
+             criterion = c("bic", "icl", "aic", "loglik"),
              ...)
 }
 \arguments{
@@ -19,7 +19,7 @@ MoE_plotCrit(res,
 A plot of the values of the chosen \code{criterion}. The values themselves can also be returned invisibly.
 }
 \description{
-Plots the BIC, ICL, or AIC values of a fitted \code{MoEClust} object.
+Plots the BIC, ICL, AIC, or log-likelihood values of a fitted \code{MoEClust} object.
 }
 \note{
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotCrit}} which accepts the default arguments, and also produces other types of plots.
