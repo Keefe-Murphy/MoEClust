@@ -587,6 +587,7 @@ MoE_plotGate.MoEClust   <- function(res, x.axis = NULL, type = "l", xlab = "Obse
   if(missing(ylab))     {
     graphics::matplot(x=x.axis, y=Tau, type=type, xlab="",   ylab="",   xaxt=xaxt, ylim=ylim, col=col, ...)
     dots     <- list(...)
+    dots     <- dots[unique(names(dots))]
     dots["cex.axis"]   <- dots["cex.lab"]
     dots["cex.lab"]    <- NULL
     graphics::mtext(side=1, xlab, las=1, line=2,   cex=dots[["cex.axis"]])
@@ -912,7 +913,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   theta      <- (0L:k)  * (pi/(2L * k))
   x          <- s[1L]   * cos(theta)
   y          <- s[2L]   * sin(theta)
-  xy         <- sweep(tcrossprod(cbind(c(x, -x, -x, x), c(y, y, -y, -y)), V), MARGIN=2, STATS=mu, FUN="+", check.margin=FALSE)
+  xy         <- sweep(tcrossprod(cbind(c(x, -x, -x, x), c(y, y, -y, -y)), V), MARGIN=2L, STATS=mu, FUN="+", check.margin=FALSE)
   l          <- length(x)
   i          <- seq_len(l)
   for(k in seq_len(4L)) {
@@ -921,7 +922,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   }
   x          <- s[1L]
   y          <- s[2L]
-  xy         <- sweep(tcrossprod(cbind(c(x, -x, 0, 0), c(0, 0, y, -y)),   V), MARGIN=2, STATS=mu, FUN="+", check.margin=FALSE)
+  xy         <- sweep(tcrossprod(cbind(c(x, -x, 0, 0), c(0, 0, y, -y)),   V), MARGIN=2L, STATS=mu, FUN="+", check.margin=FALSE)
   panel.lines(xy[1L:2L,], col=col[2L], lty=lty[2L], lwd=lwd[2L])
   panel.lines(xy[3L:4L,], col=col[2L], lty=lty[2L], lwd=lwd[2L])
     invisible()

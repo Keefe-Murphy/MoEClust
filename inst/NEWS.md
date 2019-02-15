@@ -10,7 +10,12 @@ __with Gating and Expert Network Covariates__
 * Accounted for models with equal mixing proportions in `predict.MoEClust`.
 * Accounted for categorical covariates in the `x.axis` arg. to `MoE_plotGate`.
 * Sped-up `MoE_gpairs` when `response.type="density"` for models with only expert covariates.
-* Improved printing of output, especially for `MoE_compare`.
+* Allowed specification of gating/expert formulas with dropped variables of the form `~.-x-y`.
+* `tau0` can now also be supplied as a vector in the presence of gating covariates.
+* Slight `MoE_estep` speed-up due to removal of unnecessary `sweep()`.
+* Fix to `expert_covar` for univariate models. 
+* The `nnet` arg. `MaxNWts` now passable to gating network `multinom` call via `MoE_control`.
+* Improved printing of output & handling of ties, especially for `MoE_compare`.
 
 ## MoEClust v1.2.1 - (_4<sup>th</sup> release [patch update]: 2018-12-11_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits

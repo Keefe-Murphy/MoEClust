@@ -12,7 +12,6 @@ MoE_compare(...,
 
 \method{print}{MoECompare}(x,
       index = seq_len(x$pick),
-      noise = TRUE,
       digits = 3L,
       ...)
 }
@@ -25,13 +24,10 @@ MoE_compare(...,
 
 \item{optimal.only}{Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}}
 
-\item{x, index, noise, digits}{Arguments required for the associated \code{print} function:
+\item{x, index, digits}{Arguments required for the associated \code{print} function:
 \describe{
 \item{\code{x}}{An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.}
 \item{\code{index}}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
-\item{\code{noise}}{A logical which determines whether presence of a noise-component should be indicated by the method employed to estimate the hypervolume (defaults to \code{TRUE}) or, if \code{FALSE}, simply by \code{TRUE}. In the absence of a noise component, \code{FALSE} will be printed regardless. Only relevant if at least one of the models being compared has a noise component.
-
-If any of the compared models do have a noise component, this switch also controls whether the influence (or not) of gating covariates on the noise component's mixing proportion is indicated (either by \code{TRUE} or \code{FALSE} for models with a noise component, or else a blank entry for those without), for the models among those being compared which have gating covariates.}
 \item{\code{digits}}{The number of decimal places to round model selection criteria to (defaults to 3).}}}
 }
 \value{
@@ -49,10 +45,12 @@ A list of class \code{"MoECompare"}, for which a dedicated print function exists
 \item{\code{loglik}}{Maximal log-likelihood values, ranked according to \code{criterion}.}
 \item{\code{gating}}{The gating formulas.}
 \item{\code{expert}}{The expert formulas.}
+\item{\code{algo}}{The algorithm used for fitting the model - either \code{"EM"}, \code{"CEM"}, \code{"cemEM"}.}
 \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
 \item{\code{hypvol}}{Hypervolume parameters for the noise component if required, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
 \item{\code{noise}}{Either a logical indicating the presence/absence of a noise component, or the type of noise component fitted (if any). Depends on the supplied value of \code{noise}. Only displayed if at least one of the compared models has a noise component.}
 \item{\code{noise.gate}}{Logical indicating whether gating covariates were allowed to influence the noise component's mixing proportion. Only printed for models with a noise component, when at least one of the compared models has gating covariates, and even then only when \code{noise} is supplied as \code{TRUE}.}
+\item{\code{equalNoise}}{Logical indicating whether the mixing proportion of the noise component for \code{equalPro} models is also equal (\code{TRUE}) or estimated (\code{FALSE}).}
 }
 \description{
 Takes one or more sets of MoEClust models fitted by \code{\link{MoE_clust}} and ranks them according to the BIC, ICL, or AIC. It's possible to respect the internal ranking within each set of models, or to discard models within each set which were already deemed sub-optimal.
@@ -66,6 +64,8 @@ As such if two sets of results are supplied when \code{optimal.only} is \code{FA
 }
 \note{
 The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.
+
+If random starts had been used via \code{init.z="random"} the \code{optimal} model may not necessarily correspond to the highest-ranking model in the presence of a criterion mismatch, due to the randomness of the initialisation. 
 
 A dedicated \code{print} function exists for objects of class \code{"MoECompare"}.
 
