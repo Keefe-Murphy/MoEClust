@@ -9,11 +9,13 @@ __with Gating and Expert Network Covariates__
   to `MoE_control`, further controlling `equalPro` in the presence of a noise component.
 * Accounted for models with equal mixing proportions in `predict.MoEClust`.
 * Accounted for categorical covariates in the `x.axis` arg. to `MoE_plotGate`.
-* Sped-up `MoE_gpairs` when `response.type="density"` for models with only expert covariates.
 * Allowed specification of gating/expert formulas with dropped variables of the form `~.-x-y`.
+* Fixed formula handling to allow interaction effects, transformations, & higher-order terms.
 * `tau0` can now also be supplied as a vector in the presence of gating covariates.
+* Sped-up `MoE_gpairs` when `response.type="density"` for models with only expert covariates.
 * Slight `MoE_estep` speed-up due to removal of unnecessary `sweep()`.
 * Fix to `expert_covar` for univariate models. 
+* Small fixes for when `clustMD` is invoked, and added `snow` package to `Suggests:`.
 * The `nnet` arg. `MaxNWts` now passable to gating network `multinom` call via `MoE_control`.
 * Improved printing of output & handling of ties, especially for `MoE_compare`.
 

@@ -11,7 +11,7 @@ drop_constants(dat,
 \arguments{
 \item{dat}{A \code{data.frame} where rows correspond to observations and columns correspond to variables. Ideally column names should be present.}
 
-\item{formula}{An object of class \code{"\link[stats]{formula}"}: a symbolic description of the model to be fitted. Variables in the \code{formula} not present in the columns of \code{dat} will automatically be discarded. The \code{formula} may include interactions or higher order terms.}
+\item{formula}{An object of class \code{"\link[stats]{formula}"}: a symbolic description of the model to be fitted. Variables in the \code{formula} not present in the columns of \code{dat} will automatically be discarded. The \code{formula} may include interactions, transformations, or higher order terms: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}).}
 
 \item{sub}{An optional vector specifying a subset of observations to be used in the fitting process.}
 }
@@ -31,10 +31,11 @@ sex   <- ais$sex
 BMI   <- ais$BMI
 
 # Set up a no-intercept regression formula with constant column 'sex'
-form1 <- as.formula(hema ~ sex + BMI - 1)
+form1 <- as.formula(hema ~ sex + BMI + I(BMI^2) - 1)
 sub   <- ais$sex == "male"
 
 # Try fitting a linear model
+mod1  <- try(lm(form1, data=ais, subset=sub), silent=TRUE)
 mod1  <- try(lm(form1, data=ais, subset=sub), silent=TRUE)
 inherits(mod1, "try-error") # TRUE
 
@@ -44,7 +45,7 @@ mod2  <- try(lm(form2, data=ais, subset=sub), silent=TRUE)
 inherits(mod2, "try-error") # FALSE
 }
 \seealso{
-\code{\link{drop_levels}}
+\code{\link{drop_levels}}, \code{\link{I}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

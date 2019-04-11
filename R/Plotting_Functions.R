@@ -79,7 +79,7 @@
 #' \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots. Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
-#' @references K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+#' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 #'
 #' Emerson, J.W., Green, W.A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The Generalized Pairs Plot. \emph{Journal of Computational and Graphical Statistics}, 22(1):79-91.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_Uncertainty}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}
@@ -195,9 +195,9 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   }
   N     <- ncol(x)
   Nseq  <- seq_len(N)
-  both  <- which(names(net) %in% gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", both))) + dcol
-  gate  <- which(names(net) %in% gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", gate))) + dcol
-  expx  <- which(names(net) %in% gsub("[[:space:]]", ".", gsub("[[:punct:]]", ".", expx))) + dcol
+  both  <- which(names(net) %in% gsub("[[:space:]]", ".", both)) + dcol
+  gate  <- which(names(net) %in% gsub("[[:space:]]", ".", gate)) + dcol
+  expx  <- which(names(net) %in% gsub("[[:space:]]", ".", expx)) + dcol
   both[is.na(both)] <- 0L
   gate[is.na(gate)] <- 0L
   expx[is.na(expx)] <- 0L
@@ -296,7 +296,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
      any(outer.rot       < 0))                        stop("Invalid 'outer.rot': must be a strictly non-negative numeric vector of length 2", call.=FALSE)
   class                 <- as.integer(levels(class))[class]
   class[which(class     == 0)]  <- G  + 1
-  x[,1]                 <- if(names(x)[1L]  == "MAP") factor(class) else x[,1L]
+  x[,1L]                <- if(names(x)[1L]  == "MAP") factor(class) else x[,1L]
   if(length(gap)        != 1    || (!is.numeric(gap)    ||
      gap    < 0))                                     stop("'gap' must be single strictly non-negative number", call.=FALSE)
   if(length(buffer)     != 1    || (!is.numeric(buffer) ||
@@ -824,9 +824,10 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #' Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. These can be especially useful for univariate data.
 #' @return The visualisation according to \code{"what"} of the results of a fitted \code{MoEClust} model.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
-#' @references K. Murphy and T. B. Murphy (2017). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+#' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
 #' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
 #' @export
+#' @method plot MoEClust
 #' @keywords plotting main
 #' @usage
 #' \method{plot}{MoEClust}(x,
