@@ -44,10 +44,10 @@ res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex,
                  G=2, modelNames="EVE", network.data=ais)
 
 # Plot the gating network
-plot(res, what="gating")
+plot(res, what="gating", x.axis=ais$BMI, type="p", xlab="BMI", pch=1)
 
 # Plot the log-likelihood
-plot(res, what="loglik")
+plot(res, what="loglik", col="blue")
 
 # Plot the uncertainty profile
 plot(res, what="uncertainty", type="profile")

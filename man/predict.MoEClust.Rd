@@ -35,8 +35,8 @@ When \code{newdata} is not supplied in any way, the covariates and response vari
 \value{
 A list with the following named components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
 \item{\code{y}}{Fitted values of the response variables.}
-\item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belonds to the \emph{k}-th component..}
-\item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}.}
+\item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belonds to the \emph{k}-th component. For models with a noise component, the final column gives the probability of belonging to the so-called \emph{Cluster0}.}
+\item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}. \code{0} is returned for observations assigned to the noise component.}
 
 When \code{residuals} is called, only the residuals are returned; when \code{predict} is called with \code{resid=TRUE}, the list above will also contain the element \code{resids}, containing the residuals.
 }
@@ -44,7 +44,7 @@ When \code{residuals} is called, only the residuals are returned; when \code{pre
 Predicts both cluster membership probability and fitted response values from a \code{MoEClust} model, using covariates and response data, or covariates only. The MAP classification is also reported in both cases.
 }
 \note{
-Predictions can also be made for models with noise components, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). Note that calculating \code{ystar} for models with a noise component involves renormalising the rows of \code{zstar} such that non-noise columns sum to 1, but the \emph{unnormalised} \code{zstar} is what's reported.
+Predictions can also be made for models with noise components, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any).
 }
 \examples{
 data(ais)
@@ -67,7 +67,7 @@ res2    <- MoE_clust(dat[,3:7], G=3, gating=~BMI + sex,
 pred2   <- predict(res2, newdata=ais[ind,])
 # pred2 <- predict(res2, newdata=list(new.y=ais[ind,3:7],
 #                                     new.x=ais[ind,c("BMI", "sex")]))
-pred2$y
+pred2$y  # predicted response
 
 # Get the residuals
 residuals(res2, newdata=ais[ind,])
@@ -75,7 +75,7 @@ residuals(res2, newdata=ais[ind,])
 # Predict held back data using only the covariates
 pred3   <- predict(res2, newdata=list(new.x=ais[ind,c("BMI", "sex")]))
 # pred3 <- predict(res2, newdata=ais[ind,c("BMI", "sex")])
-pred3$z
+pred3$z  # predicted cluster membership probablities
 }
 \references{
 K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.

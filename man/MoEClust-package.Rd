@@ -4,9 +4,9 @@
 \name{MoEClust-package}
 \alias{MoEClust}
 \alias{MoEClust-package}
-\title{MoEClust: Gaussian Parsimonious Clustering Models with Covariates}
+\title{MoEClust: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component}
 \description{
-Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2017) <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots is also facilitated.
+Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2018) <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of additional noise component is also facilitated.
 }
 \section{Usage}{
 
@@ -50,13 +50,16 @@ res <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
 plot(res, what="gpairs")
 
 data(CO2data)
-GNP   <- CO2data[,1]
-CO2   <- CO2data[,2]
-m1    <- MoE_clust(CO2, G=1:2)
-m2    <- MoE_clust(CO2, G=2, gating= ~ GNP)
-m3    <- MoE_clust(CO2, G=1:2, expert= ~ GNP)
-m4    <- MoE_clust(CO2, G=2, gating= ~ GNP, expert= ~ GNP)
-MoE_compare(m1, m2, m3, m4)}
+CO2   <- CO2data$CO2
+GNP   <- CO2data$GNP
+
+m1    <- MoE_clust(CO2, G=1:3)
+m2    <- MoE_clust(CO2, G=2:3, gating= ~ GNP)
+m3    <- MoE_clust(CO2, G=1:3, expert= ~ GNP)
+m4    <- MoE_clust(CO2, G=2:3, gating= ~ GNP, expert= ~ GNP)
+m5    <- MoE_clust(CO2, G=2:3, equalPro=TRUE)
+m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE)
+MoE_compare(m1, m2, m3, m4, m5, m6)}
 }
 \references{
 K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.

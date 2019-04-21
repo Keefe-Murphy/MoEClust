@@ -9,7 +9,7 @@ noise_vol(data,
           reciprocal = FALSE)
 }
 \arguments{
-\item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed. If a matrix or data frame, rows correspond to observations and columns correspond to variables.}
+\item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed, and covariates should not be included. If a matrix or data frame, rows correspond to observations and columns correspond to variables. There must be more observations than variables.}
 
 \item{method}{The method used to estimate the hypervolume. The "\code{convexhull}" and "\code{ellipsoidhull}" options require loading the \code{geometry} and \code{cluster} libraries, respectively.}
 
@@ -20,6 +20,9 @@ A hypervolume estimate (or its inverse), to be used as the hypervolume parameter
 }
 \description{
 Computes simple appproximations to the hypervolume of univariate and multivariate data sets.
+}
+\note{
+This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specificying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
 }
 \examples{
 data(ais)

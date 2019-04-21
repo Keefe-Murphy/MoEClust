@@ -10,6 +10,7 @@ MoE_gpairs(res,
            scatter.type = c("lm", "points"),
            conditional = c("stripplot", "boxplot"),
            addEllipses = c("outer", "yes", "no", "inner", "both"),
+           expert.covar = TRUE,
            border.col = c("purple", "black", "brown", "brown", "navy"),
            bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
            outer.margins = list(bottom = grid::unit(2, "lines"),
@@ -36,7 +37,7 @@ MoE_gpairs(res,
 
 Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In so doing, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data).
 
-Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}). Caution is advised when producing density plots for models with covariates in the expert network, the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow.}
+Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}). Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets).}
 
 \item{subset}{A list giving named arguments for producing only a subset of panels:
 \describe{
@@ -44,15 +45,17 @@ Alternatively, the bivariate \code{"density"} contours can be displayed (see \co
 \item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the response variables.}
 \item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the covariates.}
 }
-The subsetting must include at least two variables, whether they be the MAP, a response variable, or a covariate, in order to be valid for plotting purposes.}
+The subsetting must include at least two variables, whether they be the MAP, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting.}
 
-\item{scatter.type}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, use the options \code{"lm2"} or \code{"ci2"}.}
+\item{scatter.type}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, the options \code{"lm2"} or \code{"ci2"} can be used but this is not generally advisable.}
 
 \item{conditional}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"barcode"} and \code{"violin"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).}
 
 \item{addEllipses}{Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
 
-Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.}
+Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.}
+
+\item{expert.covar}{Logical (defaults to \code{TRUE}) governing whether the extra variabilitity in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"}.}
 
 \item{border.col}{A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, respponse vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 
@@ -92,11 +95,12 @@ where \code{density.pars$grid.size} is a vector of length two giving the number 
 \preformatted{list(strip.pch=res$classification, strip.size=unit(0.5, "char"),
 strip.col=res$classification, jitter=TRUE).}}
 
-\item{barcode.pars}{A list supplying select parameters for continuous vs. categorical panels  when one of the entries of \code{conditional} is \code{"boxplot"}. See the help file for \code{barcode::barcode}.
+\item{barcode.pars}{A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
 
 \code{NULL} is equivalent to:
-\preformatted{list(nint=0, ptsize=unit(0.25, "char"), ptpch=1,
-bcspace=NULL, use.points=FALSE).}}
+\preformatted{list(bar.col=res$classification, nint=0, ptsize=unit(0.25, "char"), ptpch=1,
+bcspace=NULL, use.points=FALSE).}
+where \code{bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}).}
 
 \item{mosaic.pars}{A list supplying select parameters for categorical vs. categorical panels. \code{NULL}. Currently \code{shade, gp_labels, gp,} and \code{gp_args} are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles.}
 
@@ -111,7 +115,7 @@ The argument \code{n.ticks} will be overwritten for categorical variables with f
 \code{NULL} is equivalent to:
 \preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
 hist.color=hist.color, show.counts=TRUE),}
-where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, response variables are \code{"black"} and covariates of any kind are \code{"grey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
+where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the fill colour for boxplot panels involving covariates only. By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
 
 When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
 
@@ -136,9 +140,9 @@ res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
 MoE_gpairs(res)
 
 # Produce the same plot, but with a violin plot in the lower triangle.
-# Add fitted lines to the scatter plots. Don't show the "sex" covariate.
+# Add fitted lines to the scatter plots. 
 # Size points in the response vs. response panels by their clustering uncertainty.
-MoE_gpairs(res, conditional=c("stripplot", "violin"), cov.ind=1,
+MoE_gpairs(res, conditional=c("stripplot", "violin"),
            scatter.type=c("lm2", "points"), response.type="uncertainty")
 
 # Instead show the bivariate density contours of the reponse variables.
@@ -147,7 +151,14 @@ MoE_gpairs(res, conditional=c("stripplot", "violin"), cov.ind=1,
 # Also use different colours for response vs. covariate & covariate vs. response panels.
 MoE_gpairs(res, response.type="density", show.labels=FALSE,
            hist.color=c("black", "cyan", "hotpink", "chartreuse"),
-           bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))}
+           bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
+           
+# Produce a generalised pairs plot for a model with a noise component
+# Reorder the covariates and omit the variabes "Hc" and "Hg"
+# Use barcode plots for the categorical/continuous pairs
+resN  <- MoE_clust(ais[,3:7], G=2, gating=~SSF + Ht, expert=~sex,
+                   network.data=ais, modelNames="EEE", tau0=0.1, noise.gate=FALSE)
+MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2))}
 }
 \references{
 K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
@@ -155,7 +166,7 @@ K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with 
 Emerson, J.W., Green, W.A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The Generalized Pairs Plot. \emph{Journal of Computational and Graphical Statistics}, 22(1):79-91.
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_Uncertainty}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}
+\code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_Uncertainty}}, \code{\link{expert_covar}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

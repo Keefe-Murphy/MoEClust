@@ -31,7 +31,7 @@ Plots the log-likelihood at every iteration of the EM/CEM algorithm used to fit 
 }
 \examples{
 data(ais)
-res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex,
+res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex, tau0=0.1,
                  G=2, modelNames="EVE", network.data=ais)
 (ll <- MoE_plotLogLik(res))
 }

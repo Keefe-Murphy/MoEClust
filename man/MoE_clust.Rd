@@ -4,15 +4,15 @@
 \alias{MoE_clust}
 \alias{print.MoEClust}
 \alias{summary.MoEClust}
-\title{MoEClust: Gaussian Parsimonious Clustering Models with Covariates}
+\title{MoEClust: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component}
 \usage{
 MoE_clust(data,
           G = 1:9,
           modelNames = NULL,
           gating = NULL,
           expert = NULL,
-          network.data = NULL,
           control = MoE_control(...),
+          network.data = NULL,
           ...)
 
 \method{print}{MoEClust}(x,
@@ -46,9 +46,9 @@ For zero-component models with a noise component only the \code{"E"} and \code{"
 
 \item{expert}{A \code{\link[stats]{formula}} for determining the model matrix for the (multivariate) WLS in the expert network when fixed covariates are included in the component densities. Continuous, categorical, and/or ordinal covariates are allowed. Logical covariates will be coerced to factors. Interactions, transformations, and higher order terms are permitted: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). The specification of the LHS of the formula is ignored. Intercept terms are included by default.}
 
-\item{network.data}{An optional data frame in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called. Try to ensure the names of variables in \code{network.data} do not match any of those in \code{data}.}
+\item{control}{A list of control parameters for the EM/CEM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}. In particular, arguments pertaining to the inclusion of an additional noise component are documented here.}
 
-\item{control}{A list of control parameters for the EM/CEM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}.}
+\item{network.data}{An optional data frame in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called. Try to ensure the names of variables in \code{network.data} do not match any of those in \code{data}.}
 
 \item{...}{An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.}
 
@@ -68,7 +68,7 @@ A list (of class \code{"MoEClust"}) with the following named entries, mostly cor
 \item{\code{bic}}{The BIC value corresponding to the optimal model. May not necessarily be the optimal BIC.}
 \item{\code{icl}}{The ICL value corresponding to the optimal model. May not necessarily be the optimal ICL.}
 \item{\code{aic}}{The AIC value corresponding to the optimal model. May not necessarily be the optimal AIC.}
-\item{\code{gating}}{An object of class \code{"MoE_gating"} and either \code{"multinom"} or \code{"glm"} (for single-component models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component, its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
+\item{\code{gating}}{An object of class \code{"MoE_gating"} and either \code{"multinom"} or \code{"glm"} (for single-component models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of ~1, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component (and the option \code{noise.gate=TRUE} is invoked), its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
 \item{\code{expert}}{An object of class \code{"MoE_expert"} and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of ~1, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * length(coef(expert[[1]]))}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
 \item{\code{LOGLIK}}{A matrix of \emph{all} maximal log-likelihood values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustLoglik"}, for which dedicated printing and plotting functions exist, respectively.}
 \item{\code{loglik}}{The vector of increasing log-likelihood values for every EM/CEM iteration under the optimal model. The last element of this vector is the maximum log-likelihood achieved by the parameters returned at convergence.}
@@ -95,10 +95,12 @@ For models with expert network covariates, this is given by the posterior mean o
 Dedicated \code{\link[=plot.MoEClust]{plot}}, \code{\link[=predict.MoEClust]{predict}}, \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link{as.Mclust}}.
 }
 \description{
-Fits MoEClust models: Gaussian Mixture of Experts models with GPCM/\pkg{mclust}-family covariance structures. In other words, performs model-based clustering via the EM/CEM algorithm where covariates are allowed to enter neither, either, or both the mixing proportions (gating network) and/or component densities (expert network) of a Gaussian Parsimonious Clustering Model.
+Fits MoEClust models: Gaussian Mixture of Experts models with GPCM/\pkg{mclust}-family covariance structures. In other words, performs model-based clustering via the EM/CEM algorithm where covariates are allowed to enter neither, either, or both the mixing proportions (gating network) and/or component densities (expert network) of a Gaussian Parsimonious Clustering Model, with or without an additional noise component. Additional arguments are available via the function \code{\link{MoE_control}}, including the specification of a noise component, controls on the initialisation of the algorithm, and more.
 }
 \details{
-The function effectively allows 4 different types of Gaussian Mixture of Experts model (as well as the different models in the GPCM/\pkg{mclust} family, for each): i) the standard finite Gaussian mixture with no covariates, ii) fixed covariates only in the gating network, iii) fixed covariates only in the expert network, iv) the full Mixture of Experts model with fixed covariates entering both the mixing proportions and component densities. Note that having the same covariates in both networks is allowed. So too are interactions, transformations, and higher order terms (see \code{\link[stats]{formula}}): the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). Covariates can be continuous, categorical, logical, or ordinal, but the response must always be continuous.
+The function effectively allows 6 different types of Gaussian Mixture of Experts model (as well as the different models in the GPCM/\pkg{mclust} family, for each): i) the standard finite Gaussian mixture with no covariates, ii) fixed covariates only in the gating network, iii) fixed covariates only in the expert network, iv) the full Mixture of Experts model with fixed covariates entering both the mixing proportions and component densities. By constraining the mixing proportions to be equal (see \code{equalPro} in \code{\link{MoE_control}}) two extra special cases are facilitated when gating covariates are excluded. 
+
+Note that having the same covariates in both networks is allowed. So too are interactions, transformations, and higher order terms (see \code{\link[stats]{formula}}): the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). Covariates can be continuous, categorical, logical, or ordinal, but the response must always be continuous.
 
 While model selection in terms of choosing the optimal number of components and the GPCM/\pkg{mclust} model type is performed within \code{\link{MoE_clust}}, using one of the \code{criterion} options within \code{\link{MoE_control}}, choosing between multiple fits with different combinations of covariates or different initialisation settings can be done by supplying objects of class \code{"MoEClust"} to \code{\link{MoE_compare}}.
 }
@@ -124,8 +126,14 @@ m3    <- MoE_clust(hema, G=2:3, expert= ~ sex)
 # Allow covariates to enter both the gating & expert network
 m4    <- MoE_clust(hema, G=2:3, gating= ~ BMI, expert= ~ sex)
 
+# Fit an equal mixing proportion model with an expert network covariate
+m5    <- MoE_clust(hema, G=2:3, expert= ~ sex, equalPro=TRUE)
+
+# Fit models with gating covariates & an additional noise component
+m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating=~BMI, network.data=ais)
+
 # Extract the model with highest ICL
-(comp <- MoE_compare(m1, m2, m3, m4, criterion="icl"))
+(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, criterion="icl"))
 (best <- comp$optimal)
 (summ <- summary(best))
 

@@ -18,7 +18,7 @@ MoE_plotGate(res,
 
 \item{x.axis}{Optional argument for the x-axis against which the mixing proportions are plotted. Defaults to \code{1:res$n} if missing. Supplying \code{x.axis} changes the defaults for the \code{type} and \code{xlab} arguments.}
 
-\item{type, xlab, ylab, ylim, col}{These graphical parameters retain their definitions from \code{\link[graphics]{matplot}}.}
+\item{type, xlab, ylab, ylim, col}{These graphical parameters retain their definitions from \code{\link[graphics]{matplot}}. \code{col} defaults to the settings in \code{\link[mclust]{mclust.options}}.}
 
 \item{...}{Catches unused arguments, or additional arguments to be passed to \code{\link[graphics]{matplot}}.}
 }

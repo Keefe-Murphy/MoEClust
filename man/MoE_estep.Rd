@@ -57,10 +57,11 @@ Estep2 <- MoE_estep(data=hema, sigs=model$parameters$variance,
                     mus=model$parameters$mean, log.tau=log(model$parameters$pro))
 identical(Estep2$loglik, ll)                                          #TRUE
 
-# The same can be done for models with expert covariates
-m2     <- MoE_clust(hema, G=2, expert= ~ sex, modelNames="EVE", network.data=ais)
-Estep3 <- MoE_estep(data=m2$resid.data, sigs=m2$parameters$variance,
-                    mus=0, log.tau=log(m2$parameters$pro))
+# The same can be done for models with expert covariates &/or a noise component
+# Note for models with expert covariates that the mean has to be supplied as 0
+m2     <- MoE_clust(hema, G=2, expert= ~ sex, modelNames="EVE", network.data=ais, tau0=0.1)
+Estep3 <- MoE_estep(data=m2$resid.data, sigs=m2$parameters$variance, mus=0, 
+                    log.tau=log(m2$parameters$pro), Vinv=m2$parameters$Vinv)
 }
 \seealso{
 \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link{MoE_cstep}}, \code{\link{MoE_control}}, \code{\link[mclust]{mclustVariance}}, \code{\link[matrixStats]{rowLogSumExps}}

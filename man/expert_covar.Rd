@@ -23,8 +23,8 @@ The \code{modelName} of the resulting \code{variance} object may not correspond 
 }
 \examples{
 data(ais)
-res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
-                   network.data=ais, modelNames="EVE")
+res   <- MoE_clust(ais[,3:7], G=2, gating= ~ 1, expert= ~ sex,
+                   network.data=ais, modelNames="EEE", equalPro=TRUE)
 
 # Extract the variance object
 res$parameters$variance
