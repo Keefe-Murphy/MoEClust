@@ -37,7 +37,7 @@ MoE_gpairs(res,
 
 Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In so doing, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data).
 
-Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}). Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets).}
+Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets).}
 
 \item{subset}{A list giving named arguments for producing only a subset of panels:
 \describe{
@@ -73,7 +73,7 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \item{gap}{The gap between the tiles; defaulting to 0.05 of the width of a tile.}
 
-\item{buffer}{The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to 2.5 percent of the range.}
+\item{buffer}{The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to \code{0.025}, i.e. 2.5 percent of the range.}
 
 \item{scatter.pars}{A list supplying select parameters for the continuous vs. continuous scatter plots.
 

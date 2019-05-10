@@ -17,8 +17,8 @@
 #' for high-dimensional multivariate data \eqn{n \leq d}{n <= d}  \tab \code{c("EII", "EEI")}
 #' }
 #' For zero-component models with a noise component only the \code{"E"} and \code{"EII"} models will be fit for univariate and multivariate data, respectively. The help file for \code{\link[mclust]{mclustModelNames}} further describes the available models (though the \code{"X"} in the single-component models will be coerced to \code{"E"} if supplied that way). For single-component models, other model names equivalent to those above can be supplied, but will be coerced to those above.
-#' @param gating A \code{\link[stats]{formula}} for determining the model matrix for the multinomial logistic regression in the gating network when fixed covariates enter the mixing proportions. This will be ignored where \code{G=1}. Continuous, categorical, and/or ordinal covariates are allowed. Logical covariates will be coerced to factors. Interactions, transformations, and higher order terms are permitted: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). The specification of the LHS of the formula is ignored. Intercept terms are included by default.
-#' @param expert A \code{\link[stats]{formula}} for determining the model matrix for the (multivariate) WLS in the expert network when fixed covariates are included in the component densities. Continuous, categorical, and/or ordinal covariates are allowed. Logical covariates will be coerced to factors. Interactions, transformations, and higher order terms are permitted: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). The specification of the LHS of the formula is ignored. Intercept terms are included by default.
+#' @param gating A \code{\link[stats]{formula}} for determining the model matrix for the multinomial logistic regression in the gating network when fixed covariates enter the mixing proportions. Defaults to \code{~1}, i.e. no covariates. This will be ignored where \code{G=1}. Continuous, categorical, and/or ordinal covariates are allowed. Logical covariates will be coerced to factors. Interactions, transformations, and higher order terms are permitted: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). The specification of the LHS of the formula is ignored. Intercept terms are included by default.
+#' @param expert A \code{\link[stats]{formula}} for determining the model matrix for the (multivariate) WLS in the expert network when fixed covariates are included in the component densities. Defaults to \code{~1}, i.e. no covariates. Continuous, categorical, and/or ordinal covariates are allowed. Logical covariates will be coerced to factors. Interactions, transformations, and higher order terms are permitted: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). The specification of the LHS of the formula is ignored. Intercept terms are included by default.
 #' @param control A list of control parameters for the EM/CEM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}. In particular, arguments pertaining to the inclusion of an additional noise component are documented here.
 #' @param network.data An optional data frame in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called. Try to ensure the names of variables in \code{network.data} do not match any of those in \code{data}.
 #' @param ... An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.
@@ -84,8 +84,8 @@
 #' MoE_clust(data,
 #'           G = 1:9,
 #'           modelNames = NULL,
-#'           gating = NULL,
-#'           expert = NULL,
+#'           gating = ~1,
+#'           expert = ~1,
 #'           control = MoE_control(...),
 #'           network.data = NULL,
 #'           ...)
@@ -134,7 +134,7 @@
 #' z     <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
 #' splom(~ hema | sex, groups=z)
 #' splom(~ hema | z, groups=sex)}
-  MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = NULL, expert = NULL, control = MoE_control(...), network.data = NULL, ...) {
+  MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = ~1, expert = ~1, control = MoE_control(...), network.data = NULL, ...) {
 
   # Definitions and storage set-up
     call          <- match.call()
@@ -189,7 +189,7 @@
        !inherits(gating, "formula"))              stop("'gating' must be a formula", call.=FALSE)
     if(exp.x      &&
        !inherits(expert, "formula"))              stop("'expert' must be a formula", call.=FALSE)
-    if(missing(data))                             stop("'data' must be supplied!", call.=FALSE)
+    if(missing(data))                             stop("'data' must be supplied!",   call.=FALSE)
 
     tmp.nam       <- as.character(substitute(data))
     data          <- as.data.frame(data)
@@ -697,7 +697,6 @@
         zN        <- z
       } else   {
         zN        <- z[,-gN,     drop=FALSE]
-        rZn       <- row(zN)
         zN        <- zN[!noise,, drop=FALSE]
       }
       if(init.exp) {
@@ -719,7 +718,7 @@
             zN[zN  > 0]  <- 1L
           }
           g.init  <- multinom(gating, trace=FALSE, data=gate.covs[!noise,, drop=FALSE], maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
-          tau     <- .tau_noise(stats::predict(g.init, type="probs", newdata=gate.covs), z[,gN], rZn)
+          tau     <- .tau_noise(stats::predict(g.init, type="probs", newdata=gate.covs), z[,gN])
         }
         gate.pen  <- length(stats::coef(g.init)) + ifelse(noise.null, 0L, 1L) + ifelse(noise.gate, 0L, 1L)
        #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="grouped")
@@ -828,11 +827,10 @@
              fitG <- multinom(gating, trace=FALSE, data=gate.covs, maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
              tau  <- fitG$fitted.values
             } else {
-             zN   <- z[,-gN, drop=FALSE]
-             zN   <- zN/(rowSums2(zN)[rZn])
+             zN   <- .renorm_z(z[,-gN, drop=FALSE])
              zN[is.nan(zN)]    <- .Machine$double.eps
              fitG <- multinom(gating, trace=FALSE, data=gate.covs, maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
-             tau  <- .tau_noise(fitG$fitted.values, z[,gN], rZn)
+             tau  <- .tau_noise(fitG$fitted.values, z[,gN])
             }
            #fitG  <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="grouped")
            #tau   <- stats::predict(fitG, type="response", newx=model.matrix(gating, data=gate.covs)[,-1L], s="lambda.1se")[,,1]
@@ -994,9 +992,9 @@
     icl.fin       <- ICLs[best.ind]
     aic.fin       <- AICs[best.ind]
     df.fin        <- DF.x[best.ind]
-    uncert        <- if(GN > 1) 1     - rowMaxs(z)             else vector("integer", n)
+    uncert        <- if(GN > 1) 1     - rowMaxs(z) else vector("integer", n)
     exp.x         <- exp.x & G  != 0
-    x.ll          <- x.ll[if(GN == 1 && !exp.x) 2L else if(GN == 1 && exp.x) 2L:3L else switch(EXPR=algo, EM=, CEM=-seq_len(2L), -1L)]
+    x.ll          <- x.ll[if(GN == 1 && !exp.x) 2L else if(GN == 1 && exp.x)    2L:3L else switch(EXPR=algo, EM=, CEM=-seq_len(2L), -1L)]
     x.ll          <- x.ll[!is.na(x.ll)]
 
     n0pro         <- equal.noise[best.G]
@@ -1009,30 +1007,28 @@
           t0      <- mean(z[,GN])
           x.tau   <- c(rep((1 - t0)/G, G), t0)
         } else     {
-          x.tau   <- if(n0pro) rep(1/GN, GN) else if(equal.pro)       rep(1/G, G) else x.fitG$fitted.values[1L,]
+          x.tau   <- if(n0pro) rep(1/GN, GN) else if(equal.pro)           rep(1/G, G) else x.fitG$fitted.values[1L,]
         }
-        x.tau     <- stats::setNames(x.tau, paste0("Cluster", if(noise.null) Gseq else c(Gseq, 0L)))
+        x.tau     <- stats::setNames(x.tau, paste0("Cluster", if(noise.null)     Gseq else c(Gseq, 0L)))
       }   else     {
         x.fitG    <- suppressWarnings(stats::glm(z ~ 1, family=stats::binomial()))
       }
     }
-    x.fitG$lab    <- if(noise.gate && !noise.null && GN > 1) c(Gseq, 0L)          else Gseq
-    gnames        <- if(G >= 1) paste0("Cluster", Gseq)
+    x.fitG$lab    <- if(noise.gate && !noise.null && GN > 1)              c(Gseq, 0L) else Gseq
+    gnames        <- if(G >= 1) paste0("Cluster", Gseq)                               else "Cluster0"
     if(!exp.x)     {
-     x.fitE       <- list()
-     for(k in seq_len(GN)) {
-      x.fitE[[k]] <- stats::lm(expert, weights=z[,k], data=expx.covs)
-     }
-     residX       <- stats::setNames(replicate(GN, matrix(0L, nrow=n, ncol=0L)),  if(!noise.null) c(gnames, "Cluster0") else gnames)
-    } else         {
-     residX       <- stats::setNames(x.resE, gnames)
-     if(!noise.null)       {
-      x.fitE[[GN]]             <- stats::lm(X ~ 1, weights=z[,GN])
-      residX                   <- c(residX, list(Cluster0=stats::residuals(x.fitE[[GN]])))
-     }
-    }
-    x.fitE        <- stats::setNames(x.fitE, if(G == 0) "NoiseComponent"     else if(!noise.null) c(gnames, "Cluster0") else gnames)
-    colnames(z)   <- if(G == 0) "Cluster0"   else if(!noise.null) c(gnames, "Cluster0")                                 else gnames
+      if(G > 0)    {
+        x.fitE    <- list()
+        for(k in Gseq)     {
+          x.fitE[[k]]          <- stats::lm(expert, weights=z[,k], data=expx.covs)
+        }
+      } else       {
+        x.fitE    <- NA
+      }
+      residX      <- stats::setNames(replicate(max(G, 1L), matrix(0L, nrow=n, ncol=0L)),   gnames)
+    } else residX <- stats::setNames(x.resE, gnames)
+    x.fitE        <- stats::setNames(x.fitE, gnames)
+    colnames(z)   <- if(G != 0 && !noise.null)                  c(gnames, "Cluster0") else gnames
     exp.gate      <- c(exp.x, bG)
     net.msg       <- ifelse(any(exp.gate), paste0(" (incl. ", ifelse(all(exp.gate), "gating and expert", ifelse(exp.x, "expert", ifelse(bG, "gating", ""))), paste0(" network covariates", ifelse(bG, "", ifelse(equal.pro && G > 1, ", with equal mixing proportions", "")), 
                      ifelse(noise.null, ")", ", and a noise component)"))), ifelse(noise.null, ifelse(equal.pro && G > 1, " (and equal mixing proportions)", ""), ifelse(equal.pro && G > 1, " (with equal mixing proportions and a noise component)", " (and a noise component)")))
@@ -1050,9 +1046,9 @@
     if(G > 0) {
       vari.fin    <- x.sig
       if(exp.x)    {
-        fitdat    <- Reduce("+",  lapply(Gseq, function(g) z[,g] * stats::predict(x.fitE[[g]])))
-        z.mean    <- if(noise.null) z else z[,-GN, drop=FALSE]
-        mean.fin  <- sweep(crossprod(fitdat, z.mean), 2L, colSums2(z.mean), FUN="/", check.margin=FALSE)
+        z.norm    <- if(noise.null) z else .renorm_z(z[,-GN, drop=FALSE])
+        fitdat    <- Reduce("+",  lapply(Gseq, function(g) z.norm[,g] * stats::predict(x.fitE[[g]])))
+        mean.fin  <- sweep(crossprod(fitdat, z.norm), 2L, colSums2(z.norm), FUN="/", check.margin=FALSE)
       } else       {
         mean.fin  <- x.mu
       }
@@ -1244,10 +1240,7 @@
     if(any(log.tau > 0))                          stop("'log.tau' cannot be greater than 0: mixing proportions must be supplied on the log scale", call.=FALSE)
     G             <- sigs$G
     Vnul          <- is.null(Vinv)
-    if((Ldat      <- inherits(data, "list"))    &&
-    !is.null(names(data)))  {
-      data        <- data[names(data) != "Cluster0"]
-    }
+    Ldat          <- inherits(data, "list")
     if(!Ldat      || (Ldat &&
        length(data)        != max(G, 1L)))       {
       data        <- replicate(G, as.matrix(data), simplify=FALSE)
@@ -1292,7 +1285,7 @@
     densi         <- if(Vnul) densi else if(G     > 0) bind2(densi, log(Vinv)) else matrix(log(Vinv), nrow=n, ncol=G + !Vnul)
     if(ifelse(is.matrix(log.tau), ncol(log.tau), length(log.tau)) > G + !Vnul)                                  stop(paste0("Too many ", ifelse(is.matrix(log.tau), "columns", "entries"), " in 'log.tau'", ifelse(Vnul, ":\nPerhaps 'Vinv' needs to be supplied?", "")), call.=FALSE)
     densi         <- densi  + if(ltau.miss       || is.matrix(log.tau))                            log.tau else
-                              if(length(log.tau) == G + !Vnul) .mat_byrow(log.tau, nrow=n, ncol=G + !Vnul) else stop(paste0("'log.tau' must be given for every component", ifelse(Vnul, "", ", incl. the noise component if 'Vinv' is supplied")),  call.=FALSE)
+                              if(length(log.tau) == G + !Vnul) .mat_byrow(log.tau, nrow=n, ncol=G + !Vnul) else stop(paste0("'log.tau' must be given for every component", ifelse(Vnul, "", ", incl. the noise component if 'Vinv' is supplied")), call.=FALSE)
       if(logarithm)  densi    else exp(densi)
   }
 
@@ -2174,7 +2167,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
   rownames(newdata.x)          <- NULL
   nr              <- nrow(newdata.x)
   nrseq           <- seq_len(nr)
-  G               <- object$G
+  if((G           <- object$G) == 0)              stop("Can't make predictions for models with only a noise component", call.=FALSE)
   GN              <- G + noise
   Gseq            <- seq_len(G)
   params          <- object$parameters
@@ -2228,7 +2221,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
       zstar       <- MoE_estep(Dens=MoE_dens(data=newdata.y, mus=mus, sigs=params$variance, log.tau=log(new.tau), Vinv=params$Vinv))$z
     }
   }
-  ystar           <- as.matrix(Reduce("+", lapply(seq_len(GN), function(g) zstar[,g] * pred.exp[[g]])))
+  zstar2          <- if(!nmiss && !yM && noise) .renorm_z(zstar[,-GN, drop=FALSE]) else zstar
+  ystar           <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar2[,g] * pred.exp[[g]])))
   claX            <- stats::setNames(max.col(zstar), nrseq)
   claX[claX   == G + 1]  <- 0L
   rownames(ystar) <- nrseq
@@ -2329,9 +2323,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     x$loglik      <- x$loglik[length(x$loglik)]
     x$BIC         <- replace(x$BIC, !is.finite(x$BIC), NA)
     class(x$BIC)  <- "mclustBIC"
-    x$parameters$pro      <- if(gating)                     colMeans2(x$z) else x$parameters$pro
     x$uncertainty         <- if(uni)                 unname(x$uncertainty) else x$uncertainty
     x$classification      <- if(uni)              unname(x$classification) else x$classification
+    x$parameters$pro      <- if(gating)        colMeans2(x$parameters$pro) else x$parameters$pro
     x$parameters$variance <- if(isTRUE(expert.covar)    &&
                                 expert)  suppressWarnings(expert_covar(x)) else x$parameters$variance
     x$data        <- if(signif > 0)   apply(x$data, 2L, .trim_out, signif) else x$data
@@ -2381,9 +2375,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     d             <- x$d
     G             <- x$G
     if(attr(x, "Expert"))  {
-      experts     <- x$expert
-      experts     <- if(attr(experts, "Noise")) experts[-(G + 1L)] else experts
-      pred.var    <- unlist(lapply(experts, function(expert) stats::cov(as.matrix(stats::predict(expert)))))
+      pred.var    <- unlist(lapply(x$expert, function(expert) stats::cov(as.matrix(stats::predict(expert)))))
      #pred.var    <- unlist(lapply(seq_len(G), function(g) stats::cov.wt(stats::predict(experts[[g]]), x$z[,g])$cov))
       if(d  == 1)  {
         x.sig$sigmasq     <- unname(x.sig$sigmasq + sqrt(pred.var))
@@ -2725,15 +2717,17 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     x.ind[,2L]    <- colnames(x)[as.numeric(x.ind[,2L])]
       return(list(crits = stats::setNames(x.val[seq_len(pick)], vapply(seq_len(pick), function(p, b=x.ind[p,]) paste0(b[2L], ",", b[1L]), character(1L))), pick = pick))
   }
+  
+  #' @importFrom matrixStats "rowSums2"
+  .renorm_z       <- function(z) z/rowSums2(z)
 
   .sq_mat         <- function(x) diag(sqrt(diag(x)))
 
-  #' @importFrom matrixStats "rowSums2"
-  .tau_noise      <- function(tau, z0, row.ind = row(tau)) {
+  .tau_noise      <- function(tau, z0) {
     t0            <- mean(z0)
-      cbind(tau/(rowSums2(tau)[row.ind]) * (1  - t0), unname(t0))
+      cbind(tau * (1 - t0), unname(t0))
   }
-
+  
   .trim_out       <- function(x, signif = 0.01, na.rm = TRUE, replace = TRUE, ...) {
     qnt           <- stats::quantile(x, probs=c(signif, 2 - signif)/2, na.rm=na.rm, ...)
     H             <- 1.5     * stats::IQR(x, na.rm=na.rm)
@@ -2932,6 +2926,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' @method print MoE_expert
 #' @export
   print.MoE_expert       <- function(x, ...) {
+    if(is.na(x)   || (names(x) == "Cluster0"))    stop("No expert network exists for models with only a noise component", call.=FALSE)
     formula       <- attr(x, "Formula")
     attributes(x)[-1L]   <- NULL
     class(x)      <- "listof"
@@ -2963,9 +2958,15 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' @method summary MoE_expert
 #' @export
   summary.MoE_expert     <- function(object, clusters = seq_along(object), ...) {
-    if(any(!is.numeric(clusters), any(clusters < 1),
-           any(clusters   > length(object))))     stop("Invalid 'clusters'", call.=FALSE)
-    summ          <- lapply(object[clusters], summary, ...)
+    if(length(object)    == 1 &&
+      (is.na(object)     || 
+      (names(object)     == "Cluster0")))        {
+      summ               <- stats::setNames(NA, "Cluster0")
+    } else                {
+      if(any(!is.numeric(clusters), any(clusters < 1),
+             any(clusters > length(object))))     stop("Invalid 'clusters'", call.=FALSE)
+      summ        <- lapply(object[clusters], summary, ...)
+    }
     class(summ)   <- "summary_MoEexp"
     attr(summ, "Form")   <- attr(object, "Formula") 
       summ
@@ -2993,6 +2994,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' @method print summary_MoEexp
 #' @export
   print.summary_MoEexp   <- function(x, ...) {
+    if(is.na(x)   || (names(x) == "Cluster0"))    stop("No expert network exists for models with only a noise component", call.=FALSE)
     class(x)      <- "listof"
     print(x, ...)
     cat(paste("Formula:", attr(x, "Form"), "\n"))
