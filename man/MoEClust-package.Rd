@@ -6,7 +6,7 @@
 \alias{MoEClust-package}
 \title{MoEClust: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component}
 \description{
-Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2018) <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of additional noise component is also facilitated.
+Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2018) <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
 }
 \section{Usage}{
 
@@ -30,8 +30,8 @@ The package also contains two data sets: \code{ais} and \code{CO2data}.
 \itemize{
 \item{Type: }{Package}
 \item{Package: }{MoEClust}
-\item{Date: }{2018-12-11 (this version), 2017-11-28 (original release)}
 \item{Version: }{1.2.2}
+\item{Date: }{2019-05-15 (this version), 2017-11-28 (original release)}
 \item{Licence: }{GPL (>=2)}
 }
 }

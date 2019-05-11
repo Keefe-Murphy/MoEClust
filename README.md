@@ -10,7 +10,7 @@
 
 ## Description
 
-Fits _MoEClust_ models introduced by Murphy and Murphy (2018) <[arXiv:1711.05632](https://arxiv.org/abs/1711.05632)>, i.e. fits finite Gaussian mixture of experts models with gating and/or expert network covariates supplied via formula interfaces using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of additional noise component is also facilitated.
+Fits _MoEClust_ models introduced by Murphy and Murphy (2018) <[arXiv:1711.05632](https://arxiv.org/abs/1711.05632)>, i.e. fits finite Gaussian mixture of experts models with gating and/or expert network covariates supplied via formula interfaces using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
 
 The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via EM/CEM with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_control`, `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 

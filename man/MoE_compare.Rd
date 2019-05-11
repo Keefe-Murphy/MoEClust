@@ -47,7 +47,7 @@ A list of class \code{"MoECompare"}, for which a dedicated print function exists
 \item{\code{expert}}{The expert formulas.}
 \item{\code{algo}}{The algorithm used for fitting the model - either \code{"EM"}, \code{"CEM"}, \code{"cemEM"}.}
 \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
-\item{\code{hypvol}}{Hypervolume parameters for the noise component if required, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
+\item{\code{hypvol}}{Hypervolume parameters for the noise component if relevant, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
 \item{\code{noise}}{Either a logical indicating the presence/absence of a noise component, or the type of noise component fitted (if any). Depends on the supplied value of \code{noise}. Only displayed if at least one of the compared models has a noise component.}
 \item{\code{noise.gate}}{Logical indicating whether gating covariates were allowed to influence the noise component's mixing proportion. Only printed for models with a noise component, when at least one of the compared models has gating covariates, and even then only when \code{noise} is supplied as \code{TRUE}.}
 \item{\code{equalNoise}}{Logical indicating whether the mixing proportion of the noise component for \code{equalPro} models is also equal (\code{TRUE}) or estimated (\code{FALSE}).}

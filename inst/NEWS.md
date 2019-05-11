@@ -5,12 +5,18 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
-## MoEClust v1.2.2 - (_5<sup>th</sup> release [patch update]: 2019-02-14_)
+## MoEClust v1.2.2 - (_5<sup>th</sup> release [minor update]: 2019-05-15_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
-* Fixed summary of means for models with expert covariates and a noise component.  
-  This fixes the location of MVN ellipses for such models in `MoE_gpairs`.
+* `noise_vol` now also returns the location of the centre of mass of the region  
+  used to estimate the hypervolume, regardless of the method employed. This fixes:    
+    * `predict.MoEClust` for any models with a noise component (see below).
+    * The summary of means for models with expert covariates and a noise component.
+    * The location of the MVN ellipses for such models in `MoE_gpairs` (see below).
+* Furthermore, calculation of the hypervolume in `noise_vol` for data with >2 dimensions  
+  is now correct when `method="ellipsoidhull"`, owing to a bug in the `cluster` package.
 * Other fixes and speed-ups for the `MoE_gpairs` plotting function:  
     * Added arg. `expert.covar` (& also to `as.Mclust` function).
+    * Fixed location of MVN ellipses for models with noise & expert covariates (see above).
     * Fixes when `response.type="density"` for all models with a noise component.
     * Speed-up when `response.type="density"` for models with covariates of any kind.
     * Fixes to labelling for models with a noise component.
@@ -28,9 +34,10 @@ __and a Noise Component__
   & hence adding noise to models for high-dimensional data for which `noise_vol()` fails.
 * Fixed bug for `equalPro` models with noise component, and also added `equalNoise` arg.  
   to `MoE_control`, further controlling `equalPro` in the presence of a noise component.
-* Small fixes to `predict.MoEClust` for the following special cases:  
-    * Accounted for models with equal mixing proportions.
+* Fixes to `predict.MoEClust` for the following special cases:  
+    * Fixes for any models with a noise component (see `noise_vol` comment above).
     * Accounted for predictions of single observations for models with a noise component.
+    * Accounted for models with equal mixing proportions.
 * Accounted for categorical covariates in the `x.axis` arg. to `MoE_plotGate`.
 * `tau0` can now also be supplied as a vector in the presence of gating covariates.
 * Fix to `expert_covar` for univariate models. 

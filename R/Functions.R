@@ -228,9 +228,11 @@
     anyg0or1      <- anyg0  + anyg1
     if(anyg0 || !noise.null)    {
       if(!is.null(noise.vol))   {
-        Vinv      <- 1/noise.vol
+        Vinv      <- ifelse(isTRUE(attr(noise.vol, "Inverse")), noise.vol, 1/noise.vol)
       } else if(n  > d)         {
-        Vinv      <- noise_vol(X, noise.meth, reciprocal=TRUE)
+        NoiseVol  <- noise_vol(X, noise.meth, reciprocal=TRUE)
+        Vinv      <- NoiseVol$vol
+        NoiseLoc  <- NoiseVol$loc
       } else                                      stop("'noise.args$noise.vol' must be specified directly for high-dimensional data when a noise component is included", call.=FALSE)
     }         
     len.G         <- length(range.G)
@@ -458,7 +460,7 @@
     }
     if((mdind     <- clust.MD  && do.md && has.md) && someG && exp.init$joint) {
       expx.facs   <- expx.covs[,setdiff(colnames(expx.covs), jo.cts), drop=FALSE]
-      flevs       <- vapply(expx.facs, nlevels,    integer(1L))
+      flevs       <- vapply(expx.facs, nlevels,           integer(1L))
       b.ind       <- which(flevs == 2L)
       o.ind       <- which(vapply(expx.facs, is.ordered, logical(1L)))
       n.ind       <- setdiff(seq_len(ncol(expx.facs)),  c(b.ind, o.ind))
@@ -476,7 +478,7 @@
       mdcrit      <- switch(EXPR=init.crit, bic=mds$BICarray, icl=mds$ICLarray)
       mderr       <- is.na(mdcrit)
       mdcrit      <- replace(mdcrit, mderr, -Inf)
-      mdbest      <- apply(mdcrit, 1L, max, na.rm=TRUE)
+      mdbest      <- rowMaxs(mdcrit, na.rm=TRUE)
     } else mderr  <- as.matrix(FALSE)
     if(is.element(init.z, c("hc", "mclust")) && someG) {
       if(miss.hc)  {
@@ -853,7 +855,7 @@
           if((ERR <- ERR || (attr(Mstep, "returnCode") < 0  || (inherits(medens, "try-error")) || any(medens > 0)))) {
             ll    <- c(ll, NA)
             break
-          } else  {
+          } else   {
             Estep <- switch(EXPR=alW, EM=MoE_estep(Dens=medens), CEM=MoE_cstep(Dens=medens))
             z     <- zN        <- Estep$z
             ERR   <- any(is.nan(z))
@@ -1046,8 +1048,14 @@
     if(G > 0) {
       vari.fin    <- x.sig
       if(exp.x)    {
-        z.norm    <- if(noise.null) z else .renorm_z(z[,-GN, drop=FALSE])
-        fitdat    <- Reduce("+",  lapply(Gseq, function(g) z.norm[,g] * stats::predict(x.fitE[[g]])))
+        if(noise.null || noise.meth == "manual") {
+          z.norm  <- if(noise.null) z else .renorm_z(z[,-GN, drop=FALSE])
+          fitdat  <- Reduce("+",  lapply(Gseq, function(g) z.norm[,g] * stats::predict(x.fitE[[g]])))
+        } else     {
+          fitdat  <- Reduce("+",  lapply(Gseq, function(g) z[,g]      * stats::predict(x.fitE[[g]])))
+          fitdat  <- fitdat  +    z[,GN] * matrix(NoiseLoc, nrow=n, ncol=d, byrow=TRUE)
+          z.norm  <- if(noise.null) z else z[,-GN, drop=FALSE]
+        }
         mean.fin  <- sweep(crossprod(fitdat, z.norm), 2L, colSums2(z.norm), FUN="/", check.margin=FALSE)
       } else       {
         mean.fin  <- x.mu
@@ -1093,6 +1101,7 @@
     if(G     == 0 || !noise.null) {
       hypvol      <- 1/Vinv
       attr(hypvol, "Hypvol0")  <- hypvol
+      attr(hypvol, "Location") <- if(noise.meth != "manual") NoiseLoc
       attr(hypvol, "Meth")     <- noise.meth
       attr(hypvol, "Meth0")    <- noise.meth
       attr(hypvol, "g0only")   <- noise.null
@@ -1196,7 +1205,7 @@
 #' @param mus The mean for each of G components. If there is more than one component, this is a matrix whose k-th column is the mean of the k-th component of the mixture model. For the univariate models, this is a G-vector of means. In the presence of expert network covariates, all values should be equal to \code{0}.
 #' @param sigs The \code{variance} component in the parameters list from the output to eg. \code{\link{MoE_clust}}. The components of this list depend on the specification of \code{modelName} (see \code{\link[mclust]{mclustVariance}} for details). The number of components \code{G}, the number of variables \code{d}, and the \code{modelName} are inferred from \code{sigs}.
 #' @param log.tau If covariates enter the gating network, an n times G matrix of mixing proportions, otherwise a G-vector of mixing proportions for the components of the mixture. \strong{Must} be on the log-scale in both cases. The default of \code{0} effectively means densities (or log-densities) aren't scaled by the mixing proportions.
-#' @param Vinv An estimate of the reciprocal hypervolume of the data region. The default is determined by applying the function \code{\link[mclust]{hypvol}} to the data. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.
+#' @param Vinv An estimate of the reciprocal hypervolume of the data region. See the function \code{\link{noise_vol}}. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.
 #' @param logarithm A logical value indicating whether or not the logarithm of the component densities should be returned. This defaults to \code{TRUE}, otherwise component densities are returned, obtained from the component log-densities by exponentiation. The \strong{log}-densities can be passed to \code{\link{MoE_estep}} or \code{\link{MoE_cstep}}.
 #'
 #' @note This function is intended for joint use with \code{\link{MoE_estep}} or \code{\link{MoE_cstep}}, using the \strong{log}-densities. Note that models with a noise component are facilitated here too.
@@ -1488,7 +1497,7 @@
 #' \item{\code{noise.init}}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise component will be added to the model in the estimation. This argument can be used in conjunction with \code{tau0} above, or can be replaced by that argument also.}
 #' \item{\code{noise.gate}}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
 #' \item{\code{noise.meth}}{The method used to estimate the volume when a noise component is invoked. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead (unless \code{noise.vol} below is specified). The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant if \code{noise.vol} below is not supplied.}
-#' \item{\code{noise.vol}}{This argument can be used to override the argument \code{noise.meth} by specifying the (hyper)volume directly, i.e. specifying an improper uniform density. This will override the use of the range of the response data for univariate data if supplied. Note that the (hyper)volume, rather than its inverse, is supplied here.}
+#' \item{\code{noise.vol}}{This argument can be used to override the argument \code{noise.meth} by specifying the (hyper)volume directly, i.e. specifying an improper uniform density. This will override the use of the range of the response data for univariate data if supplied. Note that the (hyper)volume, rather than its inverse, is supplied here. This can affect prediction and the location of the MVN ellipses for \code{\link{MoE_gpairs}} plots (see \code{\link{noise_vol}}).}
 #' \item{\code{equalNoise}}{Logical which is only invoked when \code{isTRUE(equalPro)} and gating covariates are not supplied. Under the default setting (\code{FALSE}), the mixing proportion for the noise component is estimated, and remaining mixing proportions are equal; when \code{TRUE} all components, including the noise component, have equal mixing proportions.}
 #' }
 #' In particular, the argument \code{noise.meth} will be ignored for high-dimensional \code{n <= d} data, in which case the argument \code{noise.vol} \emph{must be} specified.
@@ -1535,7 +1544,7 @@
 #' @details \code{\link{MoE_control}} is provided for assigning values and defaults within \code{\link{MoE_clust}}.
 #'
 #' While the \code{criterion} argument controls the choice of the optimal number of components and GPCM/\pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
-#' @importFrom mclust "hc" "mclust.options"
+#' @importFrom mclust "hc" "hypvol" "mclust.options"
 #' @importFrom nnet "multinom"
 #' @note Note that successfully invoking \code{exp.init$clustMD} (though it defaults to \code{FALSE}) effects the role of the arguments \code{init.z}, \code{hc.args}, and \code{km.args}. Please read the documentation above carefully in this instance.
 #' @return A named list in which the names are the names of the arguments and the values are the values supplied to the arguments.
@@ -1825,7 +1834,7 @@
 #' \item{\code{expert}}{The expert formulas.}
 #' \item{\code{algo}}{The algorithm used for fitting the model - either \code{"EM"}, \code{"CEM"}, \code{"cemEM"}.}
 #' \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
-#' \item{\code{hypvol}}{Hypervolume parameters for the noise component if required, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
+#' \item{\code{hypvol}}{Hypervolume parameters for the noise component if relevant, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
 #' \item{\code{noise}}{Either a logical indicating the presence/absence of a noise component, or the type of noise component fitted (if any). Depends on the supplied value of \code{noise}. Only displayed if at least one of the compared models has a noise component.}
 #' \item{\code{noise.gate}}{Logical indicating whether gating covariates were allowed to influence the noise component's mixing proportion. Only printed for models with a noise component, when at least one of the compared models has gating covariates, and even then only when \code{noise} is supplied as \code{TRUE}.}
 #' \item{\code{equalNoise}}{Logical indicating whether the mixing proportion of the noise component for \code{equalPro} models is also equal (\code{TRUE}) or estimated (\code{FALSE}).}
@@ -2104,7 +2113,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
   net             <- object$net.covs
   dat             <- object$data
   datnames        <- colnames(dat)
-  noise           <- !is.na(object$hypvol)
+  hypvol          <- object$hypvol
+  noise           <- !is.na(hypvol)
   yM              <- FALSE
   if(nmiss        <- ifelse(inherits(newdata,
                                      "list")    &&
@@ -2167,13 +2177,15 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
   rownames(newdata.x)          <- NULL
   nr              <- nrow(newdata.x)
   nrseq           <- seq_len(nr)
-  if((G           <- object$G) == 0)              stop("Can't make predictions for models with only a noise component", call.=FALSE)
+  G               <- object$G
   GN              <- G + noise
   Gseq            <- seq_len(G)
   params          <- object$parameters
   if(G == 0)   {
-    return(list(classification=rep(0L, nr),
-                zstar=provideDimnames(matrix(1L, nrow=nr, ncol=1L), base=list(as.character(nrseq), "Cluster0"))))
+    retval        <- list(ystar=matrix(attr(hypvol, "Location"), nrow=nr, ncol=object$d, byrow=TRUE),
+                          classification=rep(0L, nr),
+                          zstar=provideDimnames(matrix(1L, nrow=nr, ncol=1L), base=list(as.character(nrseq), "Cluster0")))
+      return(if(isTRUE(resid)) c(retval, list(resids=newdata.y - retval$ystar)) else retval)
   }
   pred.exp        <- lapply(object$expert, stats::predict, newdata=newexpx)
   if(nmiss)    {
@@ -2209,6 +2221,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     rownames(net)        <-
     rownames(dat)        <- NULL
     if(identical(newdata.x, net)      &&
+       !yM    && 
        identical(newdata.y, dat))      {
       zstar       <- object$z
       nmiss       <- TRUE
@@ -2216,13 +2229,18 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
       zstar       <- new.tau
     } else     {
       Xexp        <- attr(object, "Expert")
-      newdata.y   <- if(Xexp) lapply(pred.exp, "-", newdata.y) else newdata.y
-      mus         <- if(Xexp) 0L                               else params$mean
+      newdata.y   <- if(Xexp) lapply(pred.exp, "-", newdata.y)    else newdata.y
+      mus         <- if(Xexp) 0L                                  else params$mean
       zstar       <- MoE_estep(Dens=MoE_dens(data=newdata.y, mus=mus, sigs=params$variance, log.tau=log(new.tau), Vinv=params$Vinv))$z
     }
   }
-  zstar2          <- if(!nmiss && !yM && noise) .renorm_z(zstar[,-GN, drop=FALSE]) else zstar
-  ystar           <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar2[,g] * pred.exp[[g]])))
+  if(!noise || attr(hypvol, "Meth") == "manual") {
+    zstar2        <- if(noise) .renorm_z(zstar[,-GN, drop=FALSE]) else zstar
+    ystar         <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar2[,g] * pred.exp[[g]])))
+  } else     {
+    ystar         <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar[,g]  * pred.exp[[g]])))
+    ystar         <- ystar + zstar[,GN] *  matrix(attr(hypvol, "Location"), nrow=nr, ncol=object$d, byrow=TRUE)
+  }
   claX            <- stats::setNames(max.col(zstar), nrseq)
   claX[claX   == G + 1]  <- 0L
   rownames(ystar) <- nrseq
@@ -2243,7 +2261,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #'           ...)
 #' @export
   residuals.MoEClust     <- function(object, newdata = list(...), ...) {
-      do.call(predict.MoEClust, c(as.list(match.call())[-1L], list(resid=TRUE)))$resids
+    resids <- do.call(predict.MoEClust, c(as.list(match.call())[-1L], list(resid=TRUE)))$resids
+      if(!is.null(resids))  return(resids)
   }
 
 #' Convert MoEClust objects to the Mclust class
@@ -2605,14 +2624,24 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 
 #' Approximate Hypervolume Estimate
 #'
-#' Computes simple appproximations to the hypervolume of univariate and multivariate data sets.
+#' Computes simple appproximations to the hypervolume of univariate and multivariate data sets. Also returns the location of the centre of mass.
 #' @param data A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed, and covariates should not be included. If a matrix or data frame, rows correspond to observations and columns correspond to variables. There must be more observations than variables.
-#' @param method The method used to estimate the hypervolume. The "\code{convexhull}" and "\code{ellipsoidhull}" options require loading the \code{geometry} and \code{cluster} libraries, respectively.
+#' @param method The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The "\code{convexhull}" and "\code{ellipsoidhull}" options require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used.
 #' @param reciprocal A logical variable indicating whether or not the reciprocal hypervolume is desired rather than the hypervolume itself. The default is to return the hypervolume.
 #'
+#' @importFrom matrixStats "colMeans2" "colRanges" "rowDiffs" "rowMeans2"
 #' @importFrom mclust "hypvol"
 #' @note This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specificying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
-#' @return A hypervolume estimate (or its inverse), to be used as the hypervolume parameter for the noise component when observations are designated as noise in \code{\link{MoE_clust}}.
+#' 
+#' Note that supplying the volume manually to \code{\link{MoE_clust}} can affect prediction and by extension the location of the MVN ellipses in \code{\link{MoE_gpairs}} plots. The location cannot be estimated when the volume is supplied manually; in this case, prediction is made on the basis of renormalising the \code{z} matrix after discarding the column corresponding to the noise component.
+#' @return A list with the following two elements:
+#' \describe{
+#' \item{\code{vol}}{A hypervolume estimate (or its inverse). 
+#' 
+#' This can be used as the hypervolume parameter for the noise component when observations are designated as noise in \code{\link{MoE_clust}}.}
+#' \item{\code{loc}}{A vector of length \code{ncol(data)} giving the location of the centre of mass.
+#' 
+#' This can help in predicting the fitted values of models fitted with noise components via \code{\link{MoE_clust}}.}}
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @seealso \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}
 #' @keywords control
@@ -2624,6 +2653,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
 #' @examples
 #' data(ais)
 #' noise_vol(ais[,3:7], reciprocal=TRUE)
+#' 
+#' noise_vol(ais[,3:7], reciprocal=FALSE, method="convexhull")
   noise_vol       <- function(data, method = c("hypvol", "convexhull", "ellipsoidhull"), reciprocal = FALSE) {
     data          <- as.matrix(data)
     method        <- match.arg(method)
@@ -2631,9 +2662,41 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     if(!has.lib)                                  stop(paste0("Use of the ", method, " 'method' option requires loading the ", switch(EXPR=method, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"), call.=FALSE)
     if(length(reciprocal) != 1 ||
        !is.logical(reciprocal))                   stop("'reciprocal' must be a single logical indicator", call.=FALSE)
-    vol           <- ifelse(ncol(data) == 1, abs(diff(range(data))), switch(EXPR=method, hypvol=hypvol(data, reciprocal=FALSE),
-                     convexhull=geometry::convhulln(data, options=c("Pp", "FA"))$vol, ellipsoidhull=cluster::volume(cluster::ellipsoidhull(data))))
-      ifelse(reciprocal, 1/vol, vol)
+    if(ncol(data) == 1)    {
+      vol         <- ifelse(reciprocal, 1/abs(diff(range(data))), abs(diff(range(data))))
+      loc         <- vol/2
+    } else         {
+      switch(EXPR=method, 
+             hypvol=       {
+        bdvlog    <- .SLDC(data)
+        PCA       <- stats::princomp(data)
+        scores    <- PCA$scores
+        pcvlog    <- .SLDC(scores)
+        vlog      <- min(bdvlog, pcvlog)
+        if(reciprocal)     {
+          minlog  <- log(.Machine$double.xmin)
+          if(-vlog < minlog) {                    warning("hypervolume smaller than smallest machine representable positive number", call.=FALSE, immediate.=TRUE)
+            vol   <- 0L
+          } else vol      <- exp(-vlog)
+        }   else   {
+          maxlog  <- log(.Machine$double.xmax)
+          if(vlog  > maxlog) {                    warning("hypervolume greater than largest machine representable number", call.=FALSE, immediate.=TRUE)
+            vol   <- Inf
+          } else vol      <- exp(vlog)
+        } 
+        loc       <- if(bdvlog <= pcvlog) rowMeans2(colRanges(data)) else colMeans2(data) + tcrossprod(rowMeans2(colRanges(scores)), PCA$loadings)
+      }, ellipsoidhull=    {
+        hull      <- cluster::ellipsoidhull(data)
+        vol       <- ifelse(reciprocal, 1/.vol_ellipsoid(hull), .vol_ellipsoid(hull))
+        loc       <- hull$loc
+      }, convexhull=       {
+        hull      <- geometry::convhulln(data, options=c("Pp", "FA", "Fx"), output.options=TRUE)
+        vol       <- ifelse(reciprocal, 1/hull$vol, hull$vol)
+        loc       <- colMeans2(hull$p)
+      })
+    }
+    attr(vol, "Inverse")  <- reciprocal
+      return(list(vol=vol, loc=loc))
   }
 
 #' Show the NEWS file
@@ -2720,6 +2783,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
   
   #' @importFrom matrixStats "rowSums2"
   .renorm_z       <- function(z) z/rowSums2(z)
+  
+  #' @importFrom matrixStats "colRanges" "rowDiffs"
+  .SLDC           <- function(x) sum(log(abs(rowDiffs(colRanges(x)))))
 
   .sq_mat         <- function(x) diag(sqrt(diag(x)))
 
@@ -2737,6 +2803,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
     y[x < li.qnt] <- ifelse(replace, li.qnt, NA)
     y[x > ui.qnt] <- ifelse(replace, ui.qnt, NA)
       y
+  }
+  
+  .vol_ellipsoid  <- function(x)  {
+   exp(ifelse((p2 <- length(x$loc)/2) > 1,
+              p2   * log(x$d2) + determinant(x$cov)$modulus/2 + p2 * log(base::pi) - lgamma(p2) - log(p2),
+              log(base::pi)    + determinant(x$cov)$modulus/2 + log(x$d2))[1L])
   }
 
 #' @method print MoEClust
