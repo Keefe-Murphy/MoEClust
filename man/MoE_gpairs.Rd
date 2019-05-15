@@ -79,28 +79,30 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \code{NULL} is equivalent to:
 \preformatted{list(scat.pch=if(response.type == "uncertainty") 19 else res$classification,
-scat.size=unit(0.25, "char"), scat.col=res$classification, lci.col=res$classification),}
-where \code{lci.col} gives the colour of the fitted lines &/or confidence intervals when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"}. Note that \code{scatter.pars$scat.size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}. Note also that the default for \code{scatter.pars$scat.pch} changes depending on whether \code{response.type} is given as \code{"points"} or \code{"uncertainty"}, though it can of course be modified in both cases.}
+scat.size=unit(0.25, "char"), scat.col=res$classification, lci.col=res$classification,
+noise.size=unit(0.2, "char")),}
+where \code{lci.col} gives the colour of the fitted lines &/or confidence intervals when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"}. Note that \code{scatter.pars$scat.size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}. Note also that the default for \code{scatter.pars$scat.pch} changes depending on whether \code{response.type} is given as \code{"points"} or \code{"uncertainty"}, though it can of course be modified in both cases. Finally, \code{scatter.pars$noise.size} can be used to modify \code{scatter.pars$scat.size} for observations assigned to the noise component (if any), but only when \code{response.type="points"}.}
 
 \item{density.pars}{A list supplying select parameters for visualising the bivariate density contours, only when \code{response.type} is \code{"density"}.
 
 \code{NULL} is equivalent to:
 \preformatted{list(grid.size=c(100, 100), dcol="grey50",
-nlevels=11, show.labels=TRUE),}
-where \code{density.pars$grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively, and \code{density.pars$dcol} is either a single colour or a vector of length \code{density.pars$nlevels} colours, although note that \code{density.pars$dcol}, when \emph{not} specified, will be adjusted for transparency.}
+nlevels=11, show.labels=TRUE, label.style="mixed"),}
+where \code{density.pars$grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively, and \code{density.pars$dcol} is either a single colour or a vector of length \code{density.pars$nlevels} colours (although note that \code{density.pars$dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{density.pars$label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.}
 
 \item{stripplot.pars}{A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"stripplot"}.
 
 \code{NULL} is equivalent to:
 \preformatted{list(strip.pch=res$classification, strip.size=unit(0.5, "char"),
-strip.col=res$classification, jitter=TRUE).}}
+strip.col=res$classification, jitter=TRUE, size.noise=unit(0.4, "char")),}
+where \code{stripplot.pars$strip.size} and \code{stripplot.pars$size.noise} retain the definitions for the similar arguments under \code{scatter.pars} above. However, \code{stripplot.pars$noise.size} is invoked regardless of the \code{response.type}.}
 
 \item{barcode.pars}{A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
 
 \code{NULL} is equivalent to:
 \preformatted{list(bar.col=res$classification, nint=0, ptsize=unit(0.25, "char"), ptpch=1,
-bcspace=NULL, use.points=FALSE).}
-where \code{bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}).}
+bcspace=NULL, use.points=FALSE),}
+where \code{barcode.pars$bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}) if it is of length greater than 1, otherwise it is used for all relevant panels. See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related barcode panels.}
 
 \item{mosaic.pars}{A list supplying select parameters for categorical vs. categorical panels. \code{NULL}. Currently \code{shade, gp_labels, gp,} and \code{gp_args} are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles.}
 
@@ -115,7 +117,7 @@ The argument \code{n.ticks} will be overwritten for categorical variables with f
 \code{NULL} is equivalent to:
 \preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
 hist.color=hist.color, show.counts=TRUE),}
-where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the fill colour for boxplot panels involving covariates only. By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
+where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the fill colour for boxplot panels involving covariates only and the colour of barcode panels not related to the MAP classification. By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
 
 When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
 
@@ -145,7 +147,7 @@ MoE_gpairs(res)
 MoE_gpairs(res, conditional=c("stripplot", "violin"),
            scatter.type=c("lm2", "points"), response.type="uncertainty")
 
-# Instead show the bivariate density contours of the reponse variables.
+# Instead show the bivariate density contours of the reponse variables (without labels).
 # (Plotting may be slow when response.type="density" for models with expert covariates.)
 # Use different colours for histograms of covariates in the gating/expert/both networks.
 # Also use different colours for response vs. covariate & covariate vs. response panels.
@@ -153,12 +155,14 @@ MoE_gpairs(res, response.type="density", show.labels=FALSE,
            hist.color=c("black", "cyan", "hotpink", "chartreuse"),
            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
            
-# Produce a generalised pairs plot for a model with a noise component
-# Reorder the covariates and omit the variabes "Hc" and "Hg"
-# Use barcode plots for the categorical/continuous pairs
+# Produce a generalised pairs plot for a model with a noise component.
+# Reorder the covariates and omit the variabes "Hc" and "Hg".
+# Use barcode plots for the categorical/continuous pairs.
+# Magnify the size of scatter points assigned to the noise component.
 resN  <- MoE_clust(ais[,3:7], G=2, gating=~SSF + Ht, expert=~sex,
                    network.data=ais, modelNames="EEE", tau0=0.1, noise.gate=FALSE)
-MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2))}
+MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), 
+conditional="barcode", noise.size=grid::unit(0.5, "char"))}
 }
 \references{
 K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.

@@ -5,6 +5,16 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.2.2 - (_6<sup>th</sup> release [minor update]: 2019-05-15_)
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* New args. and small fixes added to `MoE_gpairs`:  
+    * `density.pars` gains `label.style`.
+    * `scatter.pars` & `stripplot.pars` gain `noise.size` & `size.noise`.
+    * `barcode.pars$bar.col` slightly fixed from previous update.
+* Slight speed-up to `noise_vol` when `method="ellipsoidhull"`.
+* Small fix to `print.summary_MoEClust`.
+* Removed `snow` package from `Suggests:`.
+
 ## MoEClust v1.2.2 - (_5<sup>th</sup> release [minor update]: 2019-05-15_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * `noise_vol` now also returns the location of the centre of mass of the region  

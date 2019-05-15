@@ -469,8 +469,8 @@
       J           <- ncol(XY)
       CnsIndx     <- d + nct
       OrdIndx     <- J - length(n.ind)
-      has.pkg     <- suppressMessages(requireNamespace("snow", quietly=TRUE))
-      if(!has.pkg)                                stop("'snow' package note installed", call.=FALSE)
+      has.pkg     <- suppressMessages(requireNamespace(c("snow", "parallel"), quietly=TRUE))
+      if(!has.pkg)                                stop("'parallel' and 'snow' packages must be installed to use 'exp.init$clustMD=TRUE'", call.=FALSE)
       mdx         <- utils::capture.output( {
         mds       <- clustMD::clustMDparallel(X=XY, G=g.range, CnsIndx=CnsIndx, OrdIndx=OrdIndx, Nnorms=25000, MaxIter=500, store.params=FALSE,
                                               model=c("EII", "VII", "EEI", "VEI", "EVI", "VVI", "BD"), autoStop=TRUE, stop.tol=1e-04, scale=FALSE,
@@ -2806,9 +2806,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
   }
   
   .vol_ellipsoid  <- function(x)  {
+   lDet           <- as.numeric(determinant(x$cov, logarithm=TRUE)$modulus/2)
+   ld2pi          <- log(base::pi * x$d2)
    exp(ifelse((p2 <- length(x$loc)/2) > 1,
-              p2   * log(x$d2) + determinant(x$cov)$modulus/2 + p2 * log(base::pi) - lgamma(p2) - log(p2),
-              log(base::pi)    + determinant(x$cov)$modulus/2 + log(x$d2))[1L])
+              p2   * ld2pi + lDet - lgamma(p2 + 1L),
+              lDet + ld2pi))
   }
 
 #' @method print MoEClust
@@ -2900,8 +2902,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, ...) {
                paste0("\nGating Network Covariates:  ", ifelse(gate.x, "None", gating)),
                paste0("\nExpert Network Covariates:  ", ifelse(exp.x,  "None", expert)),
                ifelse(G  > 1, paste0("\nEqual Mixing Proportions:   ",  equalP), ""),
-               paste0("\nNoise Component:            ", noise, "\n\n"),
-               ifelse(G  > 1  && noise, paste0("\nNoise Proportion Estimated: ", !equalN), "")))
+               paste0("\nNoise Component:            ", noise, ""),
+               ifelse(G  > 1  && noise, paste0("\nNoise Proportion Estimated: ", !equalN, "\n\n"), "\n\n")))
     print(tmp, row.names = FALSE)
     cat("\nClustering table:")
     print(zs,  row.names = FALSE)
