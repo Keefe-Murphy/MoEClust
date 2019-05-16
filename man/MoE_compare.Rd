@@ -95,7 +95,7 @@ comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=Inf)
 print(comp2, comp2$expert != "None" & comp2$G > 1)
 }
 \references{
-K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632}{arXiv:1711.05632}>.
+K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632v2}{arXiv:1711.05632v2}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}

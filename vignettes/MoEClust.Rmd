@@ -16,7 +16,7 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show=
 ```
 
 ## Introduction
-__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM famly (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2018)](https://arxiv.org/abs/1711.05632). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
+__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM famly (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2018)](https://arxiv.org/abs/1711.05632v2). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
 The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM/CEM algorithm with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_control` allows supplying additional arguments to the main function which govern, among other things, controls on the inclusion of an additional noise component and controls on the initialisation of the allocations for the EM/CEM algorithm. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 
@@ -79,12 +79,29 @@ m7    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, tau0=0.1, verbose=FALSE)
 
 Choose the best model among these and examine the results.
 
-```{r}
+```{r, eval=FALSE}
 (comp <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=7, optimal.only=TRUE))
+```
 
+```{r, echo=FALSE}
+comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=7, optimal.only=TRUE)
+print(comp, digits=1L)
+```
+
+```{r, eval=FALSE}
 (best <- comp$optimal)
+```
 
+```{r, echo=FALSE}
+(best <- comp$optimal)
+```
+
+```{r, eval=FALSE}
 (summ <- summary(best))
+```
+
+```{r, echo=FALSE}
+(summ <- suppressMessages(summary(best)))
 ```
 
 Visualise the results for the optimal model using a generalised pairs plot.
@@ -164,8 +181,12 @@ Examine the various additional options around initialisation of the algorithm:
 
 Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within the AIS data, supplying `sex` in the expert network and `BMI` in the gating network via formula interfaces. Include an additional noise component by specifiying it's prior mixing proportion `tau0`. Toggle between allowing the mixing proportion for the noise component depend on the gating concomitant or not via the `noise.gate` argument. This time, allow the printing of messages to the screen.
 
-```{r}
+```{r, eval=FALSE}
 mod   <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais, tau0=0.1, noise.gate=FALSE)
+```
+
+```{r, echo=FALSE}
+mod   <- suppressWarnings(MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais, tau0=0.1, noise.gate=FALSE, verbose=FALSE))
 ```
 
 Visualise the results for the optimal model using a generalised pairs plot.
@@ -231,13 +252,13 @@ splom(~ hema | z, groups=ais$sex)
 ```
 
 ```{r, echo=FALSE, fig.height=4}
-require("lattice")
+require("lattice", quietly=TRUE)
 z <- factor(mod$classification[mod$classification > 0], labels=paste0("Cluster", seq_len(mod$G)))
 splom(~ hema | ais$sex, groups=z, xlab=NULL)
 splom(~ hema | z, groups=ais$sex, xlab=NULL)
 ```
 
 ## References
-K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. _To appear_. Pre-print available at [arXiv:1711.05632](https://arxiv.org/abs/1711.05632).
+K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. _To appear_. Pre-print available at [arXiv:1711.05632v2](https://arxiv.org/abs/1711.05632v2).
 
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97:611-631.

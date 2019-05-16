@@ -7,12 +7,15 @@ __and a Noise Component__
 
 ## MoEClust v1.2.2 - (_6<sup>th</sup> release [minor update]: 2019-05-15_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* `MoE_control` & `predict.MoEClust` gain the arg. `discard.noise`:  
+  Default of `FALSE` retains old behaviour (see documentation for details).
 * New args. and small fixes added to `MoE_gpairs`:  
-    * `density.pars` gains `label.style`.
-    * `scatter.pars` & `stripplot.pars` gain `noise.size` & `size.noise`.
+    * `density.pars` gains arg. `label.style`.
+    * `scatter.pars` & `stripplot.pars` gain args. `noise.size` & `size.noise`.
     * `barcode.pars$bar.col` slightly fixed from previous update.
 * Slight speed-up to `noise_vol` when `method="ellipsoidhull"`.
-* Small fix to `print.summary_MoEClust`.
+* Small fix related to `...` construct for `residuals.MoEClust`.
+* Small fixes to `print.summary_MoEClust`.
 * Removed `snow` package from `Suggests:`.
 
 ## MoEClust v1.2.2 - (_5<sup>th</sup> release [minor update]: 2019-05-15_)

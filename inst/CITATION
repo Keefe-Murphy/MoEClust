@@ -9,9 +9,9 @@ citEntry(entry  = "Article",
   volume  = "",
   number  = "",
   pages   = "",
-  url     = "https://arxiv.org/abs/1711.05632",
+  url     = "https://arxiv.org/abs/1711.05632v2",
   archivePrefix = "arXiv",
-  eprint  = "1711.05632",
+  eprint  = "1711.05632v2",
   primaryClass  = "stat.ME",
 
   textVersion   =
@@ -19,7 +19,7 @@ citEntry(entry  = "Article",
            "Gaussian Parsimonious Clustering Models with Covariates. ",
            "To appear. ",
            "Pre-print available at arXiv. ",
-           "URL: https://arxiv.org/abs/1711.05632.")
+           "URL: https://arxiv.org/abs/1711.05632v2.")
 )
 
 year     <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
