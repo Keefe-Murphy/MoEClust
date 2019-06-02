@@ -127,19 +127,22 @@ m3    <- MoE_clust(hema, G=2:3, expert= ~ sex)
 m4    <- MoE_clust(hema, G=2:3, gating= ~ BMI, expert= ~ sex)
 
 # Fit an equal mixing proportion model with an expert network covariate
-m5    <- MoE_clust(hema, G=2:3, expert= ~ sex, equalPro=TRUE)
+m5    <- MoE_clust(hema, G=2:3, expert= ~ sex + BMI, equalPro=TRUE)
 
 # Fit models with gating covariates & an additional noise component
 m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating=~BMI, network.data=ais)
 
-# Extract the model with highest ICL
-(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, criterion="icl"))
+# Extract the model with highest BIC
+(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, criterion="bic"))
+ 
+# See if a better model can be found using greedy forward stepwise selection
+(step <- MoE_stepwise(ais[,3:7], ais))
+(comp <- MoE_compare(comp, step, optimal.only=TRUE))
 (best <- comp$optimal)
 (summ <- summary(best))
 
-# Examine the gating and expert networks in greater detail
+# Examine the expert network in greater detail
 # (but refrain from inferring statistical significance!)
-summary(best$gating)
 summary(best$expert)
 
 # Visualise the results, incl. the gating network and log-likelihood
@@ -159,6 +162,8 @@ K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with 
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 }
 \seealso{
+See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
+
 \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
 }
 \author{

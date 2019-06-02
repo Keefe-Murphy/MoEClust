@@ -7,6 +7,9 @@ __and a Noise Component__
 
 ## MoEClust v1.2.2 - (_6<sup>th</sup> release [minor update]: 2019-05-15_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Added new function `MoE_stepwise` for conducting a greedy forward stepwise  
+  search to find the optimal model in terms of the number of components, GPCM  
+  covariance parameterisation, and the subsets of gating/expert network covariates.
 * `MoE_control` & `predict.MoEClust` gain the arg. `discard.noise`:  
   Default of `FALSE` retains old behaviour (see documentation for details).
 * New args. and small fixes added to `MoE_gpairs`:  
@@ -14,6 +17,8 @@ __and a Noise Component__
     * `scatter.pars` & `stripplot.pars` gain args. `noise.size` & `size.noise`.
     * `barcode.pars$bar.col` slightly fixed from previous update.
 * Slight speed-up to `noise_vol` when `method="ellipsoidhull"`.
+* Cosmetic fix to returned `gating` objects for `equalPro=TRUE` models. 
+* Small fix to `predict.MoEClust` when `resid=TRUE` for models with expert covariates.
 * Small fix related to `...` construct for `residuals.MoEClust`.
 * Small fixes to `print.summary_MoEClust`.
 * Removed `snow` package from `Suggests:`.

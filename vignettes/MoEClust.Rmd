@@ -18,13 +18,17 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show=
 ## Introduction
 __MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM famly (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2018)](https://arxiv.org/abs/1711.05632v2). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
-The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM/CEM algorithm with gating and/or expert network covariates, supplied via formula interfaces. Other functions also exist, e.g. `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. `MoE_control` allows supplying additional arguments to the main function which govern, among other things, controls on the inclusion of an additional noise component and controls on the initialisation of the allocations for the EM/CEM algorithm. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
+The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM/CEM algorithm with gating and/or expert network covariates, supplied via formula interfaces.  `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
+
+`MoE_stepwise` is provided for conducting a greedy forward stepwise search to identify the optimal model in terms of the number of components, GPCM covariance type, and the subsets of gating/expert network covariates.
+
+`MoE_control` allows supplying additional arguments to `MoE_clust` and `MoE_stepwise` which govern, among other things, controls on the inclusion of an additional noise component and controls on the initialisation of the allocations for the EM/CEM algorithm.
 
 A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network, and/or log-likelihood, and/or clustering uncertainties, and/or graphing model selection criteria values. The generalised pairs plots (`MoE_gpairs`) visualise all pairwise relationships between clustered response variables and associated continuous, categorical, and/or ordinal covariates in the gating &/or expert networks, coloured according to the MAP classification, and also give the marginal distributions of each variable (incl. the covariates) along the diagonal.
 
 An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates). Finally, a `predict` method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response data, or new covariates only.
 
-The package also contains two data sets: `ais` and `CO2data`.
+Other functions also exist, e.g. `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. The package also contains two data sets: `ais` and `CO2data`.
 
 If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
 
@@ -65,8 +69,7 @@ CO2   <- CO2data$CO2
 GNP   <- CO2data$GNP
 ```
 
-Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither, via a formula interface. Also consider models with equal mixing proportions. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. Let's also consider models, in `m7`, with a covariate in the expert network and an additional noise component.
-
+Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither, via a formula interface. Also consider models with equal mixing proportions. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. 
 ```{r, results='hide'}
 m1    <- MoE_clust(CO2, G=1:3, verbose=FALSE)
 m2    <- MoE_clust(CO2, G=2:3, gating= ~ GNP, verbose=FALSE)
@@ -74,26 +77,31 @@ m3    <- MoE_clust(CO2, G=1:3, expert= ~ GNP, verbose=FALSE)
 m4    <- MoE_clust(CO2, G=2:3, gating= ~ GNP, expert= ~ GNP, verbose=FALSE)
 m5    <- MoE_clust(CO2, G=2:3, equalPro=TRUE, verbose=FALSE)
 m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
-m7    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, tau0=0.1, verbose=FALSE)
 ```
 
-Choose the best model among these and examine the results.
+Choose the best model among these.
 
-```{r, eval=FALSE}
-(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=7, optimal.only=TRUE))
+```{r}
+comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE)
 ```
 
-```{r, echo=FALSE}
-comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=7, optimal.only=TRUE)
-print(comp, digits=1L)
+See if a better model can be found using greedy forward stepwise selection.
+Conduct a stepwise search on the same data
+
+```{r}
+(mod1 <- MoE_stepwise(CO2, CO2data[,"GNP", drop=FALSE], verbose=FALSE))
 ```
 
-```{r, eval=FALSE}
-(best <- comp$optimal)
+Conduct another stepwise search considering models with a noise component.
+
+```{r} 
+(mod2 <- MoE_stepwise(CO2, CO2data[,"GNP", drop=FALSE], noise=TRUE, verbose=FALSE))
 ```
 
-```{r, echo=FALSE}
-(best <- comp$optimal)
+Compare all sets of results to choose the optimal model.
+
+```{r}
+(best  <- MoE_compare(mod1, mod2, comp, pick=1)$optimal)
 ```
 
 ```{r, eval=FALSE}
@@ -107,13 +115,13 @@ print(comp, digits=1L)
 Visualise the results for the optimal model using a generalised pairs plot.
 
 ```{r}
-plot(comp$optimal, what="gpairs", jitter=FALSE)
+plot(best, what="gpairs", jitter=FALSE)
 ```
 
 Visualise the density of the mixture distribution.
 
 ```{r, echo=FALSE}
-res    <- comp$optimal
+res    <- best
 G      <- res$G
 expert <- res$expert
 x.name <- names(res$net.covs)

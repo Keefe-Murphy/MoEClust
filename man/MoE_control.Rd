@@ -108,7 +108,7 @@ A named list in which the names are the names of the arguments and the values ar
 Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
 }
 \details{
-\code{\link{MoE_control}} is provided for assigning values and defaults within \code{\link{MoE_clust}}.
+\code{\link{MoE_control}} is provided for assigning values and defaults within \code{\link{MoE_clust}} and \code{\link{MoE_stepwise}}.
 
 While the \code{criterion} argument controls the choice of the optimal number of components and GPCM/\pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
 }
@@ -144,7 +144,7 @@ res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
                    network.data=ais, tau0=0.1)}
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{mclust.options}}, \code{\link{quant_clust}}, \code{\link[clustMD]{clustMD}}, \code{\link{noise_vol}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}, \code{\link[nnet]{multinom}}
+\code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{aitken}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{mclust.options}}, \code{\link{quant_clust}}, \code{\link[clustMD]{clustMD}}, \code{\link{noise_vol}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}, \code{\link[nnet]{multinom}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
