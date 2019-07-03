@@ -5,22 +5,27 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
-## MoEClust v1.2.2 - (_6<sup>th</sup> release [minor update]: 2019-05-15_)
+## MoEClust v1.2.3 - (_6<sup>th</sup> release [minor update]: 2019-07-29_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Added new function `MoE_stepwise` for conducting a greedy forward stepwise  
   search to find the optimal model in terms of the number of components, GPCM  
   covariance parameterisation, and the subsets of gating/expert network covariates.
 * `MoE_control` & `predict.MoEClust` gain the arg. `discard.noise`:  
   Default of `FALSE` retains old behaviour (see documentation for details).
+* `MoE_control` gains the arg. `z.list` and the `init.z` arg. gets the option `"list"`:  
+  this allows manually supplying (soft or hard) initial cluster allocation matrices.
 * New args. and small fixes added to `MoE_gpairs`:  
+    * `uncert.cov` arg. added to control uncertainty point-size in panels with covariates.
     * `density.pars` gains arg. `label.style`.
     * `scatter.pars` & `stripplot.pars` gain args. `noise.size` & `size.noise`.
     * `barcode.pars$bar.col` slightly fixed from previous update.
+    * Colours for `"violin"` type plots now accurate for MAP panels.
 * Slight speed-up to `noise_vol` when `method="ellipsoidhull"`.
-* Cosmetic fix to returned `gating` objects for `equalPro=TRUE` models. 
 * Small fix to `predict.MoEClust` when `resid=TRUE` for models with expert covariates.
 * Small fix related to `...` construct for `residuals.MoEClust`.
-* Small fixes to `print.summary_MoEClust`.
+* All printing related to noise-only models no longer shows the model name (there is none!).
+* Other small fixes to `print.MoEClust`, `print.summary_MoEClust`, & `print.MoECompare`.
+* Cosmetic fix to returned `gating` objects for `equalPro=TRUE` models. 
 * Removed `snow` package from `Suggests:`.
 
 ## MoEClust v1.2.2 - (_5<sup>th</sup> release [minor update]: 2019-05-15_)

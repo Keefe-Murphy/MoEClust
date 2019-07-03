@@ -25,7 +25,7 @@ This argument is only relevant for the \code{\link{MoE_compare}} function and wi
 
 \item{pick}{The (integer) number of models to be ranked and compared. Defaults to \code{10L}. Will be constrained by the number of models within the \code{"MoEClust"} objects supplied via \code{...} if \code{optimal.only} is \code{FALSE}, otherwise constrained simply by the number of \code{"MoEClust"} objects supplied. Setting \code{pick=Inf} is a valid way to select all models.}
 
-\item{optimal.only}{Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}}
+\item{optimal.only}{Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}.}
 
 \item{x, index, digits, details}{Arguments required for the associated \code{print} function:
 \describe{
@@ -36,6 +36,7 @@ This argument is only relevant for the \code{\link{MoE_compare}} function and wi
 }
 \value{
 A list of class \code{"MoECompare"}, for which a dedicated print function exists, containing the following elements (each of length \code{pick}, and ranked according to \code{criterion}, where appropriate):
+\item{\code{data}}{The name of the data set to which the models were fitted.}
 \item{\code{optimal}}{The single optimal model (an object of class \code{"MoEClust"}) among those supplied, according to the chosen \code{criterion}.}
 \item{\code{pick}}{The final number of ranked models. May be different (i.e. less than) the supplied \code{pick} value.}
 \item{\code{MoENames}}{The names of the supplied \code{"MoEClust"} objects.}
@@ -52,8 +53,8 @@ A list of class \code{"MoECompare"}, for which a dedicated print function exists
 \item{\code{algo}}{The algorithm used for fitting the model - either \code{"EM"}, \code{"CEM"}, \code{"cemEM"}.}
 \item{\code{equalPro}}{Logical indicating whether mixing proportions were constrained to be equal across components.}
 \item{\code{hypvol}}{Hypervolume parameters for the noise component if relevant, otherwise set to \code{NA} (see \code{\link{MoE_control}}).}
-\item{\code{noise}}{Either a logical indicating the presence/absence of a noise component, or the type of noise component fitted (if any). Depends on the supplied value of \code{noise}. Only displayed if at least one of the compared models has a noise component.}
-\item{\code{noise.gate}}{Logical indicating whether gating covariates were allowed to influence the noise component's mixing proportion. Only printed for models with a noise component, when at least one of the compared models has gating covariates, and even then only when \code{noise} is supplied as \code{TRUE}.}
+\item{\code{noise}}{The type of noise component fitted (if any). Only displayed if at least one of the compared models has a noise component.}
+\item{\code{noise.gate}}{Logical indicating whether gating covariates were allowed to influence the noise component's mixing proportion. Only printed for models with a noise component, when at least one of the compared models has gating covariates.}
 \item{\code{equalNoise}}{Logical indicating whether the mixing proportion of the noise component for \code{equalPro} models is also equal (\code{TRUE}) or estimated (\code{FALSE}).}
 }
 \description{
@@ -91,7 +92,7 @@ m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE)
 m7    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, tau0=0.1)
 
 # Rank only the optimal models and examine the best model
-(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=7, optimal.only=TRUE))
+(comp <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, optimal.only=TRUE))
 (best <- comp$optimal)
 (summ <- summary(best))
 
@@ -101,10 +102,10 @@ comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=Inf)
 print(comp2, comp2$expert != "None" & comp2$G > 1)
 
 # Conduct a stepwise search on the same data
-(mod1 <- MoE_stepwise(CO2data$CO2, CO2data[,"GNP", drop=FALSE]))
+(mod1 <- MoE_stepwise(CO2, GNP))
 
 # Conduct another stepwise search considering models with a noise component
-(mod2 <- MoE_stepwise(CO2data$CO2, CO2data[,"GNP", drop=FALSE], noise=TRUE))
+(mod2 <- MoE_stepwise(CO2, GNP, noise=TRUE))
 
 # Compare both sets of results to choose the optimal model
 (best <- MoE_compare(mod1, mod2, optimal.only=TRUE)$optimal)}

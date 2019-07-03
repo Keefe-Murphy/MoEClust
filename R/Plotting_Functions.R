@@ -31,12 +31,13 @@
 #' @param outer.rot A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels. Defaults to \code{c(0, 90)}.
 #' @param gap The gap between the tiles; defaulting to 0.05 of the width of a tile.
 #' @param buffer The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to \code{0.025}, i.e. 2.5 percent of the range.
+#' @param uncert.cov A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and stripplot panels.
 #' @param scatter.pars A list supplying select parameters for the continuous vs. continuous scatter plots.
 #'
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(scat.pch=if(response.type == "uncertainty") 19 else res$classification,
-#' scat.size=unit(0.25, "char"), scat.col=res$classification, lci.col=res$classification,
-#' noise.size=unit(0.2, "char")),}
+#' scat.size=unit(0.25, "char"), scat.col=res$classification, 
+#' lci.col=res$classification, noise.size=unit(0.2, "char")),}
 #' where \code{lci.col} gives the colour of the fitted lines &/or confidence intervals when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"}. Note that \code{scatter.pars$scat.size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}. Note also that the default for \code{scatter.pars$scat.pch} changes depending on whether \code{response.type} is given as \code{"points"} or \code{"uncertainty"}, though it can of course be modified in both cases. Finally, \code{scatter.pars$noise.size} can be used to modify \code{scatter.pars$scat.size} for observations assigned to the noise component (if any), but only when \code{response.type="points"}.
 #' @param density.pars A list supplying select parameters for visualising the bivariate density contours, only when \code{response.type} is \code{"density"}.
 #'
@@ -53,8 +54,8 @@
 #' @param barcode.pars A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
 #'
 #' \code{NULL} is equivalent to:
-#' \preformatted{list(bar.col=res$classification, nint=0, ptsize=unit(0.25, "char"), ptpch=1,
-#' bcspace=NULL, use.points=FALSE),}
+#' \preformatted{list(bar.col=res$classification, nint=0, ptsize=unit(0.25, "char"), 
+#' ptpch=1, bcspace=NULL, use.points=FALSE),}
 #' where \code{barcode.pars$bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}) if it is of length greater than 1, otherwise it is used for all relevant panels. See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related barcode panels.
 #' @param mosaic.pars A list supplying select parameters for categorical vs. categorical panels. \code{NULL}. Currently \code{shade, gp_labels, gp,} and \code{gp_args} are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles.
 #' @param axis.pars A list supplying select parameters for controlling axes.
@@ -106,6 +107,7 @@
 #'            outer.rot = c(0, 90),
 #'            gap = 0.05,
 #'            buffer = 0.025,
+#'            uncert.cov = FALSE,
 #'            scatter.pars = list(...),
 #'            density.pars = list(...),
 #'            stripplot.pars = list(...),
@@ -145,8 +147,8 @@
 #' conditional="barcode", noise.size=grid::unit(0.5, "char"))}
 MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), expert.covar = TRUE, border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
-                                gap = 0.05, buffer = 0.025, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
+                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025,
+                                uncert.cov = FALSE, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
     UseMethod("MoE_gpairs")
 }
 
@@ -154,8 +156,8 @@ MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", 
 #' @export
 MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), expert.covar = TRUE, border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90),
-                                gap = 0.05, buffer = 0.025, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
+                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025, 
+                                uncert.cov = FALSE, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
 
   res   <- if(inherits(res, "MoECompare")) res$optimal else res
   opar  <- suppressWarnings(graphics::par(no.readonly=TRUE))
@@ -341,7 +343,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   }
   if(response.type == "uncertainty")  {
     uncertainty         <- res$uncertainty
-    uncertainty         <- (uncertainty - min(uncertainty))/(diff(range(uncertainty)) + .Machine$double.eps)
+    uncertainty         <- res$uncertainty <- (uncertainty - min(uncertainty))/(diff(range(uncertainty)) + .Machine$double.eps)
     bubbleX             <- .bubble(uncertainty, cex=c(0.3, 2.8), alpha=c(0.3, 0.8))
     uncertainty         <- list()
     uncertainty$cex     <- bubbleX$cex
@@ -413,14 +415,18 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   } else if(length(diag.pars$show.counts) > 1 ||
             !is.logical(diag.pars$show.counts))       stop("'diag.pars$show.counts' must be a single logical indicator", call.=FALSE)
   if(is.null(stripplot.pars$strip.pch)) {
-    stripplot.pars$pch  <- symbols[class]
-  } else stripplot.pars$pch       <- stripplot.pars$strip.pch
+    stripplot.pars$pch  <- if(response.type   == "uncertainty" && uncert.cov) 19L else symbols[class]
+  } else stripplot.pars$pch       <- if(response.type  == "uncertainty" && uncert.cov) 19L else stripplot.pars$strip.pch
+  if(length(uncert.cov)  > 1                  ||
+     !is.logical(uncert.cov))                         stop("'uncert.cov' must be a single logical indicator", call.=FALSE)
+  uncert.cov            <- uncert.cov   && response.type == "uncertainty"
   if(is.null(stripplot.pars$strip.size) ||
      any(names(list(...)) == "size")) {
-    stripplot.pars$size <- grid::unit(0.5, "char")
-  } else stripplot.pars$size      <- stripplot.pars$strip.size
-  if(length(stripplot.pars$size) > 1    ||
-            !inherits(stripplot.pars$size, "unit"))   stop("'stripplot.pars$strip.size' must be a single item of class 'unit'", call.=FALSE)
+    stripplot.pars$size <- if(response.type == "uncertainty" && uncert.cov) .bubble(res$uncertainty, cex=c(0.15, 1.4), alpha=c(0.3, 0.8))$cex else grid::unit(0.5, "char")
+  } else stripplot.pars$size      <- if(response.type  == "uncertainty" && uncert.cov) .bubble(res$uncertainty, cex=c(0.15, 1.4), alpha=c(0.3, 0.8))$cex else stripplot.pars$strip.size
+  if(any(response.type  != "uncertainty", !uncert.cov) &&
+    (length(stripplot.pars$size) > 1    ||
+            !inherits(stripplot.pars$size, "unit")))  stop("'stripplot.pars$strip.size' must be a single item of class 'unit'", call.=FALSE)
   if(is.null(stripplot.pars$size.noise)) {
     stripplot.pars$size.noise     <- grid::unit(0.4, "char")
   } else stripplot.pars$size.noise      <- stripplot.pars$size.noise
@@ -433,8 +439,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     stripplot.pars$size <- replace(rep(stripplot.pars$size, nrow(dat)), clust == 0, stripplot.pars$size.noise)
   }
   if(is.null(stripplot.pars$strip.col))  {
-    stripplot.pars$col  <- colors[class]
-  } else stripplot.pars$col       <- stripplot.pars$strip.col
+    stripplot.pars$col  <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else colors[class]
+  } else stripplot.pars$col       <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else stripplot.pars$strip.col
   if(is.null(stripplot.pars$jitter)) {
   stripplot.pars$jitter <- TRUE
   }
@@ -511,8 +517,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
         .diag_panel(x=x[,i], varname=names(x)[i], diag.pars=diag.pars, hist.col=if(i == 1 && names(x)[i] == "MAP") list(noise.cols) else diag.pars$hist.color, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, index=i, outer.rot=outer.rot)
       } else {
         if(xor(is.factor(x[,i]), is.factor(x[,j]))) {
-          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) noise.cols else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border, col.ind=i <= dcol)
-          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) noise.cols else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border, col.ind=FALSE)
+          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) noise.cols else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border)
+          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) noise.cols else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border)
           if(i < j & upr.cond == "barcode") {
             grid::pushViewport(grid::viewport(gp=grid::gpar(fill=bg)))
             if(is.factor(x[,i])) {
@@ -552,7 +558,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
           } else {
             .scatter_panel(x=x[,j], y=x[,i], type=ifelse(j > dcol && i <= dcol, ifelse(upr.gate || (j %in% c(expx, both)), upr.exp, "points"), ifelse(j <= dcol && i <= dcol, ifelse(drawEllipses, "ellipses", "points"), ifelse(j <= dcol && (low.gate || (i %in% c(expx, both))), low.exp, "points"))),
                            scatter.pars=scatter.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, z=z, G=G, res=res, dimens=c(subset$data.ind[j - subset$show.map], subset$data.ind[i - subset$show.map]), outer.rot=outer.rot, bg=bg, mvn.type=addEllipses, border=border,
-                           uncertainty=if(response.type == "uncertainty" && (i <= dcol && j <= dcol)) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$ecol)
+                           uncertainty=if(response.type == "uncertainty" && (uncert.cov || (i <= dcol && j <= dcol))) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$ecol)
           }
         }
         if(all(is.factor(x[,i]),  is.factor(x[,j]))) {
@@ -876,10 +882,10 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #' @note Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #'
 #' Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. These can be especially useful for univariate data.
-#' @return The visualisation according to \code{"what"} of the results of a fitted \code{MoEClust} model.
+#' @return The visualisation according to \code{what} of the results of a fitted \code{MoEClust} model.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
 #' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632v2}{arXiv:1711.05632v2}>.
-#' @author Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @export
 #' @method plot MoEClust
 #' @keywords plotting main
@@ -1016,7 +1022,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 }
 
 #' @importFrom lattice "panel.bwplot" "panel.stripplot" "trellis.par.get" "trellis.par.set"
-.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, outer.rot, bg, box.fill, border, col.ind) {
+.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, outer.rot, bg, box.fill, border) {
   xlim         <- NULL
   ylim         <- NULL
   old.color    <- trellis.par.get("box.rectangle")$col
@@ -1037,7 +1043,6 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     cat.var    <- k + 1L - as.numeric(y)
     cont.var   <- x
     horiz      <- TRUE
-    stripplot.pars$col  <- if(col.ind) unique(stripplot.pars$col)[match(levels(y), unique(y))][as.numeric(y)] else stripplot.pars$col
   }
   grid::grid.rect(gp=grid::gpar(fill=bg, col=border))
   cont.range   <- range(cont.var, na.rm=TRUE)
@@ -1050,8 +1055,8 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     grid::pushViewport(grid::viewport(xscale=xlim, yscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5), clip=TRUE))
     if(type == "boxplot")   panel.bwplot(cont.var, cat.var, horizontal=horiz, col="black", pch="|", gp=grid::gpar(box.umbrella=list(col="black")), fill=box.fill)
     if(type == "stripplot") panel.stripplot(cont.var, cat.var, horizontal=horiz, jitter.data=stripplot.pars$jitter, col=stripplot.pars$col, cex=stripplot.pars$size, pch=stripplot.pars$pch)
-    if(type == "violin")    .violin_panel(cont.var, cat.var, horizontal=horiz, col=box.fill)
-  } else {
+    if(type == "violin")    .violin_panel(cont.var, cat.var, horizontal=horiz, col=rev(box.fill))
+  } else    {
     ylim       <- cont.range + c(-buffer * (diff(cont.range)), buffer * (diff(cont.range)))
     grid::pushViewport(grid::viewport(yscale=ylim, xscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5)))
     if(is.null(xpos)) cat.labels <- NULL

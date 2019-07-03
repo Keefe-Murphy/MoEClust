@@ -21,6 +21,7 @@ MoE_gpairs(res,
            outer.rot = c(0, 90),
            gap = 0.05,
            buffer = 0.025,
+           uncert.cov = FALSE,
            scatter.pars = list(...),
            density.pars = list(...),
            stripplot.pars = list(...),
@@ -75,12 +76,14 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \item{buffer}{The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to \code{0.025}, i.e. 2.5 percent of the range.}
 
+\item{uncert.cov}{A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and stripplot panels.}
+
 \item{scatter.pars}{A list supplying select parameters for the continuous vs. continuous scatter plots.
 
 \code{NULL} is equivalent to:
 \preformatted{list(scat.pch=if(response.type == "uncertainty") 19 else res$classification,
-scat.size=unit(0.25, "char"), scat.col=res$classification, lci.col=res$classification,
-noise.size=unit(0.2, "char")),}
+scat.size=unit(0.25, "char"), scat.col=res$classification, 
+lci.col=res$classification, noise.size=unit(0.2, "char")),}
 where \code{lci.col} gives the colour of the fitted lines &/or confidence intervals when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"}. Note that \code{scatter.pars$scat.size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}. Note also that the default for \code{scatter.pars$scat.pch} changes depending on whether \code{response.type} is given as \code{"points"} or \code{"uncertainty"}, though it can of course be modified in both cases. Finally, \code{scatter.pars$noise.size} can be used to modify \code{scatter.pars$scat.size} for observations assigned to the noise component (if any), but only when \code{response.type="points"}.}
 
 \item{density.pars}{A list supplying select parameters for visualising the bivariate density contours, only when \code{response.type} is \code{"density"}.
@@ -100,8 +103,8 @@ where \code{stripplot.pars$strip.size} and \code{stripplot.pars$size.noise} reta
 \item{barcode.pars}{A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
 
 \code{NULL} is equivalent to:
-\preformatted{list(bar.col=res$classification, nint=0, ptsize=unit(0.25, "char"), ptpch=1,
-bcspace=NULL, use.points=FALSE),}
+\preformatted{list(bar.col=res$classification, nint=0, ptsize=unit(0.25, "char"), 
+ptpch=1, bcspace=NULL, use.points=FALSE),}
 where \code{barcode.pars$bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}) if it is of length greater than 1, otherwise it is used for all relevant panels. See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related barcode panels.}
 
 \item{mosaic.pars}{A list supplying select parameters for categorical vs. categorical panels. \code{NULL}. Currently \code{shade, gp_labels, gp,} and \code{gp_args} are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles.}

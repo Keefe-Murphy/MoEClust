@@ -22,6 +22,7 @@
 #' @examples
 #' data(ais, package="MoEClust")
 #' pairs(ais[,c(3:7)], col=as.numeric(ais$sex), main = "AIS data")
+#' apply(ais[,c(3:7)], 2, summary)
 #' @docType data
 #' @keywords datasets
 #' @usage data(ais)
@@ -38,6 +39,10 @@
 #' \item{\code{country}}{ - An abbreviation pertaining to the country measures (e.g. \code{"GRC"} = Greece and \code{"CH"} = Switzerland).}
 #' }
 #' @references Hurn, M., Justel, A. and Robert, C. P. (2003) Estimating Mixtures of Regressions, \emph{Journal of Computational and Graphical Statistics}, 12(1): 55-79.
+#' @examples 
+#' data(CO2data, package="MoEClust")
+#' plot(CO2data$GNP, CO2data$CO2, type="n", ylab=expression('CO'[2]))
+#' text(CO2data$GNP, CO2data$CO2, CO2data$country)
 #' @docType data
 #' @keywords datasets
 #' @usage data(CO2data)

@@ -82,20 +82,20 @@ m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
 Choose the best model among these.
 
 ```{r}
-comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, pick=6, optimal.only=TRUE)
+comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, optimal.only=TRUE)
 ```
 
 See if a better model can be found using greedy forward stepwise selection.
 Conduct a stepwise search on the same data
 
 ```{r}
-(mod1 <- MoE_stepwise(CO2, CO2data[,"GNP", drop=FALSE], verbose=FALSE))
+(mod1 <- MoE_stepwise(CO2, GNP, verbose=FALSE))
 ```
 
 Conduct another stepwise search considering models with a noise component.
 
 ```{r} 
-(mod2 <- MoE_stepwise(CO2, CO2data[,"GNP", drop=FALSE], noise=TRUE, verbose=FALSE))
+(mod2 <- MoE_stepwise(CO2, GNP, noise=TRUE, verbose=FALSE))
 ```
 
 Compare all sets of results to choose the optimal model.
@@ -147,7 +147,7 @@ points(GNP, CO2)
 Convert from the `"MoEClust"` class to the `"Mclust"` class in order to further visualise the results. Examine the `"classification"` and `"uncertainty"` options.
 
 ```{r, fig.height=5.5, fig.width=5.5}
-(mod <- as.Mclust(comp$optimal))
+mod <- as.Mclust(comp$optimal)
 plot(mod, what="classification")
 plot(mod, what="uncertainty")
 ```

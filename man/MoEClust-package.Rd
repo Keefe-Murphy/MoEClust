@@ -34,8 +34,8 @@ The package also contains two data sets: \code{ais} and \code{CO2data}.
 \itemize{
 \item{Type: }{Package}
 \item{Package: }{MoEClust}
-\item{Version: }{1.2.2}
-\item{Date: }{2019-05-15 (this version), 2017-11-28 (original release)}
+\item{Version: }{1.2.3}
+\item{Date: }{2019-07-29 (this version), 2017-11-28 (original release)}
 \item{Licence: }{GPL (>=2)}
 }
 }

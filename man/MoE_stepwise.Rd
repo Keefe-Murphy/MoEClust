@@ -19,7 +19,7 @@ MoE_stepwise(data,
 \arguments{
 \item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed. If a matrix or data frame, rows correspond to observations and columns correspond to variables.}
 
-\item{network.data}{An optional data frame in which to look for the covariates specified in the \code{gating} &/or \code{expert} networks, if any. Columns in \code{network.data} corresponding to columns in \code{data} will be automatically removed.}
+\item{network.data}{An optional matrix or data frame in which to look for the covariates specified in the \code{gating} &/or \code{expert} networks, if any. Must include column names. Columns in \code{network.data} corresponding to columns in \code{data} will be automatically removed. While a single covariate can be supplied as a vector (provided the '\code{$}' operator is not used), it is safer to supply a named 1-column matrix or data frame in this instance.}
 
 \item{gating}{A vector giving the names of columns in \code{network.data} used to define the scope of the gating network. The initial model will contain no covariates, thereafter all variables in \code{gating} will be considered for inclusion where appropriate.
 
@@ -77,7 +77,7 @@ It is advised to run this function once with \code{noise=FALSE} and once with \c
 # Look for models with a noise component, unequal mixing proportions,
 # and only consider models with a constant mixing proportion for the noise component
 # (mod3 <- MoE_stepwise(ais[,3:7], ais, noise=TRUE,  gating=c("SSF", "Ht"), expert="sex", 
-#                       equalPro="no", noise.gate="no", modelNames="VEE"))
+#                       equalPro="no", noise.gate="no", modelNames="EEE"))
 #
 # Compare both sets of results (with & without a noise component) for the ais data
 # (comp <- MoE_compare(mod2, mod3, optimal.only=TRUE))

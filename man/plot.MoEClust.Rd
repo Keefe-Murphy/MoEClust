@@ -24,7 +24,7 @@ By default, all of the above graphs are produced.}
 \item{...}{Optional arguments to be passed to \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link[graphics]{matplot}}, \code{\link[mclust]{plot.mclustBIC}} and \code{\link[graphics]{plot}}.}
 }
 \value{
-The visualisation according to \code{"what"} of the results of a fitted \code{MoEClust} model.
+The visualisation according to \code{what} of the results of a fitted \code{MoEClust} model.
 }
 \description{
 Plot results for fitted MoE_clust mixture models with gating &/or expert network covariates: generalised pairs plots, model selection criteria, the log-likelihood vs. the EM iterations, and the gating network are all currently visualisable.
@@ -66,7 +66,7 @@ K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with 
 \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
 }
 \author{
-Keefe Murphy - \href{keefe.murphy@ucd.ie}{<keefe.murphy@ucd.ie>}
+Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
 }
 \keyword{main}
 \keyword{plotting}
