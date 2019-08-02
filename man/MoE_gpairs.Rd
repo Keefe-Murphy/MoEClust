@@ -138,8 +138,8 @@ For \code{MoEClust} models with more than one associated covariate (entering eit
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots. Caution is advised producing generalised pairs plots when the dimension of the data is large.
 }
 \examples{
-\dontrun{
-data(ais)
+\donttest{data(ais)
+
 res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
                    network.data=ais, modelNames="EVE")
 MoE_gpairs(res)

@@ -116,24 +116,30 @@ Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}
 While the \code{criterion} argument controls the choice of the optimal number of components and GPCM/\pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
 }
 \note{
-Note that successfully invoking \code{exp.init$clustMD} (though it defaults to \code{FALSE}) effects the role of the arguments \code{init.z}, \code{hc.args}, and \code{km.args}. Please read the documentation above carefully in this instance.
+Note that successfully invoking \code{exp.init$clustMD} (though it defaults to \code{FALSE}) affects the role of the arguments \code{init.z}, \code{hc.args}, and \code{km.args}. Please read the documentation above carefully in this instance.
+
+The initial allocation matrices before and after the invocation of the \code{exp.init} related arguments are both stored as attributes in the object returned by \code{\link{MoE_clust}} (named "\code{Z.init}" and "\code{Exp.init}", respectively). If \code{init.z="random"} and \code{nstarts > 1}, the allocations corresponding to the best random start are stored. This can be useful for supplying \code{z.list} for future fits.
 }
 \examples{
-\dontrun{
 ctrl1 <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random", nstarts=5)
 
 data(CO2data)
 GNP   <- CO2data$GNP
-res   <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1)
+\donttest{res   <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1)
 
 # Alternatively, specify control arguments directly
-res2  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
+res2  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")}
 
-# Supplying ctrl1 without naming it as 'control' throws an error,
-# when any of {modelNames, gating, expert} are not supplied
-res3  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl1)
+# Supplying ctrl1 without naming it as 'control' can throw an error
+\dontrun{
+res3  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl1)}
 
-# Initialise via the mixed-type joint distribution of response & covariates
+# Similarly, supplying control arguments via a mix of the ... construct
+# and the named argument 'control' also throws an error
+\dontrun{
+res4  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1, init.z="kmeans")}
+
+\donttest{# Initialise via the mixed-type joint distribution of response & covariates
 # Let the ICL criterion determine the optimal clustMD model type
 # Constrain the mixing proportions to be equal
 ctrl2 <- MoE_control(exp.init=list(clustMD=TRUE), init.crit="icl", equalPro=TRUE)

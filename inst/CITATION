@@ -28,9 +28,9 @@ vers     <- paste("package version", meta$Version)
 citEntry(entry  = "Manual",
   author  = personList(person(given="Keefe", family="Murphy"),
                        person(given=c("Thomas", "Brendan"), family="Murphy")),
-  title   = "\\texttt{\\textup{MoEClust}}: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component",
+  title   = "\\texttt{\\textup{MoEClust}}: {G}aussian Parsimonious Clustering Models with Covariates and a Noise Component",
   year    = year,
-  note    = paste0("{R} ", vers),
+  note    = paste0("\\textsf{R} ", vers),
   url     = "https://cran.r-project.org/package=MoEClust",
 
   textVersion   =

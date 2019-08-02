@@ -31,7 +31,6 @@
 #' GNP and CO2 Data Set
 #'
 #' This data set gives the gross national product (GNP) per capita in 1996 for various countries as well as their estimated carbon dioxide (CO2) emission per capita for the same year.
-#'
 #' @format This data frame consists of 28 countries and the following variables:\cr
 #' \itemize{
 #' \item{\code{GNP}}{ - The gross product per capita in 1996.}

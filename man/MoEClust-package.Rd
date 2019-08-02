@@ -47,8 +47,7 @@ Further details and examples are given in the associated vignette document:\cr
 }
 
 \examples{
-\dontrun{
-data(ais)
+\donttest{data(ais)
 
 # Fit two models
 res1  <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
@@ -59,7 +58,7 @@ res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert=~sex,
 # Compare the best model from each set of results
 (comp <- MoE_compare(res1, res2, optimal.only=TRUE))
 
-# Procude a plot for the optimal model                                                   
+# Produce a plot for the optimal model                                                   
 plot(comp$optimal, what="gpairs")
 
 data(CO2data)

@@ -13,7 +13,7 @@ MoE_plotCrit(res,
 
 \item{criterion}{The criterion to be plotted. Defaults to \code{"bic"}.}
 
-\item{...}{Catches other arguments, or additional arguments to be passed to \code{\link[mclust]{plot.mclustBIC}} (or equivalent functions for the other \code{criterion} arguments).}
+\item{...}{Catches other arguments, or additional arguments to be passed to \code{\link[mclust]{plot.mclustBIC}} (or equivalent functions for the other \code{criterion} arguments). In particular, the argument \code{legendArgs} to \code{\link[mclust]{plot.mclustBIC}} can be passed.}
 }
 \value{
 A plot of the values of the chosen \code{criterion}. The values themselves can also be returned invisibly.
@@ -25,8 +25,7 @@ Plots the BIC, ICL, AIC, or log-likelihood values of a fitted \code{MoEClust} ob
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotCrit}} which accepts the default arguments, and also produces other types of plots.
 }
 \examples{
-\dontrun{
-data(ais)
+\donttest{data(ais)
 res   <- MoE_clust(ais[,3:7], expert= ~ sex, network.data=ais)
 (crit <- MoE_plotCrit(res))}
 }

@@ -77,8 +77,7 @@ A dedicated \code{print} function exists for objects of class \code{"MoECompare"
 \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
 }
 \examples{
-\dontrun{
-data(CO2data)
+\donttest{data(CO2data)
 CO2   <- CO2data$CO2
 GNP   <- CO2data$GNP
 

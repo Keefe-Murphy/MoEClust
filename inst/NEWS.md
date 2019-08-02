@@ -5,6 +5,17 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### Bug Fixes & Miscellaneous Edits
+* Fixed small bugs in `MoE_stepwise`:  
+    * Improved checks on `network.data` and `data`.
+    * Prevented `z.list` from being suppliable.  
+    * Fixes when`equalPro="yes"` & `noise=TRUE`.
+    * Fixes for supplying optional `MoE_control` arguments (also for `MoE_clust`).
+    * Prevented termination if adding a component fails,  
+    provided at least one other step doesn't fail.
+* Initial allocation matrices now stored as attributes to `MoE_clust` output (see `?MoE_control`).
+* Anti-aliasing of vignette images.
+
 ## MoEClust v1.2.3 - (_6<sup>th</sup> release [minor update]: 2019-07-29_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Added new function `MoE_stepwise` for conducting a greedy forward stepwise  

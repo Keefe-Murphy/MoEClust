@@ -92,8 +92,7 @@
 #'           network.data = NULL,
 #'           ...)
 #' @examples
-#' \dontrun{
-#' data(ais)
+#' \donttest{data(ais)
 #' hema  <- ais[,3:7]
 #' sex   <- ais$sex
 #' BMI   <- ais$BMI
@@ -146,6 +145,10 @@
     multi         <- is.null(modelNames)
     gate.x        <- !missing(gating)
     exp.x         <- !missing(expert)
+    dots          <- list(...)
+    if(!missing(control)       &&
+      length(dots[names(dots) %in%
+                  names(control)])     > 0)       stop("Arguments cannot be supplied via the '...' construct when the named argument 'control' is supplied", call.=FALSE) 
     criterion     <- control$criterion
     stopaX        <- control$stopping == "aitken"
     init.z        <- control$init.z
@@ -203,7 +206,7 @@
        if(isTRUE(verbose))                        message("'init.z' set to 'list' as 'z.list' was supplied\n")
       }
     }
-    netmiss       <- missing(network.data)
+    netmiss       <- is.null(network.data)
     if(!multi     &&
        !all(is.character(modelNames)))            stop("'modelNames' must be a vector of character strings", call.=FALSE)
     if(gate.x     &&
@@ -543,11 +546,12 @@
         }
       }
     } else hcfail <- mcfail    <- FALSE
+    if(isTRUE(verbose))           message("\n################\n")
 
   # Loop over range of G values and initialise allocations
     G.last        <- range.G[len.G]
     for(g in range.G) {
-      if(isTRUE(verbose))   {     cat(paste0("\n", g, " cluster model", ifelse(multi, "s", ""), " -\n"))
+      if(isTRUE(verbose))   {     message(paste0("\n", g, " cluster model", ifelse(multi, "s", ""), " -\n"))
         last.G    <- g == G.last
       }
       x.dat       <- replicate(max(g, 1L), X, simplify=FALSE)
@@ -608,13 +612,14 @@
       }
     for(i in if(g  > 1) startseq else 1L)      {
       if(isTRUE(multstart)     && g > 1)       {
-        if(isTRUE(verbose))                      cat(paste0("\n\tRandom Start: #", i, "...\n"))
+        if(isTRUE(verbose))                      message(paste0("\n\tRandom Start: #", i, "...\n"))
         z.tmp     <- zg[[i]]
       }
       zc          <- ncol(z.tmp)
       if(zc != g  && g > 0)     {
         z.tmp     <- cbind(z.tmp, matrix(0L, ncol=g - zc, nrow=n))
       }
+      z1start     <- z.tmp
 
     # Invoke Iterative Mahalanobis Step?
       if(exp.g)    {
@@ -715,6 +720,7 @@
 
     # Account for Noise Component
       z.tmp       <- 0L + z.tmp
+      z2start     <- z.tmp
       if(noise.null) {
         z         <- z.init    <- z.tmp
       } else   {
@@ -785,7 +791,7 @@
         m0W       <- m0X       <- ERR  <- FALSE
 
       # Initialise parameters from allocations
-        if(isTRUE(verbose))     { cat(paste0("\n\tModel: ", modtype, "\n"))
+        if(isTRUE(verbose))     { message(paste0("\n\tModel: ", modtype, "\n"))
           last.T  <- modtype   == T.last
         }
         x.df      <- ifelse(g   > 0, nVarParams(modtype, d, g), 0L) + gate.pen
@@ -813,7 +819,7 @@
         if((ERR   <- ERR || ((g > 0 && attr(Mstep, "returnCode") < 0) || (inherits(medens, "try-error")) || any(medens > 0)))) {
           ll      <- NA
           j       <- 1L
-          if(isTRUE(verbose))     cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, ifelse(last.G && last.T, "\n\n", "\n")))
+          if(isTRUE(verbose))     message(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j, ifelse(last.G && last.T, "\n\n", "\n")))
           BICs[h,modtype]      <-
           ICLs[h,modtype]      <-
           AICs[h,modtype]      <-
@@ -925,7 +931,7 @@
 
       # Store values corresponding to the maximum BIC/ICL/AIC so far
         j2        <- max(1L, j  - switch(EXPR=algo, cemEM=1L, 2L))
-        if(isTRUE(verbose))       cat(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j2, ifelse(last.G && last.T, "\n\n", "\n")))
+        if(isTRUE(verbose))       message(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j2, ifelse(last.G && last.T, "\n\n", "\n")))
        #pen.exp   <- ifelse(exp.g, g * d * (fitE$glmnet.fit$df[which(fitE$glmnet.fit$lambda == fitE$lambda.1se)] + 1), exp.pen)
         pen.exp   <- ifelse(exp.g, g * length(stats::coef(fitE)), exp.pen)
         x.df      <- pen.exp + x.df
@@ -964,6 +970,8 @@
           AICs[h,modtype]      <- ifelse(ERR, -Inf, aics)
           DF.x[h,modtype]      <- ifelse(ERR, -Inf, x.df)
           IT.x[h,modtype]      <- ifelse(ERR,  Inf, j2)
+          x1start <- z1start
+          x2start <- z2start
         }
         if(isTRUE(multstart))   {
           LL.x[[i + 1L]][h,modtype]  <- max(max.ll, LL.x[[i]][h,modtype])
@@ -1110,9 +1118,9 @@
       if(which.max(l.warn)     != length(x.ll))   warning("Log-likelihoods are not strictly increasing\n", call.=FALSE)
     }
     if(any(IT.x[!is.na(IT.x)]  == max.it))        warning(paste0("One or more models failed to converge in the maximum number of allowed iterations (", max.it, ")\n"), call.=FALSE)
-    if(isTRUE(verbose))           cat(paste0("\n\t\tBest Model", ifelse(length(CRITs) > 1, paste0(" (according to ", toupper(criterion), "): "), ": "), ifelse(G == 0, "single noise component", paste0(mclustModelNames(best.mod)$type, " (", best.mod, "), with ",
-                                      G, " component", ifelse(G > 1, "s", ""))), ifelse(any(exp.gate) || (!noise.null && G != 0) || equal.pro, paste0("\n\t\t\t  ", net.msg), ""), "\n\t\t",
-                                      switch(EXPR=criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(EXPR=criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
+    if(isTRUE(verbose))           message(paste0("\n\t\tBest Model", ifelse(length(CRITs) > 1, paste0(" (according to ", toupper(criterion), "): "), ": "), ifelse(G == 0, "single noise component", paste0(mclustModelNames(best.mod)$type, " (", best.mod, "), with ",
+                                          G, " component", ifelse(G > 1, "s", ""))), ifelse(any(exp.gate) || (!noise.null && G != 0) || equal.pro, paste0("\n\t\t\t  ", net.msg), ""), "\n\t\t",
+                                          switch(EXPR=criterion, bic="BIC", icl="ICL", aic="AIC"), " = ", round(switch(EXPR=criterion, bic=bic.fin, icl=icl.fin, aic=aic.fin), 2), "\n"))
     if(gate.x     && (G + !noise.null - !noise.gate) <= 1) {
       if(attr(x.fitG, "Formula") != "None") tmpnet                    <- netdat
       netdat      <- expx.covs
@@ -1238,6 +1246,8 @@
     attr(results, "Gating")    <- bG
     attr(results, "Noise")     <- G == 0 || !noise.null
     attr(results, "NoiseGate") <- ctrl$noise.gate
+    attr(results, "Z.init")    <- x1start
+    attr(results, "Exp.init")  <- x2start
       return(results)
   }
 
@@ -1593,7 +1603,9 @@
 #' While the \code{criterion} argument controls the choice of the optimal number of components and GPCM/\pkg{mclust} model type, \code{\link{MoE_compare}} is provided for choosing between fits with different combinations of covariates or different initialisation settings.
 #' @importFrom mclust "hc" "hypvol" "mclust.options"
 #' @importFrom nnet "multinom"
-#' @note Note that successfully invoking \code{exp.init$clustMD} (though it defaults to \code{FALSE}) effects the role of the arguments \code{init.z}, \code{hc.args}, and \code{km.args}. Please read the documentation above carefully in this instance.
+#' @note Note that successfully invoking \code{exp.init$clustMD} (though it defaults to \code{FALSE}) affects the role of the arguments \code{init.z}, \code{hc.args}, and \code{km.args}. Please read the documentation above carefully in this instance.
+#' 
+#' The initial allocation matrices before and after the invocation of the \code{exp.init} related arguments are both stored as attributes in the object returned by \code{\link{MoE_clust}} (named "\code{Z.init}" and "\code{Exp.init}", respectively). If \code{init.z="random"} and \code{nstarts > 1}, the allocations corresponding to the best random start are stored. This can be useful for supplying \code{z.list} for future fits.
 #' @return A named list in which the names are the names of the arguments and the values are the values supplied to the arguments.
 #' @export
 #' @keywords control
@@ -1621,21 +1633,25 @@
 #'             verbose = interactive(),
 #'             ...)
 #' @examples
-#' \dontrun{
 #' ctrl1 <- MoE_control(criterion="icl", itmax=100, warn.it=15, init.z="random", nstarts=5)
 #'
 #' data(CO2data)
 #' GNP   <- CO2data$GNP
-#' res   <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1)
+#' \donttest{res   <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1)
 #'
 #' # Alternatively, specify control arguments directly
-#' res2  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")
+#' res2  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, stopping="relative")}
 #'
-#' # Supplying ctrl1 without naming it as 'control' throws an error,
-#' # when any of {modelNames, gating, expert} are not supplied
-#' res3  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl1)
+#' # Supplying ctrl1 without naming it as 'control' can throw an error
+#' \dontrun{
+#' res3  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, ctrl1)}
+#' 
+#' # Similarly, supplying control arguments via a mix of the ... construct
+#' # and the named argument 'control' also throws an error
+#' \dontrun{
+#' res4  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1, init.z="kmeans")}
 #'
-#' # Initialise via the mixed-type joint distribution of response & covariates
+#' \donttest{# Initialise via the mixed-type joint distribution of response & covariates
 #' # Let the ICL criterion determine the optimal clustMD model type
 #' # Constrain the mixing proportions to be equal
 #' ctrl2 <- MoE_control(exp.init=list(clustMD=TRUE), init.crit="icl", equalPro=TRUE)
@@ -1910,8 +1926,7 @@
 #'             pick = 10L,
 #'             optimal.only = FALSE)
 #' @examples
-#' \dontrun{
-#' data(CO2data)
+#' \donttest{data(CO2data)
 #' CO2   <- CO2data$CO2
 #' GNP   <- CO2data$GNP
 #' 
@@ -2054,7 +2069,7 @@
     if(best.model$modelName     != modelNames[1L] || best.model$G != G[1L]) {
       bestGN      <- gating[1L] != "~1" && (best.model$G + !noise.null[crit.names[1L]] - isFALSE(noise.gate[crit.names[1L]])) <= 1
       best.model$net.covs       <- if(bestGN) attr(best.model$net.covs, "Discarded") else best.model$net.covs
-      cat("Re-fitting optimal model due to mismatched 'criterion'...\n\n")
+      message("Re-fitting optimal model due to mismatched 'criterion'...\n\n")
       old.call    <- best.model$call
       old.call    <- c(as.list(old.call)[1L], list(criterion=criterion), as.list(old.call)[-1L])
       old.call    <- as.call(old.call[!duplicated(names(old.call))])
@@ -2391,8 +2406,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'              verbose = interactive(),
 #'              ...)
 #' @examples
-#' \dontrun{
-#' # data(CO2data)
+#' \donttest{# data(CO2data)
 #' # Search over all models where the single covariate can enter either network
 #' # (mod1 <- MoE_stepwise(CO2data$CO2, CO2data[,"GNP", drop=FALSE]))
 #' #
@@ -2417,16 +2431,24 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     compare       <- list()
     gate.x        <- missing(gating)
     exps.x        <- missing(expert)
-    if((!is.matrix(network.data)      &&
-       !is.data.frame(network.data)))  {
-     network.data <- if(ncol(as.matrix(network.data)) > 1) network.data else provideDimnames(as.matrix(network.data), base=list("", deparse(substitute(network.data))))
+    if(!is.null(network.data))         {
+      if((!is.matrix(network.data)    &&
+        !is.data.frame(network.data))) {
+       network.data    <- if(ncol(as.matrix(network.data)) > 1) network.data else provideDimnames(as.matrix(network.data), base=list("", deparse(substitute(network.data))))
+      }
+      if(is.null(colnames(network.data)))         stop("Invalid 'network.data': must be a matrix or data frame with named columns",      call.=FALSE)
+      if(ifelse(is.matrix(data)         ||
+                is.data.frame(data),
+         nrow(data),
+         length(data)) != nrow(network.data))     stop("Invalid 'network.data': must contain the same number of observations as 'data'", call.=FALSE)
     }
-    if(is.null(colnames(network.data)))           stop("Invalid 'network.data': must be a matrix or data frame with named columns", call.=FALSE)
+    
+    data          <- as.data.frame(data)
     if(any(grepl("\\$", colnames(network.data)))) stop("'network.data' column names cannot contain the '$' operator", call.=FALSE)
     if(!missing(gating)               &&
       ((length(gating) != 1           || 
        !is.na(gating)) && 
-       !is.character(gating)))                    stop("Invalid 'gating': must be NA or a vector of variable names", call.=FALSE)
+       !is.character(gating)))                    stop("Invalid 'gating': must be NA or a vector of variable names",  call.=FALSE)
     if(!missing(expert)               &&
       ((length(expert) != 1           ||
        !is.na(expert)) && 
@@ -2444,6 +2466,18 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
        !is.character(noise.gate))                 stop("'noise.gate' must be a single character string",  call.=FALSE)
     if(length(verbose)  > 1           ||
        !is.logical(verbose))                      stop("'verbose' must be a single logical indicator",    call.=FALSE)
+    num.X         <- vapply(data, is.numeric, logical(1L))
+    if(anyNA(data))    {
+      if(isTRUE(verbose))                         message("Rows with missing values removed from data\n")
+      data        <- data[stats::complete.cases(data),, drop=FALSE]
+    }
+    if(sum(num.X) != ncol(data))    {
+      if(isTRUE(verbose))                         message("Non-numeric columns removed from data\n")
+      data        <- data[,num.X,                       drop=FALSE]
+    }
+    if(ncol(data) == 1) {
+      colnames(data)   <- as.character(match.call()$data)
+    }
     dup.ind       <- if(any(is.matrix(data), is.data.frame(data))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) identical(network.data[,j], data), logical(1L))
     if(any(dup.ind))                              warning("Removing covariates found in response data\n", call.=FALSE, immediate.=TRUE)
     network.data  <- network.data[,!dup.ind, drop=FALSE]  
@@ -2471,13 +2505,13 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     o.exps        <-
     o.gate        <- NULL
     dots          <- list(...)
-    if(any(names(dots) == "control"))  {
-      dots        <- c(dots, dots$control)
-      dots        <- dots[names(dots) != "control"]
-    }
+    if(any(names(dots) == "control")  &&
+       length(dots[names(dots)       %in%
+              names(MoE_control())])   > 0)       stop("Arguments cannot be supplied via the '...' construct when the named argument 'control' is supplied", call.=FALSE) 
+    dots          <- dots[names(dots) != "z.list"]
     args          <- c(list(data=data, G=G, gating=~1, expert=~1, network.data=network.data, modelNames=modelNames, equalPro=FALSE, 
                        noise.gate=TRUE, verbose=FALSE, tau0=if(any(names(dots) == "tau0")) dots$tau0 else 0.1), criterion=criterion)
-    args          <- if(length(dots)   > 1) c(args, dots) else args
+    args          <- if(length(dots)  >= 1) c(args, dots) else args
     args          <- args[unique(names(args))]
     args$tau0     <- if(isTRUE(noise)) args$tau0
     if(isTRUE(verbose))                           message("\n\tStep ", 1, "...\n")
@@ -2486,11 +2520,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(isTRUE(verbose))            suppressWarnings(print(suppressWarnings(MoE_compare(res, optimal.only=TRUE, pick=1L, criterion=criterion)), details=FALSE))
     crit          <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
     crit.old      <- -Inf
-    addC          <- isTRUE(unequalPro)
+    addC          <- TRUE
     addE          <- isFALSE(noise)   && !na.expx
     addG          <- FALSE
     addGN         <- FALSE
-    addQ          <- (isFALSE(noise)  || isTRUE(args$equalNoise)) && isTRUE(equalPro)
+    addQ          <- isTRUE(noise)    && isTRUE(args$equalNoise)  && isTRUE(equalPro)
     
     while(crit     > crit.old)   {
       crit.old    <- crit
@@ -2499,33 +2533,39 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       if(isTRUE(verbose))                         message("\n\tStep ", j, "...\n")
       if(addE)     {
         exps      <- try(lapply(seq_along(ecov), function(x) { args$expert <- stats::as.formula(ecov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
-        if(inherits(exps,  "try-error"))  {
+        if(inherits(exps,   "try-error")) {
           exps    <- NULL
         } else       exps       <- suppressWarnings(MoE_compare(stats::setNames(exps,  seq_along(exps)),  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
       }   else       exps       <- NULL
       if(addG)     {
         gates     <- try(lapply(seq_along(gcov), function(x) { args$gating <- stats::as.formula(gcov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
-        if(inherits(gates, "try-error"))  {
+        if(inherits(gates,  "try-error")) {
           gates   <- NULL
         } else       gates      <- suppressWarnings(MoE_compare(stats::setNames(gates, seq_along(gates)), optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
       }   else       gates      <- NULL
       if(addGN)    {
         args$noise.gate         <- FALSE
         Ngate     <- try(lapply(seq_along(gcov), function(x) { args$gating <- stats::as.formula(gcov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
-        if(inherits(Ngate, "try-error"))  {
+        if(inherits(Ngate,  "try-error")) {
           Ngate   <- NULL
         } else       Ngate      <- suppressWarnings(MoE_compare(stats::setNames(Ngate, seq_along(Ngate)), optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
         args$noise.gate         <- TRUE
       }   else       Ngate      <- NULL
       if(addC)     { 
         args$G    <- G + 1L
-        clplus    <- suppressWarnings(MoE_compare(suppressWarnings(do.call(MoE_clust, args)),             optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+        clplus    <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
+        if(inherits(clplus, "try-error")) {
+          clplus  <- NULL    
+        } else       clplus     <- suppressWarnings(MoE_compare(clplus, optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
         args$G    <- G
       } else         clplus     <- NULL
       if(addQ)     {
         args$equalPro           <- TRUE
         args$G    <- G + 1L
-        eqplus    <- suppressWarnings(MoE_compare(suppressWarnings(do.call(MoE_clust, args)),             optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+        eqplus    <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
+        if(inherits(eqplus, "try-error")) {
+          eqplus  <- NULL
+        } else       eqplus     <- suppressWarnings(MoE_compare(eqplus, optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
         args$G    <- G
         if(addE)   {
           expQ    <- try(lapply(seq_along(ecov), function(x) { args$expert <- stats::as.formula(ecov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
@@ -2559,7 +2599,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         }
         o.exps    <- all.vars(args$expert)
       }
-      if(length(gcov)    > 1    &&
+      if(length(gcov)   > 1     &&
         (any(any.g     <- is.element(gcov, 
         paste0("~", as.character(args$gating)[-1L]))))) {
         if(is.null(o.gate))      {
@@ -2580,9 +2620,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     compare       <- compare[-j]
     for(i in seq_along(compare)) {
       compare[[i]]$call         <- call
+      names(compare[[i]]$data)  <- colnames(data)
     }
     names(compare)              <- paste0("Step_", seq_along(compare))
-    if(isTRUE(verbose))                cat("\n\n")
+    message("\n\n")
       MoE_compare(compare, optimal.only=TRUE, criterion=criterion)  
   }
 
@@ -2619,8 +2660,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'           signif = 0L,
 #'           ...)
 #' @examples
-#' \dontrun{
-#' library(mclust)
+#' \donttest{library(mclust)
 #' 
 #' # Fit a gating network mixture of experts model to the ais data
 #' data(ais)

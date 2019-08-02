@@ -108,8 +108,7 @@ While model selection in terms of choosing the optimal number of components and 
 Where \code{BIC}, \code{ICL}, \code{AIC}, \code{LOGLIK}, \code{DF} and \code{ITERS} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL}, \code{AIC}, \code{LOGLIK}, \code{DF} and \code{ITERS} all inherit the classes \code{"MoECriterion"} and \code{"mclustBIC", "mclustICL", etc.}, for which dedicated printing and plotting functions exist, respectively.
 }
 \examples{
-\dontrun{
-data(ais)
+\donttest{data(ais)
 hema  <- ais[,3:7]
 sex   <- ais$sex
 BMI   <- ais$BMI

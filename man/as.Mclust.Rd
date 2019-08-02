@@ -41,8 +41,7 @@ Plots may be quite misleading in the presence of gating &/or expert covariates w
 The functions \code{\link[mclust]{clustCombi}} and \code{\link[mclust]{clustCombiOptim}} can be safely used (provided \code{as.Mclust(x)} is supplied as the \code{object} argument to \code{\link[mclust]{clustCombi}}), as they only rely on \code{x$z} and \code{x$G} only. See the examples below.
 }
 \examples{
-\dontrun{
-library(mclust)
+\donttest{library(mclust)
 
 # Fit a gating network mixture of experts model to the ais data
 data(ais)

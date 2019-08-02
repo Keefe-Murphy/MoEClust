@@ -64,8 +64,7 @@ Without any prior information, it is best to accept the defaults at the expense 
 It is advised to run this function once with \code{noise=FALSE} and once with \code{noise=TRUE} and then choose the optimal model across both sets of results.
 }
 \examples{
-\dontrun{
-# data(CO2data)
+\donttest{# data(CO2data)
 # Search over all models where the single covariate can enter either network
 # (mod1 <- MoE_stepwise(CO2data$CO2, CO2data[,"GNP", drop=FALSE]))
 #

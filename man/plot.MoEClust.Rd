@@ -21,7 +21,7 @@
 }
 By default, all of the above graphs are produced.}
 
-\item{...}{Optional arguments to be passed to \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link[graphics]{matplot}}, \code{\link[mclust]{plot.mclustBIC}} and \code{\link[graphics]{plot}}.}
+\item{...}{Optional arguments to be passed to \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link[graphics]{matplot}}, \code{\link[mclust]{plot.mclustBIC}} and \code{\link[graphics]{plot}}. In particular, the argument \code{legendArgs} to \code{\link[mclust]{plot.mclustBIC}} can be passed to \code{\link{MoE_plotCrit}}.}
 }
 \value{
 The visualisation according to \code{what} of the results of a fitted \code{MoEClust} model.
@@ -38,8 +38,7 @@ Caution is advised producing generalised pairs plots when the dimension of the d
 Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. These can be especially useful for univariate data.
 }
 \examples{
-\dontrun{
-data(ais)
+\donttest{data(ais)
 res <- MoE_clust(ais[,3:7], gating= ~ BMI, expert= ~ sex,
                  G=2, modelNames="EVE", network.data=ais)
 

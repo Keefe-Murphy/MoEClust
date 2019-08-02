@@ -2,6 +2,7 @@
 title: "MoEClust: Gaussian Parsimonious Clustering Models with Gating and Expert Network Covariates and a Noise Component"
 author: "Keefe Murphy"
 date: "`r Sys.Date()`"
+urlcolor: blue
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{MoEClust}
@@ -10,13 +11,13 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-options(width = 999)
 knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show='hold',
-                      warning=FALSE, message=FALSE, progress=FALSE, collapse=TRUE, comments="#>")
+                      dev.args=list(type="cairo"), warning=FALSE, message=FALSE, 
+                      progress=FALSE, collapse=TRUE, comments="#>")
 ```
 
 ## Introduction
-__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, ie. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM famly (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2018)](https://arxiv.org/abs/1711.05632v2). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
+__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, i.e. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM family (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2018)](https://arxiv.org/abs/1711.05632v2). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
 The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM/CEM algorithm with gating and/or expert network covariates, supplied via formula interfaces.  `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 
@@ -30,7 +31,9 @@ An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` fro
 
 Other functions also exist, e.g. `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. The package also contains two data sets: `ais` and `CO2data`.
 
-If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
+If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). 
+
+This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
 
 ### Installing MoEClust
 __MoEClust__ will run in Windows, Mac OS X or Linux. To install it you first need to install [R](https://cran.r-project.org/). Installing [Rstudio](https://www.rstudio.com/) as a nice desktop environment for using R is also recommended.
@@ -69,7 +72,8 @@ CO2   <- CO2data$CO2
 GNP   <- CO2data$GNP
 ```
 
-Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable enter the gating &/or expert networks, or neither, via a formula interface. Also consider models with equal mixing proportions. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. 
+Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable to enter the gating &/or expert networks, or neither, via a formula interface. Also consider models with equal mixing proportions. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. 
+
 ```{r, results='hide'}
 m1    <- MoE_clust(CO2, G=1:3, verbose=FALSE)
 m2    <- MoE_clust(CO2, G=2:3, gating= ~ GNP, verbose=FALSE)
@@ -140,7 +144,7 @@ getden <- function(x, y, res) {
 mat    <- matrix(getden(grid[,1L], grid[,2L], res), length(x.new), length(y.new))
 image(x.new, y.new, mat, col=c("white", heat.colors(30L)[30L:1L]), xlab="GNP", ylab=paste('CO'[2]), add=TRUE)
 box(lwd=1)
-contour(x.new, y.new, mat, add=TRUE, col="lightgray")
+contour(x.new, y.new, mat, add=TRUE, col="grey60", labcex=0.75)
 points(GNP, CO2)
 ```
 
@@ -152,7 +156,7 @@ plot(mod, what="classification")
 plot(mod, what="uncertainty")
 ```
 
-Predictions can also be made from `MoEClust` models: the response, probability of cluster membership, and the MAP classification can be predicted for the fitted data or for new data (in the form of new covarariates and new response variables, or new covariates only). Let's predict the response variable using the optimal model fit above to the CO2 data.
+Predictions can also be made from `MoEClust` models: the response, probability of cluster membership, and the MAP classification can be predicted for the fitted data or for new data (in the form of new covariates and new response variables, or new covariates only). Let's predict the response variable using the optimal model fit above to the CO2 data.
 
 ```{r}
 as.vector(predict(comp$optimal)$y)
@@ -162,15 +166,18 @@ Now let's build a model on some of the CO2 data and retain the indices of the wi
 
 ```{r, results="hide"}
 ind     <- sample(1:nrow(CO2data), 2)
-res2    <- MoE_clust(CO2data[-ind,]$CO2, G=3, expert=~GNP, equalPro=TRUE, network.data=CO2data[-ind,])
+res2    <- MoE_clust(CO2data[-ind,]$CO2, G=3, expert=~GNP, 
+                     equalPro=TRUE, network.data=CO2data[-ind,])
 ```
 
 Now we can make predictions on the withheld data, either by using the withheld covariates only, or by also using the withheld response variables. Note that `newdata` can be either a list with component(s) `new.x` (and optionally `new.y`) or a single matrix/data.frame with the appropriate columns.
 
 ```{r}
-predict(res2, newdata= list(new.x=CO2data[ind,"GNP", drop=FALSE])) # Using new covariates only
+# Using new covariates only
+predict(res2, newdata= list(new.x=CO2data[ind,"GNP", drop=FALSE])) 
 
-predict(res2, newdata = CO2data[ind,])         # Using both new covariates & new response data
+# Using both new covariates & new response data
+predict(res2, newdata = CO2data[ind,])         
 ```
 
 ## AIS Data
@@ -187,10 +194,11 @@ Examine the various additional options around initialisation of the algorithm:
 ?MoE_control
 ```
 
-Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within the AIS data, supplying `sex` in the expert network and `BMI` in the gating network via formula interfaces. Include an additional noise component by specifiying it's prior mixing proportion `tau0`. Toggle between allowing the mixing proportion for the noise component depend on the gating concomitant or not via the `noise.gate` argument. This time, allow the printing of messages to the screen.
+Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within the AIS data, supplying `sex` in the expert network and `BMI` in the gating network via formula interfaces. Include an additional noise component by specifying it's prior mixing proportion `tau0`. Toggle between allowing the mixing proportion for the noise component depend on the gating concomitant or not via the `noise.gate` argument. This time, allow the printing of messages to the screen.
 
 ```{r, eval=FALSE}
-mod   <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais, tau0=0.1, noise.gate=FALSE)
+mod   <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, 
+                   network.data=ais, tau0=0.1, noise.gate=FALSE)
 ```
 
 ```{r, echo=FALSE}
@@ -223,12 +231,8 @@ plot(mod, what="uncertainty", type="profile")
 
 Plot the BIC of the visited models.
 
-```{r, eval=FALSE}
-plot(mod, what="criterion")
-```
-
 ```{r, echo=FALSE}
-plot(mod, what="criterion", legendArgs=list(cex=0.8))
+plot(mod, what="criterion", legendArgs=list(x="right"))
 ```
 
 Plot the gating network of the optimal model against the gating concomitant `BMI`. Note the horizontal line of grey points corresponding to the noise component due to the specification of `noise.gate=FALSE` in the original function call.
@@ -254,7 +258,8 @@ Produce further visualisations for the Gaussian components with the aid of the `
 
 ```{r, eval=FALSE}
 require("lattice")
-z <- factor(mod$classification[mod$classification > 0], labels=paste0("Cluster", seq_len(mod$G)))
+z <- factor(mod$classification[mod$classification > 0], 
+            labels=paste0("Cluster", seq_len(mod$G)))
 splom(~ hema | ais$sex, groups=z)
 splom(~ hema | z, groups=ais$sex)
 ```
@@ -265,6 +270,8 @@ z <- factor(mod$classification[mod$classification > 0], labels=paste0("Cluster",
 splom(~ hema | ais$sex, groups=z, xlab=NULL)
 splom(~ hema | z, groups=ais$sex, xlab=NULL)
 ```
+
+---------
 
 ## References
 K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. _To appear_. Pre-print available at [arXiv:1711.05632v2](https://arxiv.org/abs/1711.05632v2).
