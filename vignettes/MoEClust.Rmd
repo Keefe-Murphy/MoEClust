@@ -17,7 +17,7 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show=
 ```
 
 ## Introduction
-__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, i.e. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM family (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2018)](https://arxiv.org/abs/1711.05632v2). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
+__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, i.e. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM family (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2019)](https://doi.org/10.1007/s11634-019-00373-8). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
 The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM/CEM algorithm with gating and/or expert network covariates, supplied via formula interfaces.  `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 
@@ -274,6 +274,6 @@ splom(~ hema | z, groups=ais$sex, xlab=NULL)
 ---------
 
 ## References
-K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. _To appear_. Pre-print available at [arXiv:1711.05632v2](https://arxiv.org/abs/1711.05632v2).
+K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 1-33. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.
 
 C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97:611-631.

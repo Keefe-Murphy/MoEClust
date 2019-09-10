@@ -22,6 +22,6 @@ plot(CO2data$GNP, CO2data$CO2, type="n", ylab=expression('CO'[2]))
 text(CO2data$GNP, CO2data$CO2, CO2data$country)
 }
 \references{
-Hurn, M., Justel, A. and Robert, C. P. (2003) Estimating Mixtures of Regressions, \emph{Journal of Computational and Graphical Statistics}, 12(1): 55-79.
+Hurn, M., Justel, A. and Robert, C. P. (2003) Estimating mixtures of regressions, \emph{Journal of Computational and Graphical Statistics}, 12(1): 55-79.
 }
 \keyword{datasets}

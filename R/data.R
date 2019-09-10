@@ -37,7 +37,7 @@
 #' \item{\code{CO2}}{ - The estimated carbon dioxide emission per capita in 1996.}
 #' \item{\code{country}}{ - An abbreviation pertaining to the country measures (e.g. \code{"GRC"} = Greece and \code{"CH"} = Switzerland).}
 #' }
-#' @references Hurn, M., Justel, A. and Robert, C. P. (2003) Estimating Mixtures of Regressions, \emph{Journal of Computational and Graphical Statistics}, 12(1): 55-79.
+#' @references Hurn, M., Justel, A. and Robert, C. P. (2003) Estimating mixtures of regressions, \emph{Journal of Computational and Graphical Statistics}, 12(1): 55-79.
 #' @examples 
 #' data(CO2data, package="MoEClust")
 #' plot(CO2data$GNP, CO2data$CO2, type="n", ylab=expression('CO'[2]))

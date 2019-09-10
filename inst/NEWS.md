@@ -5,7 +5,8 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
-### Bug Fixes & Miscellaneous Edits
+## MoEClust v1.2.4 - (_7<sup>th</sup> release [patch update]: 2019-12-11_)
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Fixed small bugs in `MoE_stepwise`:  
     * Improved checks on `network.data` and `data`.
     * Prevented `z.list` from being suppliable.  
@@ -13,10 +14,15 @@ __and a Noise Component__
     * Fixes for supplying optional `MoE_control` arguments (also for `MoE_clust`).
     * Prevented termination if adding a component fails,  
     provided at least one other step doesn't fail.
+* Fixed `discard.noise=TRUE` behaviour for `MoE_clust`, `predict.MoEClust`, &  
+  `residuals.MoEClust` for models with a noise component fitted via `"CEM"`.
+* Minor fixes to `noise_vol` function and handling of `noise.meth` arg. to `MoE_control`.
+* Slight speed-up to E-step/C-step for models with a noise component.
 * Initial allocation matrices now stored as attributes to `MoE_clust` output (see `?MoE_control`).
 * Anti-aliasing of vignette images.
+* Updated citation info after publication in _Advances in Data Analysis and Classification_.
 
-## MoEClust v1.2.3 - (_6<sup>th</sup> release [minor update]: 2019-07-29_)
+## MoEClust v1.2.3 - (_6<sup>th</sup> release [patch update]: 2019-07-29_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Added new function `MoE_stepwise` for conducting a greedy forward stepwise  
   search to find the optimal model in terms of the number of components, GPCM  
@@ -39,7 +45,7 @@ __and a Noise Component__
 * Cosmetic fix to returned `gating` objects for `equalPro=TRUE` models. 
 * Removed `snow` package from `Suggests:`.
 
-## MoEClust v1.2.2 - (_5<sup>th</sup> release [minor update]: 2019-05-15_)
+## MoEClust v1.2.2 - (_5<sup>th</sup> release [patch update]: 2019-05-15_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * `noise_vol` now also returns the location of the centre of mass of the region  
   used to estimate the hypervolume, regardless of the method employed. This fixes:    

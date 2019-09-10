@@ -77,7 +77,7 @@
 #' 
 #' \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
 #' @export
-#' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632v2}{arXiv:1711.05632v2}>.
+#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #'
 #' C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
@@ -233,11 +233,12 @@
     Nseq          <- seq_len(n)
     comp.x        <- if(isTRUE(comp.x)) Nseq else comp.x
     noise.null    <- all(nnull <- is.null(noise), tnull   <- is.null(tau0))
+    if(!is.null(noise.vol) && noise.null)         stop("Initial noise volume supplied without initial guess of noise allocations or initial guess of noise component proportion 'tau0'", call.=FALSE)
     equalNoise    <- !noise.null      && ctrl$equalNoise
     gate.noise    <- (!noise.null     && ctrl$noise.gate) || noise.null
     if(missing(G) && !noise.null) G   <- 0L:9L
     if(any(G      != floor(G))        &&
-       any(G < ifelse(noise.null, 1, 0)))         stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")), call.=FALSE)
+       any(G < ifelse(noise.null, 1, 0)))         stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")),   call.=FALSE)
     if(any(G      >= n))        {
       G           <- G[G <= n]
       if(length(G) > 1)         {                 warning("Removing G values >= the number of observations\n",  call.=FALSE, immediate.=TRUE)
@@ -252,12 +253,18 @@
     anyg0or1      <- anyg0  + anyg1
     if(anyg0 || !noise.null)    {
       if(!is.null(noise.vol))   {
+        if(inherits(noise.vol, "NoiseVol"))   {
+          NoiseLoc             <- noise.vol$loc
+          noise.vol            <- noise.vol$vol
+        }
         Vinv      <- ifelse(isTRUE(attr(noise.vol, "Inverse")), noise.vol, 1/noise.vol)
       } else if(n  > d)         {
         NoiseVol  <- noise_vol(X, noise.meth, reciprocal=TRUE)
         Vinv      <- NoiseVol$vol
         NoiseLoc  <- NoiseVol$loc
       } else                                      stop("'noise.args$noise.vol' must be specified directly for high-dimensional data when a noise component is included", call.=FALSE)
+      Linv        <- log(Vinv)
+      attr(Linv, "LogV")       <- TRUE
     }         
     len.G         <- length(range.G)
     Gall          <- ifelse(noise.null, all(G > 1), all(G[G > 0] > 1))
@@ -567,7 +574,7 @@
       stopGx      <- g > 1 && stopaX
       noiseG      <- !noise.null || g == 0
       noise.gate  <- ifelse(noiseG, gate.noise[h], TRUE)
-      Xinv        <- if(noiseG) Vinv
+      Xinv        <- if(noiseG) Linv
 
     # Initialise Expert Network & Allocations
       if(indmd    <- mdind &&   g > 1) {
@@ -1098,8 +1105,13 @@
     if(G > 0) {
       vari.fin    <- x.sig
       if(exp.x)    {
-        if(noise.null || noise.meth == "manual" || isTRUE(ctrl$discard.noise))   {
+        if(noise.null || noise.meth == "manual" || isTRUE(ctrl$discard.noise))    {
           z.norm  <- if(noise.null) z else .renorm_z(z[,-GN, drop=FALSE])
+          if(algo == "CEM"     &&
+             any(nan           <- apply(z.norm, 1L, function(x) all(is.nan(x))))) {
+            z.norm[nan,]       <- .renorm_z(MoE_estep(data=lapply(x.resE, "[", nan, TRUE), mus=mus, sigs=vari.fin, 
+                                            log.tau=log(if(is.matrix(x.tau)) x.tau[nan,, drop=FALSE] else x.tau), Vinv=Xinv)$z[,-GN, drop=FALSE])
+          }
           fitdat  <- Reduce("+",  lapply(Gseq, function(g) z.norm[,g] * stats::predict(x.fitE[[g]])))
         } else     {
           fitdat  <- Reduce("+",  lapply(Gseq, function(g) z[,g]      * stats::predict(x.fitE[[g]])))
@@ -1302,6 +1314,7 @@
     if(any(log.tau > 0))                          stop("'log.tau' cannot be greater than 0: mixing proportions must be supplied on the log scale", call.=FALSE)
     G             <- sigs$G
     Vnul          <- is.null(Vinv)
+    Vinv          <- if(is.null(Vinv) || isTRUE(attr(Vinv, "LogV"))) Vinv else log(Vinv)
     Ldat          <- inherits(data, "list")
     if(!Ldat      || (Ldat &&
        length(data)        != max(G, 1L)))       {
@@ -1344,7 +1357,7 @@
       test        <- is.infinite(densi) & densi   > 0
       densi[test] <- 0L
     }
-    densi         <- if(Vnul) densi else if(G     > 0) bind2(densi, log(Vinv)) else matrix(log(Vinv), nrow=n, ncol=G + !Vnul)
+    densi         <- if(Vnul) densi else if(G     > 0) bind2(densi, Vinv) else matrix(Vinv, nrow=n, ncol=G + !Vnul)
     if(ifelse(is.matrix(log.tau), ncol(log.tau), length(log.tau)) > G + !Vnul)                                  stop(paste0("Too many ", ifelse(is.matrix(log.tau), "columns", "entries"), " in 'log.tau'", ifelse(Vnul, ":\nPerhaps 'Vinv' needs to be supplied?", "")), call.=FALSE)
     densi         <- densi  + if(ltau.miss       || is.matrix(log.tau))                            log.tau else
                               if(length(log.tau) == G + !Vnul) .mat_byrow(log.tau, nrow=n, ncol=G + !Vnul) else stop(paste0("'log.tau' must be given for every component", ifelse(Vnul, "", ", incl. the noise component if 'Vinv' is supplied")), call.=FALSE)
@@ -1404,7 +1417,7 @@
 #'                     log.tau=log(m2$parameters$pro), Vinv=m2$parameters$Vinv)
   MoE_estep       <- function(data, mus, sigs, log.tau = 0L, Vinv = NULL, Dens = NULL) {
     if(missing(Dens)) {
-      Dens        <- do.call(MoE_dens, as.list(match.call())[-1L])
+      Dens        <- do.call(MoE_dens, list(data=data, mus=mus, sigs=sigs, log.tau=log.tau, Vinv=Vinv))
     } else if(!is.matrix(Dens) ||
               !is.numeric(Dens))                  stop("'Dens' must be a numeric matrix", call.=FALSE)
     norm          <- rowLogSumExps(Dens)
@@ -1460,7 +1473,7 @@
 #' identical(Cstep2$loglik, ll)                                          #TRUE
   MoE_cstep       <- function(data, mus, sigs, log.tau = 0L, Vinv = NULL, Dens = NULL) {
     if(missing(Dens)) {
-      Dens        <- do.call(MoE_dens, as.list(match.call())[-1L])
+      Dens        <- do.call(MoE_dens, list(data=data, mus=mus, sigs=sigs, log.tau=log.tau, Vinv=Vinv))
     } else if(!is.matrix(Dens) ||
               !is.numeric(Dens))                  stop("'Dens' must be a numeric matrix", call.=FALSE)
     Gseq          <- seq_len(ncol(Dens))
@@ -1554,7 +1567,7 @@
 #' \item{\code{equalNoise}}{Logical which is only invoked when \code{isTRUE(equalPro)} and gating covariates are not supplied. Under the default setting (\code{FALSE}), the mixing proportion for the noise component is estimated, and remaining mixing proportions are equal; when \code{TRUE} all components, including the noise component, have equal mixing proportions.}
 #' \item{\code{discard.noise}}{A logical governing how the means are summarised in \code{parameters$mean} and by extension the location of the MVN ellipses in \code{\link{MoE_gpairs}} plots for models with \emph{both} expert network covariates and a noise component (otherwise this argument is irrelevant). 
 #' 
-#' The means for models with expert network covariates are summarised by the posterior mean of the fitted values. By default (\code{FALSE}), the mean of the noise component is accounted for in the posterior mean. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied via \code{noise.args$noise.vol}), the \code{z} matrix is renormalised after discarding the column corresponding to the noise component prior to computation of the posterior mean. The renormalisation approach can be forced by specifying \code{noise.args$discard.noise=TRUE}, even when the mean of the noise component is available.}
+#' The means for models with expert network covariates are summarised by the posterior mean of the fitted values. By default (\code{FALSE}), the mean of the noise component is accounted for in the posterior mean. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied via \code{noise.args$noise.vol}), the \code{z} matrix is renormalised after discarding the column corresponding to the noise component prior to computation of the posterior mean. The renormalisation approach can be forced by specifying \code{noise.args$discard.noise=TRUE}, even when the mean of the noise component is available. For models with a noise component fitted with \code{algo="CEM"}, a small extra E-step is conducted for observations assigned to the non-noise components in this case.}
 #' }
 #' In particular, the argument \code{noise.meth} will be ignored for high-dimensional \code{n <= d} data, in which case the argument \code{noise.vol} \emph{must be} specified. Note that this forces \code{noise.args$discard.noise} to \code{TRUE}. See \code{\link{noise_vol}} for more details.
 #' 
@@ -1739,9 +1752,11 @@
         any(noise.args$tau0 <= 0)  ||
         any(noise.args$tau0 >= 1)))               stop("'noise.args$tau0' must lie in the interval (0, 1)",  call.=FALSE)
       if(!is.null(noise.args$noise.vol))         {
-        if(length(noise.args$noise.vol) > 1     ||
-           noise.args$noise.vol    <= 0)          stop("Invalid 'noise.args$noise.vol'", call.=FALSE)
-        noise.args$noise.meth      <- "manual"
+        NoiseVol  <- inherits(noise.args$noise.vol, "NoiseVol")
+        if(!NoiseVol        &&
+          (length(noise.args$noise.vol) > 1     ||
+           noise.args$noise.vol    <= 0))         stop("Invalid 'noise.args$noise.vol'", call.=FALSE)
+        noise.args$noise.meth      <- ifelse(NoiseVol, attr(noise.args$noise.vol, "Method"), "manual")
       } else if(is.null(noise.args$noise.meth))  {
         noise.args$noise.meth      <- "hypvol"
       } else {
@@ -1913,7 +1928,7 @@
 #' \item{\code{equalNoise}}{Logical indicating whether the mixing proportion of the noise component for \code{equalPro} models is also equal (\code{TRUE}) or estimated (\code{FALSE}).}
 #' @export
 #' @keywords clustering main
-#' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632v2}{arXiv:1711.05632v2}>.
+#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @importFrom mclust "mclustModelNames"
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #'
@@ -2141,7 +2156,7 @@
 #'
 #' When \code{newdata} is not supplied in any way, the covariates and response variables used in the fitting of the model are used here.
 #' @param resid A logical indicating whether to return the residuals also. Defaults to \code{FALSE}. Only allowed when response variables are supplied in some form. The function \code{residuals} is a wrapper to \code{predict} with the argument \code{resid} set to \code{TRUE}, with only the residuals returned.
-#' @param discard.noise A logical governing how predictions of the responses are made for models with a noise component (otherwise this argument is irrelevant). By default (\code{FALSE}), the mean of the noise component is accounted for. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied through \code{\link{MoE_control}} via \code{noise.args$noise.vol}), prediction of the responses is performed using a \code{z} matrix which is renormalised after discarding the column corresponding to the noise component. The renormalisation approach can be forced by specifying \code{TRUE}, even when the mean of the noise component is available.
+#' @param discard.noise A logical governing how predictions of the responses are made for models with a noise component (otherwise this argument is irrelevant). By default (\code{FALSE}), the mean of the noise component is accounted for. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied through \code{\link{MoE_control}} via \code{noise.args$noise.vol}), prediction of the responses is performed using a \code{z} matrix which is renormalised after discarding the column corresponding to the noise component. The renormalisation approach can be forced by specifying \code{TRUE}, even when the mean of the noise component is available. For models with a noise component fitted with \code{algo="CEM"}, a small extra E-step is conducted for observations assigned to the non-noise components in this case.
 #' @param ... Catches unused arguments.
 #'
 #' @return A list with the following named components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
@@ -2154,7 +2169,7 @@
 #' @note Predictions can also be made for models with noise components, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 #' 
 #' Note that the argument \code{discard.noise} is here invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
-#' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632v2}{arXiv:1711.05632v2}>.
+#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}
 #' @method predict MoEClust
@@ -2199,6 +2214,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   dcard           <- discard.noise
   if(length(resid) > 1   || !is.logical(resid))   stop("'resid' should be a single logical indicator", call.=FALSE)
   if(length(dcard) > 1   || !is.logical(dcard))   stop("'discard.noise' should be a single logical indicator", call.=FALSE)
+  algo            <- attr(object, "Algo")
   net             <- object$net.covs
   dat             <- object$data
   datnames        <- colnames(dat)
@@ -2293,6 +2309,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       return(if(isTRUE(resid)) c(retval, list(resids=newdata.y - retval$ystar)) else retval)
   }
   pred.exp        <- lapply(object$expert, stats::predict, newdata=newexpx)
+  new.exp         <- 
+  mus             <- NULL 
+  new.tau         <- params$pro
   if(nmiss)    {
     zstar         <- object$z
   } else       {
@@ -2327,6 +2346,13 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   }
   if(!noise || attr(hypvol, "Meth") == "manual" || isTRUE(dcard)) {
     zstar2        <- if(noise) .renorm_z(zstar[,-GN, drop=FALSE]) else zstar
+    if(algo == "CEM"     &&
+       any(nan           <- apply(zstar2, 1L, function(x) all(is.nan(x)))))    {
+      new.exp     <- if(!is.null(new.exp)) new.exp else if(Xexp) lapply(pred.exp, "-", newdata.y)  else newdata.y
+      mus         <- if(!is.null(mus))     mus     else if(Xexp) 0L                                else params$mean
+      zstar2[nan,]       <- .renorm_z(MoE_estep(data=lapply(new.exp, "[", nan, TRUE), mus=mus, sigs=params$variance, 
+                                      log.tau=log(if(is.matrix(new.tau)) new.tau[nan,, drop=FALSE] else new.tau), Vinv=params$Vinv)$z[,-GN, drop=FALSE])
+    }
     ystar         <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar2[,g] * pred.exp[[g]])))
   } else     {
     ystar         <- as.matrix(Reduce("+", lapply(Gseq, function(g) zstar[,g]  * pred.exp[[g]])))
@@ -2390,7 +2416,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @note It is advised to run this function once with \code{noise=FALSE} and once with \code{noise=TRUE} and then choose the optimal model across both sets of results.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
-#' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632v2}{arXiv:1711.05632v2}>.
+#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_compare}}, \code{\link{MoE_control}}
 #' @keywords clustering main
 #' @usage
@@ -2728,7 +2754,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters. Usually, the \code{modelName} of the transformed \code{variance} object will be "\code{VVV}".
 #' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
-#' @references K. Murphy and T. B. Murphy (2018). Gaussian Parsimonious Clustering Models with Covariates. \emph{To appear}. <\href{https://arxiv.org/abs/1711.05632v2}{arXiv:1711.05632v2}>.
+#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @keywords utility
 #' @export
@@ -3058,7 +3084,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       })
     }
     attr(vol, "Inverse")  <- reciprocal
-      return(list(vol=vol, loc=loc))
+    noise         <- list(vol=vol, loc=loc)
+    attr(noise, "Method") <- method
+    class(noise)  <- "NoiseVol"
+      return(noise)
   }
 
 #' Show the NEWS file
