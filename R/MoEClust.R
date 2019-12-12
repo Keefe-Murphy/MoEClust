@@ -37,7 +37,7 @@
 #' Keefe Murphy [aut, cre], Thomas Brendan Murphy [ctb]
 #'
 #' \strong{Maintainer}: Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
-#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @examples
 #' \donttest{data(ais)
 #' 

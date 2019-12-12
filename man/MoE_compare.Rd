@@ -110,7 +110,7 @@ print(comp2, comp2$expert != "None" & comp2$G > 1)
 (best <- MoE_compare(mod1, mod2, optimal.only=TRUE)$optimal)}
 }
 \references{
-K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr

@@ -77,9 +77,9 @@
 #' 
 #' \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
 #' @export
-#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #'
-#' C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
+#' Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @keywords clustering main
 #' @usage
@@ -664,7 +664,7 @@
                   init.exp     <- FALSE
                 } else   {
                   nexp         <- expnoise[,vapply(seq_len(ne), function(p, ep=expnoise[,p], fep=is.factor(ep)) {
-                                 (!fep && !all(ep[sub] == ep[sub][1], na.rm=TRUE)) || (fep && (nlevels(droplevels(ep[sub])) == nlevels(ep))) }, logical(1L)), drop=FALSE]
+                                 (!fep && !all(ep[sub] == ep[sub][1L], na.rm=TRUE)) || (fep && (nlevels(droplevels(ep[sub])) == nlevels(ep))) }, logical(1L)), drop=FALSE]
                   px           <- try(stats::predict(stats::lm(drop_constants(nexp, expN, pna), data=nexp, subset=pna)), silent=TRUE)
                   if(!inherits(px,  "try-error")) {
                     pred[pna,] <- px
@@ -673,7 +673,7 @@
                   }
                 }
               }
-              res              <- xN - pred
+              res              <- xN   - pred
               res.G[[k]]       <- res
               mahala[[k]]      <- if(g > 1) MoE_mahala(exp, res, squared=TRUE)
             }
@@ -707,7 +707,7 @@
                } else   {
                  sub           <- z.tmp[,k] == 1
                  nexp          <- expnoise[,vapply(seq_len(ne), function(p, ep=expnoise[,p], fep=is.factor(ep)) {
-                                 (!fep && !all(ep[sub] == ep[sub][1], na.rm=TRUE)) || (fep && (nlevels(droplevels(ep[sub])) == nlevels(ep))) }, logical(1L)), drop=FALSE]
+                                 (!fep && !all(ep[sub] == ep[sub][1L], na.rm=TRUE)) || (fep && (nlevels(droplevels(ep[sub])) == nlevels(ep))) }, logical(1L)), drop=FALSE]
                  px            <- try(stats::predict(stats::lm(drop_constants(nexp, expN, which(noise)[pna]), data=nexp, subset=sub), newdata=noisexp[pna,colnames(nexp), drop=FALSE]), silent=TRUE)
                  if(!inherits(px,   "try-error")) {
                    pred[pna,]  <- px
@@ -1928,7 +1928,7 @@
 #' \item{\code{equalNoise}}{Logical indicating whether the mixing proportion of the noise component for \code{equalPro} models is also equal (\code{TRUE}) or estimated (\code{FALSE}).}
 #' @export
 #' @keywords clustering main
-#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @importFrom mclust "mclustModelNames"
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #'
@@ -2169,7 +2169,7 @@
 #' @note Predictions can also be made for models with noise components, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 #' 
 #' Note that the argument \code{discard.noise} is here invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
-#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}
 #' @method predict MoEClust
@@ -2416,7 +2416,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @note It is advised to run this function once with \code{noise=FALSE} and once with \code{noise=TRUE} and then choose the optimal model across both sets of results.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
-#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_compare}}, \code{\link{MoE_control}}
 #' @keywords clustering main
 #' @usage
@@ -2502,7 +2502,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       data        <- data[,num.X,                       drop=FALSE]
     }
     if(ncol(data) == 1) {
-      colnames(data)   <- as.character(match.call()$data)
+      colnames(data)   <- deparse(match.call()$data)
     }
     dup.ind       <- if(any(is.matrix(data), is.data.frame(data))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) identical(network.data[,j], data), logical(1L))
     if(any(dup.ind))                              warning("Removing covariates found in response data\n", call.=FALSE, immediate.=TRUE)
@@ -2678,7 +2678,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @export
 #' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
-#' @references C. Fraley and A. E. Raftery (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
+#' @references Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #' @keywords utility
 #' @usage
 #' as.Mclust(x,
@@ -2754,7 +2754,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters. Usually, the \code{modelName} of the transformed \code{variance} object will be "\code{VVV}".
 #' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
-#' @references K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @keywords utility
 #' @export

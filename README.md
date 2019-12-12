@@ -62,4 +62,4 @@ devtools::install_github('Keefe-Murphy/MoEClust', build_vignettes = TRUE)
 Alternatively, the vignette is available on the package's CRAN page.
 
 ### References
-K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 1-33. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.
+Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 1-33. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.

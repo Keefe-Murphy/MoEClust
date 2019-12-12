@@ -5,6 +5,9 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Fixed small bug for supplying univariate response data to `MoE_stepwise`.
+
 ## MoEClust v1.2.4 - (_7<sup>th</sup> release [patch update]: 2019-12-11_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Fixed small bugs in `MoE_stepwise`:  

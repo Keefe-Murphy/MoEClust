@@ -168,9 +168,9 @@ MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2),
 conditional="barcode", noise.size=grid::unit(0.5, "char"))}
 }
 \references{
-K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 
-Emerson, J.W., Green, W.A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The generalized pairs plot. \emph{Journal of Computational and Graphical Statistics}, 22(1):79-91.
+Emerson, J. W., Green, W. A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The generalized pairs plot. \emph{Journal of Computational and Graphical Statistics}, 22(1):79-91.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_Uncertainty}}, \code{\link{expert_covar}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}

@@ -87,7 +87,7 @@ m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE)
 (best <- MoE_compare(mod1, mod2, comp, pick=1)$optimal)}
 }
 \references{
-K. Murphy and T. B. Murphy (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 Useful links:
