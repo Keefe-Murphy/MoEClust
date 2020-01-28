@@ -22,13 +22,14 @@ A vector giving the Mahalanobis distance (or squared Mahalanobis distance) betwe
 Computes the Mahalanobis distance between the response variable(s) and the fitted values of linear regression models with multivariate or univariate responses.
 }
 \examples{
+\dontshow{library(matrixStats)}
 data(ais)
 hema <- as.matrix(ais[,3:7])
 mod  <- lm(hema ~ sex + BMI, data=ais)
 res  <- hema - predict(mod)
 MoE_mahala(mod, res, squared=TRUE)
 
-data(CO2data)
+\donttest{data(CO2data)
 CO2  <- CO2data$CO2
 GNP  <- CO2data$GNP
 mod2 <- lm(CO2 ~ GNP, data=CO2data)
@@ -67,7 +68,7 @@ while(crit < old)   {
   points(GNP, CO2, cex=maha, lwd=2, col=z + 1L)
   text(GNP, CO2, col="blue", 
        labels=replace(as.character(CO2data$country), which(maha <= 0.8), ""))
-}
+}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

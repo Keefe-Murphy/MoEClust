@@ -62,6 +62,8 @@ Without any prior information, it is best to accept the defaults at the expense 
 }
 \note{
 It is advised to run this function once with \code{noise=FALSE} and once with \code{noise=TRUE} and then choose the optimal model across both sets of results.
+
+At present, only additions (of components and covariates) are considered. In future updates, it will be possible to allow both additions and removals.
 }
 \examples{
 \donttest{# data(CO2data)

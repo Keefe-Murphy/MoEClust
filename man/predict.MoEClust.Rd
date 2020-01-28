@@ -9,6 +9,8 @@
         newdata,
         resid = FALSE,
         discard.noise = FALSE,
+        MAPresids = FALSE,
+        use.y = TRUE,
         ...)
 
 \method{residuals}{MoEClust}(object,
@@ -27,28 +29,33 @@ If supplied as a list with elements \code{new.x} and \code{new.y}, both \strong{
 
 Alternatively, a single \code{data.frame} or \code{matrix} can be supplied and an attempt will be made to extract & separate covariate and response columns (\emph{if any}) into \code{newdata$new.x} and \code{newdata$new.y} based on the variable names in \code{object$data} and \code{object$net.covs}.
 
-When \code{newdata} is not supplied in any way, the covariates and response variables used in the fitting of the model are used here. It is possible to not supply \code{newdata.y} and to supply an empty \code{data.frame} or \code{matrix} for \code{newdata.x} (or to equivalently supply an empty \code{data.frame} or \code{matrix} for \code{newdata} itself) for models with no covariates of any kind, which effectively predicts the weighted mean of the component means.}
+When \code{newdata} is not supplied in any way, the covariates and response variables used in the fitting of the model are used here. It is possible to not supply \code{new.y} and to supply an empty \code{data.frame} or \code{matrix} for \code{new.x} (or to equivalently supply an empty \code{data.frame} or \code{matrix} for \code{newdata} itself) for models with no covariates of any kind, which effectively predicts the weighted mean of the component means.}
 
 \item{resid}{A logical indicating whether to return the residuals also. Defaults to \code{FALSE}. Only allowed when response variables are supplied in some form. The function \code{residuals} is a wrapper to \code{predict} with the argument \code{resid} set to \code{TRUE}, with only the residuals returned.}
 
 \item{discard.noise}{A logical governing how predictions of the responses are made for models with a noise component (otherwise this argument is irrelevant). By default (\code{FALSE}), the mean of the noise component is accounted for. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied through \code{\link{MoE_control}} via \code{noise.args$noise.vol}), prediction of the responses is performed using a \code{z} matrix which is renormalised after discarding the column corresponding to the noise component. The renormalisation approach can be forced by specifying \code{TRUE}, even when the mean of the noise component is available. For models with a noise component fitted with \code{algo="CEM"}, a small extra E-step is conducted for observations assigned to the non-noise components in this case.}
 
-\item{...}{Catches unused arguments.}
+\item{MAPresids}{A logical indicating whether residuals are computed against \code{y} (\code{TRUE}, the default) or \code{MAPy} when \code{FALSE}. See \strong{Value} below for more details.}
+
+\item{use.y}{A logical indicating whether the response variables (supplied either via \code{new.y} or via \code{newdata} itself) are actually used in the prediction. Defaults to \code{TRUE}, but useful when \code{FALSE} for computing residuals as though only the covariates in \code{new.x} were supplied.}
+
+\item{...}{Catches unused arguments (and allows the \code{predict} arguments \code{discard.noise}, \code{MAPresids}, and \code{use.y} to be passed through \code{residuals}).}
 }
 \value{
 A list with the following named components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
-\item{\code{y}}{Fitted values of the response variables.}
+\item{\code{y}}{Aggregated fitted values of the response variables.}
 \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belonds to the \emph{k}-th component. For models with a noise component, the final column gives the probability of belonging to the so-called \emph{Cluster0}.}
 \item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}. \code{0} is returned for observations assigned to the noise component.}
 \item{\code{pro}}{The predicted mixing proportions for the \code{newdata}, i.e. predicted values of the gating network. \code{object$parameters$pro} is returned for models without gating network covariates.}
 \item{\code{mean}}{The predicted component means for the \code{newdata}, i.e. predicted values of the expert network. Given as a 3-dimensional array with dimensions given by the number of new observations, the number of variables, and the number of clusters. The first dimension is of length \code{1} when there are no expert network covariates, in which case the entries correspond to \code{object$parameters$mean}.}
+\item{\code{MAPy}}{Fitted values of the single expert network to which each observation is most probably assigned. Likely to only be of use for models with gating and expert covariates when only \code{new.x} is supplied.}
 
 When \code{residuals} is called, only the residuals are returned; when \code{predict} is called with \code{resid=TRUE}, the list above will also contain the element \code{resids}, containing the residuals.
 
 The returned values of \code{pro} and \code{mean} are always the same, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
 }
 \description{
-Predicts both cluster membership probabilities and fitted response values from a \code{MoEClust} model, using covariates and response data, or covariates only. The predicted MAP classification, mixing proportions, and component means are all also reported in both cases.
+Predicts both cluster membership probabilities and fitted response values from a \code{MoEClust} model, using covariates and response data, or covariates only. The predicted MAP classification, mixing proportions, and component means are all also reported in both cases, as well as the predictions of the expert network corresponding to the most probable component.
 }
 \note{
 Predictions can also be made for models with noise components, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).

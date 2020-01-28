@@ -167,7 +167,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   dat   <- res$data
   net   <- res$net.covs
   z     <- res$z
-  class <- res$classification
+  claSS <- res$classification
   G     <- res$G
   Gseq  <- seq_len(G)
   both  <- attr(net, "Both")
@@ -199,11 +199,11 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   dat   <- dat[,subset$data.ind, drop=FALSE]
   net   <- net[,subset$cov.ind,  drop=FALSE]
   dcol  <- ncol(dat)  + subset$show.map
-  uni.c <- unique(class[class > 0])
-  class <- factor(class)
+  uni.c <- unique(claSS[claSS > 0])
+  claSS <- factor(claSS)
   x     <- if(ncol(net) == 0) as.data.frame(dat)      else cbind(dat, net)
-  x     <- if(subset$show.map) cbind(MAP  = class, x) else x
-  clust <- as.character(class)
+  x     <- if(subset$show.map) cbind(MAP  = claSS, x) else x
+  clust <- as.character(claSS)
   zc    <- function(x) length(unique(x)) <= 1L
   saxzc <- vapply(x, zc, logical(1L))
   nrm   <- sum(saxzc, na.rm=TRUE)
@@ -312,18 +312,18 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(length(outer.rot)  != 2    ||
     !all(is.numeric(outer.rot)) ||
      any(outer.rot       < 0))                        stop("Invalid 'outer.rot': must be a strictly non-negative numeric vector of length 2", call.=FALSE)
-  class                 <- as.integer(levels(class))[class]
-  if(any(C <- class == 0))       {
-    class0              <- factor(class, levels=c(sort(levels(factor(class)))[-1L], 0L))
-    class[which(C)]     <- G  + 1
-  } else class0         <- factor(class)
-  x[,1L]                <- if(names(x)[1L]  == "MAP") class0 else x[,1L]
+  claSS                 <- as.integer(levels(claSS))[claSS]
+  if(any(C <- claSS == 0))       {
+    claSS0              <- factor(claSS, levels=c(sort(levels(factor(claSS)))[-1L], 0L))
+    claSS[which(C)]     <- G  + 1
+  } else claSS0         <- factor(claSS)
+  x[,1L]                <- if(names(x)[1L]  == "MAP") claSS0 else x[,1L]
   if(length(gap)        != 1    || (!is.numeric(gap)    ||
      gap    < 0))                                     stop("'gap' must be single strictly non-negative number", call.=FALSE)
   if(length(buffer)     != 1    || (!is.numeric(buffer) ||
      buffer < 0))                                     stop("'buffer' must be single strictly non-negative number", call.=FALSE)
   if(is.null(scatter.pars$scat.pch))  {
-    scatter.pars$pch    <- if(response.type == "uncertainty") 19 else symbols[class]
+    scatter.pars$pch    <- if(response.type == "uncertainty") 19 else symbols[claSS]
   } else scatter.pars$pch         <- scatter.pars$scat.pch
   if(is.null(scatter.pars$scat.size)) {
     scatter.pars$size   <- grid::unit(0.25, "char")
@@ -336,7 +336,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(length(scatter.pars$noise.size)   > 1 ||
      !inherits(scatter.pars$noise.size,     "unit"))  stop("'scatter.pars$noise.size' must be a single item of class 'unit'", call.=FALSE)
   if(is.null(scatter.pars$scat.col))  {
-    scatter.pars$col    <- colors[class]
+    scatter.pars$col    <- colors[claSS]
   } else scatter.pars$col    <- scatter.pars$scat.col
   if(is.null(scatter.pars$lci.col))   {
     scatter.pars$lci.col     <- colors[Gseq]
@@ -415,7 +415,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   } else if(length(diag.pars$show.counts) > 1 ||
             !is.logical(diag.pars$show.counts))       stop("'diag.pars$show.counts' must be a single logical indicator", call.=FALSE)
   if(is.null(stripplot.pars$strip.pch)) {
-    stripplot.pars$pch  <- if(response.type   == "uncertainty" && uncert.cov) 19L else symbols[class]
+    stripplot.pars$pch  <- if(response.type   == "uncertainty" && uncert.cov) 19L else symbols[claSS]
   } else stripplot.pars$pch       <- if(response.type  == "uncertainty" && uncert.cov) 19L else stripplot.pars$strip.pch
   if(length(uncert.cov)  > 1                  ||
      !is.logical(uncert.cov))                         stop("'uncert.cov' must be a single logical indicator", call.=FALSE)
@@ -439,14 +439,14 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     stripplot.pars$size <- replace(rep(stripplot.pars$size, nrow(dat)), clust == 0, stripplot.pars$size.noise)
   }
   if(is.null(stripplot.pars$strip.col))  {
-    stripplot.pars$col  <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else colors[class]
+    stripplot.pars$col  <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else colors[claSS]
   } else stripplot.pars$col       <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else stripplot.pars$strip.col
   if(is.null(stripplot.pars$jitter)) {
   stripplot.pars$jitter <- TRUE
   }
   bar.col               <- FALSE
   if(is.null(barcode.pars$bar.col))  {
-    barcode.pars$col    <- colors[rev(seq_along(unique(class)))]
+    barcode.pars$col    <- colors[rev(seq_along(unique(claSS)))]
   } else {
     if(length(barcode.pars$bar.col) == 1) {
       bar.col           <- TRUE
@@ -476,8 +476,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     mosaic.pars$shade   <- NULL
   }
   noise.cols <- scatter.pars$col
-  scatter.pars$ecol     <- unique(noise.cols[class != G + 1])[match(Gseq, uni.c)]
-  noise.cols <- unique(noise.cols)[match(if(noise) c(Gseq, G + 1) else Gseq, unique(class))]
+  scatter.pars$ecol     <- unique(noise.cols[claSS != G + 1])[match(Gseq, uni.c)]
+  noise.cols <- unique(noise.cols)[match(if(noise) c(Gseq, G + 1) else Gseq, unique(claSS))]
   grid::grid.newpage()
   vp.main    <- grid::viewport(x=outer.margins$bottom, y=outer.margins$left,
                                width=grid::unit(1,  "npc") - outer.margins$right - outer.margins$left,

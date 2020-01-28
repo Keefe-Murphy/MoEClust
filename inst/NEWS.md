@@ -10,12 +10,18 @@ __and a Noise Component__
     * Improved checks on the `resids` arg. to `MoE_mahala`.
     * `MoE_control` arg. `exp.init$max.init` now defaults to `.Machine$integer.max`.
     * Greatly expanded the `MoE_mahala` examples.
+* Improvements to `predict.MoEClust`:  
+    * Now returns the predicted values of the gating and expert networks.
+    * Now returns the predictions from the expert network of the most probable component  
+    (`MAPy`), in addition to the (aggregated) predicted responses (`y`).
+    * New arg. `MAPresids` governs whether residuals are computed against `MAPy` or `y`.
+    * New arg. `use.y` (see documentation for details).
+    * Now allows empty `newdata` for models with no covariates of any kind.
+    * Fixed prediction for equal mixing proportion models when `discard.noise=FALSE`.
 * Fixed small `MoE_stepwise` bugs when  
     * only one of `gating` or `expert` are supplied.
     * univariate response `data` are supplied.
 * `noise_vol` now returns correction location for univariate data when `reciprocal=TRUE`.
-* `predict.MoEClust` now also returns the predicted values of the gating and expert networks.
-* `predict.MoEClust` now allows empty `newdata` for models with no covariates of any kind.
 
 ## MoEClust v1.2.4 - (_7<sup>th</sup> release [patch update]: 2019-12-11_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
