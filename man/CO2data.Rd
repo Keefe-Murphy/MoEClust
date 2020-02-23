@@ -4,12 +4,14 @@
 \name{CO2data}
 \alias{CO2data}
 \title{GNP and CO2 Data Set}
-\format{This data frame consists of 28 countries and the following variables:\cr
+\format{
+This data frame consists of 28 countries and the following variables:\cr
 \itemize{
 \item{\code{GNP}}{ - The gross product per capita in 1996.}
 \item{\code{CO2}}{ - The estimated carbon dioxide emission per capita in 1996.}
 \item{\code{country}}{ - An abbreviation pertaining to the country measures (e.g. \code{"GRC"} = Greece and \code{"CH"} = Switzerland).}
-}}
+}
+}
 \usage{
 data(CO2data)
 }

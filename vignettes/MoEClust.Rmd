@@ -113,7 +113,7 @@ Compare all sets of results to choose the optimal model.
 ```
 
 ```{r, echo=FALSE}
-(summ <- suppressMessages(summary(best)))
+(summ <- suppressWarnings(summary(best)))
 ```
 
 Visualise the results for the optimal model using a generalised pairs plot.
@@ -158,8 +158,12 @@ plot(mod, what="uncertainty")
 
 Predictions can also be made from `MoEClust` models: the response, probability of cluster membership, and the MAP classification can be predicted for the fitted data or for new data (in the form of new covariates and new response variables, or new covariates only). Let's predict the response variable using the optimal model fit above to the CO2 data.
 
-```{r}
+```{r, eval=FALSE}
 as.vector(predict(comp$optimal)$y)
+```
+
+```{r, echo=FALSE}
+as.vector(suppressWarnings(predict(comp$optimal)$y))
 ```
 
 Now let's build a model on some of the CO2 data and retain the indices of the withheld observations:
@@ -172,12 +176,20 @@ res2    <- MoE_clust(CO2data[-ind,]$CO2, G=3, expert=~GNP,
 
 Now we can make predictions on the withheld data, either by using the withheld covariates only, or by also using the withheld response variables. Note that `newdata` can be either a list with component(s) `new.x` (and optionally `new.y`) or a single matrix/data.frame with the appropriate columns.
 
-```{r}
+```{r, eval=FALSE}
 # Using new covariates only
-predict(res2, newdata= list(new.x=CO2data[ind,"GNP", drop=FALSE])) 
+predict(res2, newdata = CO2data[ind,], use.y = FALSE)[1:3]
 
 # Using both new covariates & new response data
-predict(res2, newdata = CO2data[ind,])         
+predict(res2, newdata = CO2data[ind,])[1:3]         
+```
+
+```{r, echo=FALSE}
+# Using new covariates only
+suppressWarnings(predict(res2, newdata = CO2data[ind,], use.y = FALSE)[1:3])
+
+# Using both new covariates & new response data
+predict(res2, newdata = CO2data[ind,])[1:3]         
 ```
 
 ## AIS Data
@@ -235,7 +247,7 @@ Plot the BIC of the visited models.
 plot(mod, what="criterion", legendArgs=list(x="right"))
 ```
 
-Plot the gating network of the optimal model against the gating concomitant `BMI`. Note the horizontal line of grey points corresponding to the noise component due to the specification of `noise.gate=FALSE` in the original function call.
+Plot the gating network of the optimal model against the gating concomitant `BMI`. Note the flat horizontal line of grey circles corresponding to the noise component due to the specification of `noise.gate=FALSE` in the original function call.
 
 ```{r, eval=FALSE}
 plot(mod, what="gating", x.axis=ais$BMI, type="p", xlab="BMI", pch=1)

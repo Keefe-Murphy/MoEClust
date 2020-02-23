@@ -16,7 +16,7 @@ The \code{variance} component only from the \code{parameters} list from the outp
 In the presence of expert network covariates, this helper function modifies the component-specific covariance matrices of a \code{"MoEClust"} object, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses. The function also works for univariate response data.
 }
 \details{
-This function is used internally by \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}}, for visualisation purposes.
+This function is used internally by \code{\link{plot.MoEClust}} and \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, for visualisation purposes.
 }
 \note{
 The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters. Usually, the \code{modelName} of the transformed \code{variance} object will be "\code{VVV}".
@@ -36,7 +36,7 @@ expert_covar(res)
 Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
+\code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

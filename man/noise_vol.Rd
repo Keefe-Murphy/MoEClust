@@ -26,10 +26,10 @@ This can be used as the hypervolume parameter for the noise component when obser
 This can help in predicting the fitted values of models fitted with noise components via \code{\link{MoE_clust}}.}}
 }
 \description{
-Computes simple appproximations to the hypervolume of univariate and multivariate data sets. Also returns the location of the centre of mass.
+Computes simple approximations to the hypervolume of univariate and multivariate data sets. Also returns the location of the centre of mass.
 }
 \note{
-This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specificying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
+This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
 
 Note that supplying the volume manually to \code{\link{MoE_clust}} can affect the summary of the means in \code{parameters$mean} and by extension the location of the MVN ellipses in \code{\link{MoE_gpairs}} plots for models with \emph{both} expert network covariates and a noise component. The location cannot be estimated when the volume is supplied manually; in this case, prediction is made on the basis of renormalising the \code{z} matrix after discarding the column corresponding to the noise component. Otherwise, the mean of the noise component is accounted for. The renormalisation approach can be forced by specifying \code{noise.args$discard.noise=TRUE}, even when the mean of the noise component is available.
 }

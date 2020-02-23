@@ -12,8 +12,8 @@ aitken(loglik)
 \value{
 A list with the following named components:
 \item{\code{ll}}{The most current estimate for the log-likelihood.}
-\item{\code{linf}}{The most current estimate of the final converged maxmised log-likelihood.}
-\item{\code{a}}{The Aitken acceleration value where typically \code{0 <= a <= 1}. When \code{a < 0}, a numerical issue or bug has occured; when \code{a > 1}, the algorithm is accelerating and should not be stopped.}
+\item{\code{linf}}{The most current estimate of the final converged maximised log-likelihood.}
+\item{\code{a}}{The Aitken acceleration value where typically \code{0 <= a <= 1}. When \code{a < 0}, a numerical issue or bug has occurred; when \code{a > 1}, the algorithm is accelerating and should not be stopped.}
 When the \code{"aitken"} method is employed within \code{\link{MoE_clust}} (via \code{\link{MoE_control}}), \code{ll} at convergence gives the log-likelihood achieved by the estimated parameters, while \code{linf} at convergence estimates the log-likelihood that would be achieved after an infinite number of EM/CEM iterations.
 }
 \description{

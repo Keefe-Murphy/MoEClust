@@ -61,11 +61,11 @@
 #' \item{\code{z}}{The final responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component. If there is a noise component, its values are found in the \emph{last} column.}
 #' \item{\code{classification}}{The vector of cluster labels for the chosen model corresponding to \code{z}, i.e. \code{max.col(z)}. Observations belonging to the noise component, if any, will belong to component \code{0}.}
 #' \item{\code{uncertainty}}{The uncertainty associated with the \code{classification}.}
-#' \item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any. Will contain zero columns in the absence of gating or expert network covariates. Supplied gating covariates will be exluded if the optimal model has only one component. May have fewer columns than covariates supplied via the \code{network.data} argument also, as only the included covariates are gathered here.}
+#' \item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any. Will contain zero columns in the absence of gating or expert network covariates. Supplied gating covariates will be excluded if the optimal model has only one component. May have fewer columns than covariates supplied via the \code{network.data} argument also, as only the included covariates are gathered here.}
 #' \item{\code{resid.data}}{In the presence of expert network covariates, this is the augmented data actually used in the clustering at convergence, as a list of \code{G} matrices of WLS residuals of dimension \code{n * d}. Will contain zero columns in the absence of expert network covariates.}
 #' \item{\code{DF}}{A matrix giving the numbers of estimated parameters (i.e. the number of 'used' degrees of freedom) for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. Subtract these numbers from \code{n} to get the degrees of freedom. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustDF"}, for which dedicated printing and plotting functions exist, respectively.}
 #' \item{\code{ITERS}}{A matrix giving the total number of EM/CEM iterations for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged. Inherits the classes \code{"MoECriterion"} and \code{"mclustITERS"}, for which dedicated printing and plotting functions exist, respectively.}
-#' Dedicated \code{\link[=plot.MoEClust]{plot}}, \code{\link[=predict.MoEClust]{predict}}, \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link{as.Mclust}}.
+#' Dedicated \code{\link[=plot.MoEClust]{plot}}, \code{\link[=predict.MoEClust]{predict}}, \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link[=as.Mclust.MoEClust]{as.Mclust}}.
 #' @details The function effectively allows 6 different types of Gaussian Mixture of Experts model (as well as the different models in the GPCM/\pkg{mclust} family, for each): i) the standard finite Gaussian mixture with no covariates, ii) fixed covariates only in the gating network, iii) fixed covariates only in the expert network, iv) the full Mixture of Experts model with fixed covariates entering both the mixing proportions and component densities. By constraining the mixing proportions to be equal (see \code{equalPro} in \code{\link{MoE_control}}) two extra special cases are facilitated when gating covariates are excluded. 
 #' 
 #' Note that having the same covariates in both networks is allowed. So too are interactions, transformations, and higher order terms (see \code{\link[stats]{formula}}): the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). Covariates can be continuous, categorical, logical, or ordinal, but the response must always be continuous.
@@ -75,7 +75,7 @@
 #'
 #' @seealso See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
 #' 
-#' \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{MoE_control}}, \code{\link{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
+#' \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{MoE_control}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
 #' @export
 #' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #'
@@ -160,6 +160,7 @@
     exp.init      <- control$exp.init
     do.joint      <- exp.init$joint   && init.z != "random"
     max.init      <- exp.init$max.init
+    Identity      <- exp.init$identity
     drop.exp      <- exp.init$drop.break
     tol           <- control$tol[1L]
     g.reltol      <- control$tol[3L]
@@ -349,7 +350,7 @@
       Gn          <- G + !noise.null - !gate.noise
       if(gate.x   &&
          any(Gn   <= 1))        {
-        if(all(Gn <= 1) && verbose)               message(paste0("Can't include gating network covariates ", ifelse(gate.noise, "in a single component mixture", "where G is less than 3 when 'noise.args$noise.gate' is FALSE\n")))
+        if(all(Gn <= 1) && verbose)               message(paste0("Can't include gating network covariates ", ifelse(gate.noise, "in a single component mixture", "where G is less than 2 when 'noise.args$noise.gate' is FALSE\n")))
         gate.G[Gn <= 1]        <- FALSE
       }
       gate.names  <- stats::terms(gating)
@@ -494,10 +495,14 @@
        }
      }
     }
+    if(exp.crit   <- exp.x    && exp.init$mahalanobis) {
+      crit.exp    <- 
+      iter.exp    <- stats::setNames(rep(NA, len.G), paste0("G=", range.G))
+    }
     if(clust.MD   <- exp.init$clustMD) {
-      if(exp.init$joint)        {
+      if((do.md   <- exp.init$joint))  {
         exp.fac   <- ncol(expx.covs)   - nct
-        if((do.md <- exp.fac    > 0))  {
+        if((do.md <- exp.fac   > 0))   {
           if(!(has.md         <- suppressMessages(requireNamespace("clustMD",
                                  quietly=TRUE)))) warning("'exp.init$clustMD' not invoked - 'clustMD' library not loaded\n", call.=FALSE, immediate.=TRUE)
         } else if(isTRUE(verbose))                message("'exp.init$clustMD' not invoked - no categorical or ordinal expert network covariates\n")
@@ -514,8 +519,8 @@
       J           <- ncol(XY)
       CnsIndx     <- d + nct
       OrdIndx     <- J - length(n.ind)
-      has.pkg     <- suppressMessages(requireNamespace(c("snow", "parallel"), quietly=TRUE))
-      if(!has.pkg)                                stop("'parallel' and 'snow' packages must be installed to use 'exp.init$clustMD=TRUE'", call.=FALSE)
+      has.pkg     <- suppressMessages(requireNamespace("snow", quietly=TRUE))
+      if(!has.pkg)                                stop("'snow' package must be installed to use 'exp.init$clustMD=TRUE'", call.=FALSE)
       mdx         <- utils::capture.output( {
         mds       <- clustMD::clustMDparallel(X=XY, G=g.range, CnsIndx=CnsIndx, OrdIndx=OrdIndx, Nnorms=25000, MaxIter=500, store.params=FALSE,
                                               model=c("EII", "VII", "EEI", "VEI", "EVI", "VVI", "BD"), autoStop=TRUE, stop.tol=1e-04, scale=FALSE,
@@ -646,8 +651,13 @@
         expN      <- stats::update.formula(expert, xN ~ .)
         ix        <- 0L
         ne        <- ncol(expnoise)
-        while(!identical(tmp.z, z.tmp) && ix <= max.init) {
+        oldcrit   <- Inf
+        newcrit   <- .Machine$double.xmax
+        while(!identical(tmp.z, z.tmp) &&
+              newcrit   <= oldcrit     && ix <= max.init) {
+          old.z   <- tmp.z
           tmp.z   <- z.tmp
+          oldcrit <- newcrit
           ix      <- ix  + 1L
           for(k in Gseq) {
             sub   <- z.tmp[,k] == 1
@@ -677,19 +687,27 @@
               }
               res              <- 
               res.G[[k]]       <- xN   - pred
-              mahala[[k]]      <- if(g > 1) MoE_mahala(exp, res, squared=TRUE)
+              mahala[[k]]      <- MoE_mahala(exp, res, squared=TRUE, identity=Identity)
             }
           }
           if(!init.exp)  {
             break
-          } else if(g  > 1)     {
+          } else   {
             maha  <- do.call(cbind, mahala)
             if(anyNA(maha))     {
               init.exp         <- FALSE
               break
-            } else   z.tmp     <- maha == rowMins(maha)
+            } else     {
+              mahamin <- rowMins(maha)
+              newcrit <- pmin(sum(mahamin), oldcrit)
+              z.tmp   <- maha  == mahamin
+              if(identical(z.tmp, old.z))         break
+            }
           }
+          if(g    == 1)  break
         }
+        if(exp.crit) newcrit   -> crit.exp[which(g == range.G)]
+        if(exp.crit) ix        -> iter.exp[which(g == range.G)]
         if(ix     >= max.init)                    warning(paste0("\tMahalanobis initialisation step failed to converge in max.init=", max.init, " iterations for the ", g, " cluster models\n"), call.=FALSE, immediate.=TRUE)
         if(noiseG && init.exp  && tnull)  {
          nRG      <- replicate(g, matrix(NA, nrow=n, ncol=d), simplify=FALSE)
@@ -1034,7 +1052,7 @@
       best.ind    <- best.ind[which.min(best.ind[,1L]),]
     }
     best.G        <- best.ind[1L]
-    G             <- G[best.G]
+    G             <- range.G[best.G]
     if(len.G > 1  && verbose)   {
       if(G        == min(range.G))                message("Best model occurs at the min of the number of components considered\n")
       if(G        == max(range.G))                message("Best model occurs at the max of the number of components considered\n")
@@ -1102,6 +1120,8 @@
     attr(x.fitG, "Noise")      <-
     attr(x.fitE, "Noise")      <- G == 0 || !noise.null
     attr(x.fitE, "Formula")    <- Reduce(paste, deparse(expert[-2L]))
+    attr(x.fitE, "Criterion")  <- if(exp.crit) crit.exp
+    attr(x.fitE, "Iterations") <- if(exp.crit) iter.exp
     class(x.fitG) <- c("MoE_gating", class(x.fitG))
     class(x.fitE) <- c("MoE_expert", class(x.fitE))
     if(G > 0) {
@@ -1261,6 +1281,8 @@
     attr(results, "EqualPro")  <- ctrl$equalPro
     attr(results, "Expert")    <- exp.x
     attr(results, "Gating")    <- bG
+    attr(results, "Init.Crit") <- if(exp.crit) crit.exp
+    attr(results, "Init.Iter") <- if(exp.crit) iter.exp
     attr(results, "Noise")     <- G == 0 || !noise.null
     attr(results, "NoiseGate") <- ctrl$noise.gate
     attr(results, "Z.init")    <- x1start
@@ -1497,7 +1519,7 @@
 #' @param z The \code{n} times \code{G} responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component.. If supplied the ICL is also computed and returned, otherwise only the BIC and AIC.
 #' @param df An alternative way to specify the number of estimated parameters (or 'used' degrees of freedom) exactly. If supplied, the arguments \code{d, G, gating.pen} and \code{expert.pen}, which are used to calculate the number of parameters, will be ignored. The number of parameters used in the estimation of the noise component, if any, should also be included.
 #'
-#' @details The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.
+#' @details The function is vectorised with respect to the arguments \code{modelName} and \code{loglik}.
 #'
 #' If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
 #'
@@ -1564,7 +1586,7 @@
 #' When \code{init.z="mclust"} or \code{\link[clustMD]{clustMD}} is successfully invoked (via \code{exp.init$clustMD}), the argument \code{init.crit} (see below) specifies the model-selection criterion ("\code{bic}" or "\code{icl}") by which the optimal \code{\link[mclust]{Mclust}} or \code{\link[clustMD]{clustMD}} model type to initialise with is determined, and \code{criterion} remains unaffected.
 #' @param noise.args A list supplying select named parameters to control inclusion of a noise component in the estimation of the mixture. If either or both of the arguments \code{tau0} &/or \code{noise.init} are supplied, a noise component is added to the the model in the estimation.
 #' \describe{
-#' \item{\code{tau0}}{Prior mixing proportion for the noise component. If supplied, a noise component will be added to the model in the estimation, with \code{tau0} giving the prior probability of belonging to the noise component for \emph{all} observations. Typically supplied as a scalar in the interval (0, 1), e.g. \code{0.1}. Can be supplied as a vector when gating covariates are present and \code{noise.args$noise.gate} is \code{TRUE}. This argument can be spplied instead of or in conjuction with the argument \code{noise.init} below.}
+#' \item{\code{tau0}}{Prior mixing proportion for the noise component. If supplied, a noise component will be added to the model in the estimation, with \code{tau0} giving the prior probability of belonging to the noise component for \emph{all} observations. Typically supplied as a scalar in the interval (0, 1), e.g. \code{0.1}. Can be supplied as a vector when gating covariates are present and \code{noise.args$noise.gate} is \code{TRUE}. This argument can be supplied instead of or in conjunction with the argument \code{noise.init} below.}
 #' \item{\code{noise.init}}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise component will be added to the model in the estimation. This argument can be used in conjunction with \code{tau0} above, or can be replaced by that argument also.}
 #' \item{\code{noise.gate}}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
 #' \item{\code{noise.meth}}{The method used to estimate the volume when a noise component is invoked. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead (unless \code{noise.vol} below is specified). The options "\code{convexhull}" and "\code{ellipsoidhull}" require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant if \code{noise.vol} below is not supplied.}
@@ -1582,11 +1604,12 @@
 #' \describe{
 #' \item{\code{joint}}{A logical indicating whether the initial partition is obtained on the joint distribution of the response and expert network covariates (defaults to \code{TRUE}) or just the response variables (\code{FALSE}). By default, only continuous expert network covariates are considered (see \code{exp.init$clustMD} below). Only relevant when \code{init.z} is not \code{"random"} (unless \code{isTRUE(exp.init$clustMD)}, in which case \code{init.z} specifies the initialisation routine for a call to \code{\link[clustMD]{clustMD}}). This will render the \code{"quantile"} option to \code{init.z} for univariate data unusable if continuous expert network covariates are supplied &/or categorical/ordinal expert network covariates are supplied when \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded.}
 #' \item{\code{mahalanobis}}{A logical indicating whether to iteratively reallocate observations during the initialisation phase to the component corresponding to the expert network regression to which it's closest to the fitted values of in terms of Mahalanobis distance (defaults to \code{TRUE}). This will ensure that each component can be well modelled by a single expert prior to running the EM/CEM algorithm.}
-#' \item{\code{\link[clustMD]{clustMD}}}{A logical indicating whether categorical/ordinal covariates should be incorporated when using the joint distribution of the response and expert network covariates for initialisation (defaults to \code{FALSE}). Only relevant when \code{isTRUE(exp.init$joint)}. Requires the use of the \code{\link[clustMD]{clustMD}} library. Note that initialising in this manner involves fiting all \code{\link[clustMD]{clustMD}} model types in parallel for all numbers of components considered, and may fail (especially) in the presence of nominal expert network covariates.
+#' \item{\code{\link[clustMD]{clustMD}}}{A logical indicating whether categorical/ordinal covariates should be incorporated when using the joint distribution of the response and expert network covariates for initialisation (defaults to \code{FALSE}). Only relevant when \code{isTRUE(exp.init$joint)}. Requires the use of the \code{\link[clustMD]{clustMD}} library. Note that initialising in this manner involves fitting all \code{\link[clustMD]{clustMD}} model types in parallel for all numbers of components considered, and may fail (especially) in the presence of nominal expert network covariates.
 #'
 #' Unless \code{init.z="list"}, supplying this argument as \code{TRUE} when the \code{\link[clustMD]{clustMD}} library is loaded has the effect of superseding the \code{init.z} argument: this argument now governs instead how the call to \code{\link[clustMD]{clustMD}} is initialised (unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components, in which case \code{init.z} is invoked \emph{instead} to initialise for \code{G} values for which all \code{\link[clustMD]{clustMD}} model types failed). Similarly, the arguments \code{hc.args} and \code{km.args} will be ignored (again, unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components).}
 #' \item{\code{max.init}}{The maximum number of iterations for the Mahalanobis distance-based reallocation procedure when \code{exp.init$mahalanobis} is \code{TRUE}. Defaults to \code{.Machine$integer.max}.}
-#' \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given componenet's expert regression (particularly for categorical covariates). It may also occur, due to this partitioning, that "unseen" data, when calculating the residuals, will have new factor levels. When \code{isTRUE(exp.init$drop.break)}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios.
+#' \item{\code{identity}}{A logical indicating whether the identity matrix (corresponding to the use of the Euclidean distance) is used in place of the covariance matrix of the residuals (corresponding to the use of the Mahalanobis distance). Defaults to \code{FALSE}; only relevant for multivariate response data.}
+#' \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given component's expert regression (particularly for categorical covariates). It may also occur, due to this partitioning, that "unseen" data, when calculating the residuals, will have new factor levels. When \code{isTRUE(exp.init$drop.break)}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios.
 #'
 #' Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{exp.init$drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{exp.init$drop.break}.}
 #' }
@@ -1612,7 +1635,7 @@
 #' }
 #' @param init.crit The criterion to be used to determine the optimal model type to initialise with, when \code{init.z="mclust"} or when \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded (one of "\code{bic}" or "\code{icl}"). Defaults to "\code{icl}" when \code{criterion="icl"}, otherwise defaults to "\code{bic}". The \code{criterion} argument remains unaffected.
 #' @param warn.it A single number giving the iteration count at which a warning will be printed if the EM/CEM algorithm has failed to converge. Defaults to \code{0}, i.e. no warning (which is true for any \code{warn.it} value less than \code{3}), otherwise the message is printed regardless of the value of \code{verbose}. If non-zero, \code{warn.it} should be moderately large, but obviously less than \code{itmax[1]}. A warning will always be printed if one of more models fail to converge in \code{itmax[1]} iterations.
-#' @param MaxNWts The maximum allowable number of weights in the call to \code{\link[nnet]{multinom}} for the multinomial logistic regression in the gating network. There is no instrinsic limit in the code, but increasing \code{MaxNWts} will probably allow fits that are very slow and time-consuming. It may be necessary to increase \code{MaxNWts} when categorical concomitant variables with many levels are included or the number of components is high.
+#' @param MaxNWts The maximum allowable number of weights in the call to \code{\link[nnet]{multinom}} for the multinomial logistic regression in the gating network. There is no intrinsic limit in the code, but increasing \code{MaxNWts} will probably allow fits that are very slow and time-consuming. It may be necessary to increase \code{MaxNWts} when categorical concomitant variables with many levels are included or the number of components is high.
 #' @param verbose Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.
 #' @param ... Catches unused arguments.
 #'
@@ -1722,6 +1745,10 @@
       exp.init$mahalanobis  <- TRUE
     } else if(length(exp.init$mahalanobis)  > 1 ||
               !is.logical(exp.init$mahalanobis))  stop("'exp.init$mahalanobis' must be a single logical indicator",     call.=FALSE)
+    if(is.null(exp.init$identity))          {
+      exp.init$identity     <- FALSE
+    } else if(length(exp.init$identity)     > 1 ||
+              !is.logical(exp.init$identity))     stop("'exp.init$identity' must be a single logical indicator",        call.=FALSE)
     if(is.null(exp.init$max.init))          {
       exp.init$max.init     <- .Machine$integer.max
     } else if(isTRUE(exp.init$mahalanobis)      &&
@@ -1853,8 +1880,8 @@
 #'
 #' @return A list with the following named components:
 #' \item{\code{ll}}{The most current estimate for the log-likelihood.}
-#' \item{\code{linf}}{The most current estimate of the final converged maxmised log-likelihood.}
-#' \item{\code{a}}{The Aitken acceleration value where typically \code{0 <= a <= 1}. When \code{a < 0}, a numerical issue or bug has occured; when \code{a > 1}, the algorithm is accelerating and should not be stopped.}
+#' \item{\code{linf}}{The most current estimate of the final converged maximised log-likelihood.}
+#' \item{\code{a}}{The Aitken acceleration value where typically \code{0 <= a <= 1}. When \code{a < 0}, a numerical issue or bug has occurred; when \code{a > 1}, the algorithm is accelerating and should not be stopped.}
 #' When the \code{"aitken"} method is employed within \code{\link{MoE_clust}} (via \code{\link{MoE_control}}), \code{ll} at convergence gives the log-likelihood achieved by the estimated parameters, while \code{linf} at convergence estimates the log-likelihood that would be achieved after an infinite number of EM/CEM iterations.
 #' @export
 #' @keywords control
@@ -1908,7 +1935,7 @@
 #'
 #' A dedicated \code{print} function exists for objects of class \code{"MoECompare"}.
 #' 
-#' \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
+#' \code{\link{plot.MoEClust}} and \code{\link[=as.Mclust.MoEClust]{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
 #'
 #' @details The purpose of this function is to conduct model selection on \code{"MoEClust"} objects, fit to the same data set, with different combinations of gating/expert network covariates or different initialisation settings.
 #'
@@ -1944,7 +1971,7 @@
 #'
 #' @seealso See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
 #' 
-#' \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
+#' \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 #' @usage
 #' MoE_compare(...,
 #'             criterion = c("bic", "icl", "aic"),
@@ -2155,7 +2182,7 @@
 #'
 #' Predicts both cluster membership probabilities and fitted response values from a \code{MoEClust} model, using covariates and response data, or covariates only. The predicted MAP classification, mixing proportions, and component means are all also reported in both cases, as well as the predictions of the expert network corresponding to the most probable component.
 #' @param object An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Predictions for models with a noise component are facilitated here too (see \code{discard.noise}).
-#' @param newdata A list with two \emph{named} components, each of which must be a \code{data.frame} or \code{matrix} with named columns, giving the data for which predicitions are desired.
+#' @param newdata A list with two \emph{named} components, each of which must be a \code{data.frame} or \code{matrix} with named columns, giving the data for which predictions are desired.
 #' \describe{
 #' \item{\code{new.x}}{The new covariates for the \code{gating} &/or \code{expert} networks. \strong{Must} be supplied when \code{newdata$new.y} is supplied.}
 #' \item{\code{new.y}}{(Optional) response data. When supplied, cluster and response prediction is based on both \code{newdata$new.x} and \code{newdata$new.y}, otherwise only on the covariates in \code{newdata$new.x}.}
@@ -2167,23 +2194,23 @@
 #' When \code{newdata} is not supplied in any way, the covariates and response variables used in the fitting of the model are used here. It is possible to not supply \code{new.y} and to supply an empty \code{data.frame} or \code{matrix} for \code{new.x} (or to equivalently supply an empty \code{data.frame} or \code{matrix} for \code{newdata} itself) for models with no covariates of any kind, which effectively predicts the weighted mean of the component means.
 #' @param resid A logical indicating whether to return the residuals also. Defaults to \code{FALSE}. Only allowed when response variables are supplied in some form. The function \code{residuals} is a wrapper to \code{predict} with the argument \code{resid} set to \code{TRUE}, with only the residuals returned.
 #' @param discard.noise A logical governing how predictions of the responses are made for models with a noise component (otherwise this argument is irrelevant). By default (\code{FALSE}), the mean of the noise component is accounted for. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied through \code{\link{MoE_control}} via \code{noise.args$noise.vol}), prediction of the responses is performed using a \code{z} matrix which is renormalised after discarding the column corresponding to the noise component. The renormalisation approach can be forced by specifying \code{TRUE}, even when the mean of the noise component is available. For models with a noise component fitted with \code{algo="CEM"}, a small extra E-step is conducted for observations assigned to the non-noise components in this case.
-#' @param MAPresids A logical indicating whether residuals are computed against \code{y} (\code{TRUE}, the default) or \code{MAPy} when \code{FALSE}. See \strong{Value} below for more details.
+#' @param MAPresids A logical indicating whether residuals are computed against \code{y} (\code{TRUE}, the default) or \code{MAPy} when \code{FALSE}. Not relevant for models with equal mixing proportions when only \code{new.x} is available. See \strong{Value} below for more details.
 #' @param use.y A logical indicating whether the response variables (supplied either via \code{new.y} or via \code{newdata} itself) are actually used in the prediction. Defaults to \code{TRUE}, but useful when \code{FALSE} for computing residuals as though only the covariates in \code{new.x} were supplied.
 #' @param ... Catches unused arguments (and allows the \code{predict} arguments \code{discard.noise}, \code{MAPresids}, and \code{use.y} to be passed through \code{residuals}).
 #'
 #' @return A list with the following named components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
 #' \item{\code{y}}{Aggregated fitted values of the response variables.}
-#' \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belonds to the \emph{k}-th component. For models with a noise component, the final column gives the probability of belonging to the so-called \emph{Cluster0}.}
+#' \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belongs to the \emph{k}-th component. For models with a noise component, the final column gives the probability of belonging to the so-called \emph{Cluster0}.}
 #' \item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}. \code{0} is returned for observations assigned to the noise component.}
 #' \item{\code{pro}}{The predicted mixing proportions for the \code{newdata}, i.e. predicted values of the gating network. \code{object$parameters$pro} is returned for models without gating network covariates.}
 #' \item{\code{mean}}{The predicted component means for the \code{newdata}, i.e. predicted values of the expert network. Given as a 3-dimensional array with dimensions given by the number of new observations, the number of variables, and the number of clusters. The first dimension is of length \code{1} when there are no expert network covariates, in which case the entries correspond to \code{object$parameters$mean}.}
-#' \item{\code{MAPy}}{Fitted values of the single expert network to which each observation is most probably assigned. Likely to only be of use for models with gating and expert covariates when only \code{new.x} is supplied.}
+#' \item{\code{MAPy}}{Fitted values of the single expert network to which each observation is most probably assigned. Not returned for models with equal mixing proportions when only \code{new.x} is available. Likely to only be of use for models with gating and expert covariates when only \code{new.x} is supplied. Note that \code{MAPy} and \code{y} will coincide for models fitted via the CEM algorithm (see \code{\link{MoE_control}} and its argument \code{algo}).}
 #'
-#' When \code{residuals} is called, only the residuals are returned; when \code{predict} is called with \code{resid=TRUE}, the list above will also contain the element \code{resids}, containing the residuals.
+#' When \code{residuals} is called, only the residuals (governed by \code{MAPresids}) are returned; when \code{predict} is called with \code{resid=TRUE}, the list above will also contain the element \code{resids}, containing the residuals.
 #' 
 #' The returned values of \code{pro} and \code{mean} are always the same, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
 #'
-#' @note Predictions can also be made for models with noise components, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
+#' @note Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 #' 
 #' Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
 #' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
@@ -2405,12 +2432,18 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   } else           {
     new.tau       <- provideDimnames(if(is.matrix(new.tau)) new.tau[1L,, drop=FALSE] else t(new.tau), base=list("pro", gnames0))
   }
-  if(isTRUE(yM)   && attr(object, "EqualPro"))    warning("Randomness introduced in 'MAPy' due to the equal mixing proportions\n", call.=FALSE, immediate.=TRUE)
   retval          <- list(y=ystar, classification=claX, z=zstar, pro=new.tau, mean=mu)
-  MAPy            <- ystar
-  cD              <- if(ZD && noise) max.col(zstar2) else claX
-  MAPy[]          <- t(vapply(seq_len(nr), function(i, z=cD[i]) if(z == 0) noise.loc else mu[ifelse(Xexp, i, 1L),,z], numeric(nc)))
-  retval          <- c(retval, list(MAPy = MAPy))
+  if((isTRUE(yM)  || isFALSE(use.y))  && 
+     attr(object, "EqualPro"))         {           warning("'MAPy' not returned due to randomness induced by the equal mixing proportions and the absent response variables\n", call.=FALSE, immediate.=TRUE)
+    if(isTRUE(MAPresids))              {           warning("Hence, 'MAPresids' is forced to FALSE\n", call.=FALSE, immediate.=TRUE)
+      MAPresids   <- FALSE
+    }
+  } else           {
+    MAPy          <- ystar
+    cD            <- if(ZD && noise) max.col(zstar2) else claX
+    MAPy[]        <- t(vapply(seq_len(nr), function(i, z=cD[i]) if(z == 0) noise.loc else mu[ifelse(Xexp, i, 1L),,z], numeric(nc)))
+    retval        <- c(retval, list(MAPy = MAPy))
+  }
   retval          <- if(isTRUE(resid)) c(retval, list(resids=provideDimnames(as.matrix(newdata.y - if(isTRUE(MAPresids)) MAPy else ystar), 
                                          base=list(as.character(nrseq), datnames)))) else retval
   class(retval)   <- "listof"
@@ -2464,6 +2497,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @note It is advised to run this function once with \code{noise=FALSE} and once with \code{noise=TRUE} and then choose the optimal model across both sets of results.
 #' 
 #' At present, only additions (of components and covariates) are considered. In future updates, it will be possible to allow both additions and removals.
+#' 
+#' The function will attempt to remove duplicate variables found in both \code{data} and \code{network.data}; in particular, they will be removed from \code{network.data}. Users are however advised to careful specify \code{data} and \code{network.data} such that there are no duplicates, especially if the desired variable(s) should belong to \code{network.data}.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
@@ -2554,10 +2589,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(ncol(data) == 1) {
       colnames(data)   <- deparse(match.call()$data)
     }
-    dup.ind       <- if(any(is.matrix(data), is.data.frame(data))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) identical(network.data[,j], data), logical(1L))
+    dup.ind       <- if(any(is.matrix(data), is.data.frame(data)) && !any(grepl("\\$", colnames(data)))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) isTRUE(all.equal(network.data[,j], unname(unlist(data)))), logical(1L))
     if(any(dup.ind))                              warning("Removing covariates found in response data\n", call.=FALSE, immediate.=TRUE)
     network.data  <- network.data[,!dup.ind, drop=FALSE]  
     netnames      <- colnames(network.data)
+    if(suppressWarnings(!all(is.na(
+       as.numeric(netnames)))))                   stop("Invalid variable names in 'network.data'", call.=FALSE)
     G             <- 0L + isFALSE(noise)
     na.gate       <- !gate.x    && is.na(gating)
     na.expx       <- !exps.x    && is.na(expert)
@@ -2600,7 +2637,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     addE          <- isFALSE(noise)   && !na.expx
     addG          <- FALSE
     addGN         <- FALSE
-    addQ          <- isTRUE(noise)    && isTRUE(args$equalNoise)  && isTRUE(equalPro)
+    addQ          <- isTRUE(equalPro)
     
     while(crit     > crit.old)   {
       crit.old    <- crit
@@ -2703,16 +2740,21 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       MoE_compare(compare, optimal.only=TRUE, criterion=criterion)  
   }
 
+#' @export
+  as.Mclust       <- function(x, ...) {
+      UseMethod("as.Mclust")
+  }
+  
 #' Convert MoEClust objects to the Mclust class
 #'
 #' Converts an object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} and converts it to an object of class \code{"Mclust"} as generated by fitting \code{\link[mclust]{Mclust}}, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package. Some caution is advised when converting models with gating &/or expert covariates (see Note below).
 #' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Models with a noise component are facilitated here too.
-#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variabilitity in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}.
+#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}.
 #' @param signif Significance level for outlier removal. Must be a single number in the interval [0, 1). Corresponds to the percentage of data to be considered extreme and therefore removed (half of \code{signif} at each endpoint, on a column-wise basis). The default, \code{0}, corresponds to no outlier removal. \strong{Only} invoke this argument as an aid to visualisation via \code{\link[mclust]{plot.Mclust}}.
 #' @param ... Further arguments to be passed to other methods.
 #'
 #' @return An object of class \code{"Mclust"}. See \code{methods(class="Mclust")} for a (non-exhaustive) list of functions which can be applied to this class.
-#' @details Of course, the user is always encouraged to use the dedicated \code{\link[=plot.MoEClust]{plot}} function for objects of the \code{"MoEClust"} class instead, but calling \code{plot} after converting via \code{\link{as.Mclust}} can be particularly useful for univariate mixtures.
+#' @details Of course, the user is always encouraged to use the dedicated \code{\link[=plot.MoEClust]{plot}} function for objects of the \code{"MoEClust"} class instead, but calling \code{plot} after converting via \code{\link[=as.Mclust.MoEClust]{as.Mclust}} can be particularly useful for univariate mixtures.
 #'
 #' In the presence of expert network covariates, the component-specific covariance matrices are (by default, via the argument \code{expert.covar}) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
 #'
@@ -2724,50 +2766,45 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' Plots may be quite misleading in the presence of gating &/or expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
 #'
 #' The functions \code{\link[mclust]{clustCombi}} and \code{\link[mclust]{clustCombiOptim}} can be safely used (provided \code{as.Mclust(x)} is supplied as the \code{object} argument to \code{\link[mclust]{clustCombi}}), as they only rely on \code{x$z} and \code{x$G} only. See the examples below.
-#' @importFrom mclust "as.densityMclust.Mclust" "clustCombi" "clustCombiOptim" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "summary.Mclust"
-#' @export
+#' @importFrom matrixStats "colMeans2"
+#' @importFrom mclust "as.Mclust.default" "clustCombi" "clustCombiOptim" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "sigma2decomp" "summary.Mclust"
+#' @method as.Mclust MoEClust
 #' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @references Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
 #' @keywords utility
 #' @usage
-#' as.Mclust(x,
-#'           expert.covar = TRUE,
-#'           signif = 0L,
-#'           ...)
+#' \method{as.Mclust}{MoEClust}(x,
+#'          expert.covar = TRUE,
+#'          signif = 0L,
+#'          ...)
+#' @export
+#' @name as.Mclust
 #' @examples
-#' \donttest{library(mclust)
+#' \donttest{# library(mclust)
 #' 
 #' # Fit a gating network mixture of experts model to the ais data
-#' data(ais)
-#' mod   <- MoE_clust(ais[,3:7], G=1:9, gating= ~ BMI + sex, network.data=ais)
+#' # data(ais)
+#' # mod   <- MoE_clust(ais[,3:7], G=1:9, gating= ~ BMI + sex, network.data=ais)
 #'
 #' # Convert to the "Mclust" class and examine the classification
-#' mod2  <- as.Mclust(mod)
-#' plot(mod2, what="classification")
+#' # mod2  <- as.Mclust(mod)
+#' # plot(mod2, what="classification")
 #'
 #' # Examine the uncertainty
-#' plot(mod2, what="uncertainty")
+#' # plot(mod2, what="uncertainty")
 #'
 #' # Return the optimal number of clusters according to entropy
-#' combi <- mclust::clustCombi(object=mod2)
-#' optim <- mclust::clustCombiOptim(combi)
-#' table(mod2$classification, ais$sex)
-#' table(optim$cluster.combi, ais$sex)
+#' # combi <- mclust::clustCombi(object=mod2)
+#' # optim <- mclust::clustCombiOptim(combi)
+#' # table(mod2$classification, ais$sex)
+#' # table(optim$cluster.combi, ais$sex)
 #'
 #' # While we could have just used plot.MoEClust above,
 #' # plot.Mclust is especially useful for univariate data
-#' data(CO2data)
-#' res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert = ~ GNP, network.data=CO2data)
-#' plot(as.Mclust(res))}
-  as.Mclust       <- function(x, expert.covar = TRUE, signif = 0L, ...) {
-      UseMethod("as.Mclust")
-  }
-
-#' @method as.Mclust MoEClust
-#' @importFrom matrixStats "colMeans2"
-#' @importFrom mclust "sigma2decomp"
-#' @export
+#' # data(CO2data)
+#' # res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert = ~ GNP, network.data=CO2data)
+#' # plot(as.Mclust(res))}
   as.Mclust.MoEClust      <- function(x, expert.covar = TRUE, signif = 0L, ...) {
     x             <- if(inherits(x, "MoECompare")) x$optimal else x
     if(length(signif) > 1 || !is.numeric(signif)     ||
@@ -2800,10 +2837,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' In the presence of expert network covariates, this helper function modifies the component-specific covariance matrices of a \code{"MoEClust"} object, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses. The function also works for univariate response data.
 #' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Models with a noise component are facilitated here too.
 #'
-#' @details This function is used internally by \code{\link{plot.MoEClust}} and \code{\link{as.Mclust}}, for visualisation purposes.
+#' @details This function is used internally by \code{\link{plot.MoEClust}} and \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, for visualisation purposes.
 #' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters. Usually, the \code{modelName} of the transformed \code{variance} object will be "\code{VVV}".
 #' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
-#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 #' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @keywords utility
@@ -3025,6 +3062,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param fit A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.
 #' @param resids The residuals. Can be residuals for observations included in the model, or residuals arising from predictions on unseen data. Must be coercible to a matrix with the number of columns being the number of response variables. Missing values are not allowed.
 #' @param squared A logical. By default (\code{FALSE}), the generalized interpoint distance is computed. Set this flag to \code{TRUE} for the squared value.
+#' @param identity A logical indicating whether the identity matrix is used in in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE}; \code{TRUE} corresponds to the use of the Euclidean distance. Only relevant for multivariate response data.
 #'
 #' @return A vector giving the Mahalanobis distance (or squared Mahalanobis distance) between response(s) and fitted values for each observation.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
@@ -3034,7 +3072,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @usage
 #' MoE_mahala(fit,
 #'            resids,
-#'            squared = FALSE)
+#'            squared = FALSE,
+#'            identity = FALSE)
 #' @examples
 #' \dontshow{library(matrixStats)}
 #' data(ais)
@@ -3052,7 +3091,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' maha <- MoE_mahala(mod2, res2)
 #' 
 #' # Highlight outlying observations
-#' plot(GNP, CO2, type="n")
+#' plot(GNP, CO2, type="n", ylab=expression('CO'[2]))
 #' lines(GNP, pred, col="red")
 #' points(GNP, CO2, cex=maha, lwd=2)
 #' text(GNP, CO2, col="blue", 
@@ -3060,7 +3099,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'      
 #' # Replicate initialisation strategy using 2 randomly chosen components
 #' # Repeat the random initialisation if necessary
-#' G       <- 2L
+#' # (until 'crit' at convergence is minimised)
+#' G       <- 3L
 #' z       <- sample(seq_len(G), nrow(CO2data), replace=TRUE)
 #' old     <- Inf
 #' crit    <- .Machine$double.xmax
@@ -3068,7 +3108,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'   Sys.sleep(1)
 #'   old   <- crit
 #'   maha  <- NULL
-#'   plot(GNP, CO2, type="n")
+#'   plot(GNP, CO2, type="n", ylab=expression('CO'[2]))
 #'   for(g in seq_len(G)) { 
 #'    ind  <- which(z == g)
 #'    mod  <- lm(CO2 ~ GNP, data=CO2data, sub=ind)
@@ -3076,14 +3116,15 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'    maha <- cbind(maha, MoE_mahala(mod, CO2 - pred))
 #'    lines(GNP, pred, col=g + 1L)
 #'   }
-#'   z     <- apply(maha, 1L, which.min)
-#'   crit  <- sum(sapply(seq_len(nrow(CO2data)), function(i) maha[i,z[i]]))
-#'   maha  <- rowMins(maha)
-#'   points(GNP, CO2, cex=maha, lwd=2, col=z + 1L)
-#'   text(GNP, CO2, col="blue", 
-#'        labels=replace(as.character(CO2data$country), which(maha <= 0.8), ""))
-#' }}
-  MoE_mahala      <- function(fit, resids, squared = FALSE)    {
+#'   min.M <- rowMins(maha)
+#'   crit  <- sum(min.M)
+#'   z     <- max.col(maha == min.M)
+#'   points(GNP, CO2, cex=min.M, lwd=2, col=z + 1L)
+#'   text(GNP, CO2, col=z + 1L, 
+#'        labels=replace(as.character(CO2data$country), which(min.M <= 1), ""))
+#' }
+#' crit}
+  MoE_mahala      <- function(fit, resids, squared = FALSE, identity = FALSE) {
     if(!inherits(fit, "mlm") &&
        !inherits(fit, "lm"))                      stop("'fit' must inherit the class \"mlm\" or \"lm\"",  call.=FALSE)
     resids        <- tryCatch(data.matrix(as.data.frame(resids)), error=function(e) {
@@ -3092,8 +3133,14 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
        anyNA(resids))                             stop("Invalid 'resids': must be numeric and contain no missing values", call.=FALSE)
     if(length(squared) > 1   ||
        !is.logical(squared))                      stop("'squared' must be a single logical indicator",    call.=FALSE)
+    if(length(identity) > 1  ||
+       !is.logical(identity))                     stop("'identity' must be a single logical indicator",   call.=FALSE)
     
     if(inherits(fit, "mlm"))  {
+     if(isTRUE(identity))     {
+       icov       <- diag(ncol(resids))
+     } else        { 
+      covar       <- crossprod(resids)/(nrow(resids) - fit$rank)
       covar[!stats::complete.cases((covar))]   <- .Machine$double.eps
       if(diff(dim(resids))   >= 0)     {
         covsvd    <- svd(covar)
@@ -3101,22 +3148,26 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         icov      <- if(all(posi)) covsvd$v   %*% (t(covsvd$u)/covsvd$d) else if(any(posi))
         covsvd$v[,posi, drop=FALSE]   %*% (t(covsvd$u[,posi, drop=FALSE])/covsvd$d[posi]) else array(0L, dim(covar)[2L:1L])
       } else icov <- chol2inv(.chol(covar))
-      res         <- rowSums2(resids  %*% icov * resids)
+     }
+     res          <- rowSums2(resids  %*% icov * resids)
     }   else       {
+    #covar        <- as.numeric(crossprod(resids)/(nrow(resids) - fit$rank))
+     covar        <- 1L
+     res          <- (resids  * resids)/covar
     }
       return(as.vector(if(isTRUE(squared)) res else sqrt(res)))
   }
 
 #' Approximate Hypervolume Estimate
 #'
-#' Computes simple appproximations to the hypervolume of univariate and multivariate data sets. Also returns the location of the centre of mass.
+#' Computes simple approximations to the hypervolume of univariate and multivariate data sets. Also returns the location of the centre of mass.
 #' @param data A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed, and covariates should not be included. If a matrix or data frame, rows correspond to observations and columns correspond to variables. There \strong{must} be more observations than variables.
 #' @param method The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The "\code{convexhull}" and "\code{ellipsoidhull}" options require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used.
 #' @param reciprocal A logical variable indicating whether or not the reciprocal hypervolume is desired rather than the hypervolume itself. The default is to return the hypervolume.
 #'
 #' @importFrom matrixStats "colMeans2" "colRanges" "rowDiffs" "rowMeans2"
 #' @importFrom mclust "hypvol"
-#' @note This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specificying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
+#' @note This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
 #' 
 #' Note that supplying the volume manually to \code{\link{MoE_clust}} can affect the summary of the means in \code{parameters$mean} and by extension the location of the MVN ellipses in \code{\link{MoE_gpairs}} plots for models with \emph{both} expert network covariates and a noise component. The location cannot be estimated when the volume is supplied manually; in this case, prediction is made on the basis of renormalising the \code{z} matrix after discarding the column corresponding to the noise component. Otherwise, the mean of the noise component is accounted for. The renormalisation approach can be forced by specifying \code{noise.args$discard.noise=TRUE}, even when the mean of the noise component is available.
 #' @return A list with the following two elements:
@@ -3526,6 +3577,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     formula       <- attr(object, "Formula")
     class(object) <- class(object)[2L]
     summ          <- summary(object, ...)
+    summ$OddsRatios      <- exp(summ$coefficients)
     class(summ)   <- "summary_MoEgate"
     attr(summ, "Class")  <- class(object)
     attr(summ, "Noise")  <- noise
@@ -3563,8 +3615,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     gateNoise     <- noise && !equalpro && formula != "~1"
     class(x)      <- switch(EXPR=attr(x, "Class"), glm="summary.glm", "summary.multinom")
     print(x, ...)
-    cat(paste("Formula:",  formula,  "\n"))
-    cat(paste("Noise:",    noise,    "\n"))
+    cat("\nOddsRatios:\n")
+    print(x$OddsRatios)
+    cat(paste("\nFormula:", formula, "\n"))
+    cat(paste("Noise:",     noise,   "\n"))
     if(gateNoise)    cat(paste("Noise Component Gating:", attr(x, "NoiseG"), "\n"))
     cat(paste("EqualPro:", equalpro, ifelse(equalNoise, "\n", "")))
     if(equalNoise)   cat(paste("Noise Proportion Estimated:", attr(x, "EqualN")))
@@ -3576,10 +3630,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @method print summary_MoEexp
 #' @export
   print.summary_MoEexp   <- function(x, ...) {
-    if(is.na(x)   || (names(x) == "Cluster0"))    stop("No expert network exists for models with only a noise component", call.=FALSE)
-    class(x)      <- "listof"
-    print(x, ...)
-    cat(paste("Formula:", attr(x, "Form"), "\n"))
-    message("\n\n\nUsers are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network\n")
-      invisible(x)
+   if(all(is.na(x) | (names(x) == "Cluster0")))   stop("No expert network exists for models with only a noise component", call.=FALSE)
+   class(x)       <- "listof"
+   print(x, ...)
+   cat(paste("Formula:", attr(x, "Form"), "\n"))
+   message("\n\n\nUsers are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network\n")
+     invisible(x)
   }

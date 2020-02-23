@@ -18,11 +18,11 @@ The most important function in the \pkg{MoEClust} package is: \code{\link{MoE_cl
 
 \code{\link{MoE_control}} allows supplying additional arguments to \code{\link{MoE_clust}} and \code{\link{MoE_stepwise}} which govern, among other things, controls on the inclusion of an additional noise component and controls on the initialisation of the allocations for the EM/CEM algorithm.
 
-A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network, and/or log-likelihood, and/or clustering uncertaines, and/or graphing model selection criteria values. The generalised pairs plots (\code{\link{MoE_gpairs}}) visualise all pairwise relationships between clustered response variables and associated continuous, categorical, and/or ordinal covariates in the gating &/or expert networks, coloured according to the MAP classification, and also give the marginal distributions of each variable (incl. the covariates) along the diagonal.
+A dedicated plotting function (\code{\link{plot.MoEClust}}) exists for visualising the results using generalised pairs plots, for examining the gating network, and/or log-likelihood, and/or clustering uncertainties, and/or graphing model selection criteria values. The generalised pairs plots (\code{\link{MoE_gpairs}}) visualise all pairwise relationships between clustered response variables and associated continuous, categorical, and/or ordinal covariates in the gating &/or expert networks, coloured according to the MAP classification, and also give the marginal distributions of each variable (incl. the covariates) along the diagonal.
 
-An \code{as.Mclust} method is provided to coerce the output of class \code{"MoEClust"} from \code{\link{MoE_clust}} to the \code{"Mclust"} class, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package. As per \pkg{mclust}, \pkg{MoEClust} also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates).
+An \code{\link[=as.Mclust.MoEClust]{as.Mclust}} method is provided to coerce the output of class \code{"MoEClust"} from \code{\link{MoE_clust}} to the \code{"Mclust"} class, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package. As per \pkg{mclust}, \pkg{MoEClust} also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates).
 
-Finally, a \code{predict} method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response data, or new covariates only.
+Finally, a \code{\link[=predict.MoEClust]{predict}} method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response data, or new covariates only.
 
 Other functions also exist, e.g. \code{\link{MoE_crit}}, \code{\link{MoE_dens}}, \code{\link{MoE_estep}}, \code{\link{MoE_compare}}, and \code{\link{aitken}}, which are all used within \code{\link{MoE_clust}} but are nonetheless made available for standalone use. 
 
@@ -34,8 +34,8 @@ The package also contains two data sets: \code{ais} and \code{CO2data}.
 \itemize{
 \item{Type: }{Package}
 \item{Package: }{MoEClust}
-\item{Date: }{2019-12-11 (this version), 2017-11-28 (original release)}
 \item{Version: }{1.3.0}
+\item{Date: }{2020-03-30 (this version), 2017-11-28 (original release)}
 \item{Licence: }{GPL (>=2)}
 }
 }

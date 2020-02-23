@@ -6,7 +6,8 @@
 \usage{
 MoE_mahala(fit,
            resids,
-           squared = FALSE)
+           squared = FALSE,
+           identity = FALSE)
 }
 \arguments{
 \item{fit}{A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.}
@@ -14,6 +15,8 @@ MoE_mahala(fit,
 \item{resids}{The residuals. Can be residuals for observations included in the model, or residuals arising from predictions on unseen data. Must be coercible to a matrix with the number of columns being the number of response variables. Missing values are not allowed.}
 
 \item{squared}{A logical. By default (\code{FALSE}), the generalized interpoint distance is computed. Set this flag to \code{TRUE} for the squared value.}
+
+\item{identity}{A logical indicating whether the identity matrix is used in in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE}; \code{TRUE} corresponds to the use of the Euclidean distance. Only relevant for multivariate response data.}
 }
 \value{
 A vector giving the Mahalanobis distance (or squared Mahalanobis distance) between response(s) and fitted values for each observation.
@@ -38,7 +41,7 @@ res2 <- CO2 - pred
 maha <- MoE_mahala(mod2, res2)
 
 # Highlight outlying observations
-plot(GNP, CO2, type="n")
+plot(GNP, CO2, type="n", ylab=expression('CO'[2]))
 lines(GNP, pred, col="red")
 points(GNP, CO2, cex=maha, lwd=2)
 text(GNP, CO2, col="blue", 
@@ -46,7 +49,8 @@ text(GNP, CO2, col="blue",
      
 # Replicate initialisation strategy using 2 randomly chosen components
 # Repeat the random initialisation if necessary
-G       <- 2L
+# (until 'crit' at convergence is minimised)
+G       <- 3L
 z       <- sample(seq_len(G), nrow(CO2data), replace=TRUE)
 old     <- Inf
 crit    <- .Machine$double.xmax
@@ -54,7 +58,7 @@ while(crit < old)   {
   Sys.sleep(1)
   old   <- crit
   maha  <- NULL
-  plot(GNP, CO2, type="n")
+  plot(GNP, CO2, type="n", ylab=expression('CO'[2]))
   for(g in seq_len(G)) { 
    ind  <- which(z == g)
    mod  <- lm(CO2 ~ GNP, data=CO2data, sub=ind)
@@ -62,13 +66,14 @@ while(crit < old)   {
    maha <- cbind(maha, MoE_mahala(mod, CO2 - pred))
    lines(GNP, pred, col=g + 1L)
   }
-  z     <- apply(maha, 1L, which.min)
-  crit  <- sum(sapply(seq_len(nrow(CO2data)), function(i) maha[i,z[i]]))
-  maha  <- rowMins(maha)
-  points(GNP, CO2, cex=maha, lwd=2, col=z + 1L)
-  text(GNP, CO2, col="blue", 
-       labels=replace(as.character(CO2data$country), which(maha <= 0.8), ""))
-}}
+  min.M <- rowMins(maha)
+  crit  <- sum(min.M)
+  z     <- max.col(maha == min.M)
+  points(GNP, CO2, cex=min.M, lwd=2, col=z + 1L)
+  text(GNP, CO2, col=z + 1L, 
+       labels=replace(as.character(CO2data$country), which(min.M <= 1), ""))
+}
+crit}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

@@ -64,6 +64,8 @@ Without any prior information, it is best to accept the defaults at the expense 
 It is advised to run this function once with \code{noise=FALSE} and once with \code{noise=TRUE} and then choose the optimal model across both sets of results.
 
 At present, only additions (of components and covariates) are considered. In future updates, it will be possible to allow both additions and removals.
+
+The function will attempt to remove duplicate variables found in both \code{data} and \code{network.data}; in particular, they will be removed from \code{network.data}. Users are however advised to careful specify \code{data} and \code{network.data} such that there are no duplicates, especially if the desired variable(s) should belong to \code{network.data}.
 }
 \examples{
 \donttest{# data(CO2data)

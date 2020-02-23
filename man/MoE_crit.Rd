@@ -36,7 +36,7 @@ A simplified array containing the BIC, AIC, number of estimated parameters (\cod
 Computes the BIC (Bayesian Information Criterion), ICL (Integrated Complete Likelihood), and AIC (Akaike Information Criterion) for parsimonious mixture of experts models given the log-likelihood, the dimension of the data, the number of mixture components in the model, the numbers of parameters in the gating and expert networks respectively, and, for the ICL, the numbers of observations in each component.
 }
 \details{
-The function is vectorized with respect to the arguments \code{modelName} and \code{loglik}.
+The function is vectorised with respect to the arguments \code{modelName} and \code{loglik}.
 
 If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
 

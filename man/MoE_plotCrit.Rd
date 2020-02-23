@@ -25,9 +25,9 @@ Plots the BIC, ICL, AIC, or log-likelihood values of a fitted \code{MoEClust} ob
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_plotCrit}} which accepts the default arguments, and also produces other types of plots.
 }
 \examples{
-\donttest{data(ais)
-res   <- MoE_clust(ais[,3:7], expert= ~ sex, network.data=ais)
-(crit <- MoE_plotCrit(res))}
+\donttest{# data(ais)
+# res   <- MoE_clust(ais[,3:7], expert= ~ sex, network.data=ais)
+# (crit <- MoE_plotCrit(res))}
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link[mclust]{plot.mclustBIC}}

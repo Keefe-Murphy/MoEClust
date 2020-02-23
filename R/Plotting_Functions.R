@@ -19,8 +19,8 @@
 #' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$lci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
 #'
 #' Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
-#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variabilitity in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
-#' @param border.col A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, respponse vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
+#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
+#' @param border.col A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 #'
 #' Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.
 #' @param bg.col A vector of length 5 (or 1) containing \emph{background} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
@@ -174,9 +174,14 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   gate  <- setdiff(attr(net, "Gating"), both)
   expx  <- setdiff(attr(net, "Expert"), both)
   if(is.null(subset$show.map)) {
-    subset$show.map <- (G + !is.na(res$hypvol)) > 1
-  } else if(length(subset$show.map) > 1  ||
-            !is.logical(subset$show.map))             stop("'subset$show.map' should be a single logical indicator", call.=FALSE)
+    subset$show.map <- ifelse(length(unique(claSS))  == 1, FALSE, (G + !is.na(res$hypvol)) > 1)
+  } else {
+    if(length(subset$show.map) > 1  ||
+       !is.logical(subset$show.map))                  stop("'subset$show.map' should be a single logical indicator", call.=FALSE)
+    if(length(unique(claSS))  == 1)       {           message("'show.map' set to FALSE as there is only one non-empty component\n")
+      subset$show.map         <- FALSE
+    }
+  }
   if(is.null(subset$data.ind)) {
     subset$data.ind <- seq_len(ncol(dat))
   } else if(length(subset$data.ind) < 1  ||
@@ -275,7 +280,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(res$d  > 1) {
     res$parameters$varianceX    <- if(isTRUE(drawEllipses) && 
                                       isTRUE(expert.covar) &&
-                                      attr(res, "Expert")) suppressWarnings(expert_covar(res)) else res$parameters$variance
+                                      attr(res, "Expert")) suppressMessages(expert_covar(res)) else res$parameters$variance
   }
   upr.gate <- grepl("2", scatter.type[1L])
   low.gate <- grepl("2", scatter.type[2L])
@@ -680,9 +685,9 @@ MoE_plotGate.MoEClust   <- function(res, x.axis = NULL, type = "l", xlab = "Obse
 #'              criterion = c("bic", "icl", "aic", "loglik"),
 #'              ...)
 #' @examples
-#' \donttest{data(ais)
-#' res   <- MoE_clust(ais[,3:7], expert= ~ sex, network.data=ais)
-#' (crit <- MoE_plotCrit(res))}
+#' \donttest{# data(ais)
+#' # res   <- MoE_clust(ais[,3:7], expert= ~ sex, network.data=ais)
+#' # (crit <- MoE_plotCrit(res))}
 MoE_plotCrit <- function(res, criterion = c("bic", "icl", "aic", "loglik"), ...) {
     UseMethod("MoE_plotCrit")
 }

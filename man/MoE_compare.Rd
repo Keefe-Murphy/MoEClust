@@ -74,7 +74,7 @@ If random starts had been used via \code{init.z="random"} the \code{optimal} mod
 
 A dedicated \code{print} function exists for objects of class \code{"MoECompare"}.
 
-\code{\link{plot.MoEClust}} and \code{\link{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
+\code{\link{plot.MoEClust}} and \code{\link[=as.Mclust.MoEClust]{as.Mclust}} can both also be called on objects of class \code{"MoECompare"}.
 }
 \examples{
 \donttest{data(CO2data)
@@ -115,7 +115,7 @@ Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models wit
 \seealso{
 See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
 
-\code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link{as.Mclust}}
+\code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

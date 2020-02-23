@@ -4,7 +4,8 @@
 \name{ais}
 \alias{ais}
 \title{Australian Institute of Sport data}
-\format{A data frame with 202 observations on the following 13 variables:\cr
+\format{
+A data frame with 202 observations on the following 13 variables:\cr
 \itemize{
 \item{[,1] \code{sex}}{ - categorical, levels = \code{female, male}}
 \item{[,2] \code{sport}}{ - categorical, levels = \code{B_Ball, Field, Gym, Netball, Row, Swim, T_400m, Tennis, T_Sprnt, W_Polo}}
@@ -19,7 +20,8 @@
 \item{[,11] \code{LBM}}{ - lean body mass (numeric)}
 \item{[,12] \code{Ht}}{ - height, cm (numeric)}
 \item{[,13] \code{Wt}}{ - weight, kg (numeric)}
-}}
+}
+}
 \usage{
 data(ais)
 }

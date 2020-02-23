@@ -56,9 +56,9 @@ The subsetting must include at least two variables, whether they be the MAP, a r
 
 Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.}
 
-\item{expert.covar}{Logical (defaults to \code{TRUE}) governing whether the extra variabilitity in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"}.}
+\item{expert.covar}{Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"}.}
 
-\item{border.col}{A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, respponse vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
+\item{border.col}{A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 
 Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.}
 

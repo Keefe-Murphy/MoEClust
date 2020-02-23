@@ -5,10 +5,17 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.3.0 - (_8<sup>th</sup> release [minor update]: 2020-03-30_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
-* Various fixes and improvements to initialisation when there expert network covariates:  
-    * Improved checks on the `resids` arg. to `MoE_mahala`.
+* Various fixes and improvements to initialisation when there are expert network covariates:  
+    * `MoE_mahala` now correctly uses the covariance of `resids` rather than the response.
+    * New `MoE_mahala` arg. `identity` allow use of Euclidean distance instead:  
+    this argument can also be passed via `exp.init$identity` to `MoE_control`.
+    * Convergence of the initialisation procedure now explictly monitored & sped-up.
+    * Values of the criterion being minimised are now returned as an attribute.
+    * The number of iterations of the initialisation algorithm are also returned as an attribute.
     * `MoE_control` arg. `exp.init$max.init` now defaults to `.Machine$integer.max`.
+    * Improved checks on the `resids` arg. to `MoE_mahala`.
     * Greatly expanded the `MoE_mahala` examples.
 * Improvements to `predict.MoEClust`:  
     * Now returns the predicted values of the gating and expert networks.
@@ -16,12 +23,16 @@ __and a Noise Component__
     (`MAPy`), in addition to the (aggregated) predicted responses (`y`).
     * New arg. `MAPresids` governs whether residuals are computed against `MAPy` or `y`.
     * New arg. `use.y` (see documentation for details).
-    * Now allows empty `newdata` for models with no covariates of any kind.
+    * Now properly allows empty `newdata` for models with no covariates of any kind.
     * Fixed prediction for equal mixing proportion models when `discard.noise=FALSE`.
 * Fixed small `MoE_stepwise` bugs when  
     * only one of `gating` or `expert` are supplied.
     * univariate response `data` are supplied.
+    * moving from G=1 to G=2 with equal mixing proportions and no covariates.
+    * discarding covariates present in the response data.
+* Odds ratios now returned (and printed) when calling `summary` on `x$gating`.
 * `noise_vol` now returns correction location for univariate data when `reciprocal=TRUE`.
+* Spell-checking of documentation and fixes to `donttest` examples.
 
 ## MoEClust v1.2.4 - (_7<sup>th</sup> release [patch update]: 2019-12-11_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
@@ -42,7 +53,7 @@ __and a Noise Component__
 
 ## MoEClust v1.2.3 - (_6<sup>th</sup> release [patch update]: 2019-07-29_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
-* Added new function `MoE_stepwise` for conducting a greedy forward stepwise  
+* Exported function `MoE_stepwise` for conducting a greedy forward stepwise  
   search to find the optimal model in terms of the number of components, GPCM  
   covariance parameterisation, and the subsets of gating/expert network covariates.
 * `MoE_control` & `predict.MoEClust` gain the arg. `discard.noise`:  
@@ -61,7 +72,7 @@ __and a Noise Component__
 * All printing related to noise-only models no longer shows the model name (there is none!).
 * Other small fixes to `print.MoEClust`, `print.summary_MoEClust`, & `print.MoECompare`.
 * Cosmetic fix to returned `gating` objects for `equalPro=TRUE` models. 
-* Removed `snow` package from `Suggests:`.
+* Removed `parallel` package from `Suggests:`.
 
 ## MoEClust v1.2.2 - (_5<sup>th</sup> release [patch update]: 2019-05-15_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
