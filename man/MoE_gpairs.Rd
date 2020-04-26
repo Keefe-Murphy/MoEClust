@@ -120,7 +120,7 @@ The argument \code{n.ticks} will be overwritten for categorical variables with f
 \code{NULL} is equivalent to:
 \preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
 hist.color=hist.color, show.counts=TRUE),}
-where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the fill colour for boxplot panels involving covariates only and the colour of barcode panels not related to the MAP classification. By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
+where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the fill colour for boxplot panels except those involving covariates only, as well as the colour of barcode panels not related to the MAP classification. By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
 
 When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
 
@@ -139,7 +139,6 @@ For \code{MoEClust} models with more than one associated covariate (entering eit
 }
 \examples{
 \donttest{data(ais)
-
 res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
                    network.data=ais, modelNames="EVE")
 MoE_gpairs(res)

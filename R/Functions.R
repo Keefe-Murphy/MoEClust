@@ -22,7 +22,7 @@
 #' @param control A list of control parameters for the EM/CEM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}. In particular, arguments pertaining to the inclusion of an additional noise component are documented here.
 #' @param network.data An optional data frame (or a matrix with named columns) in which to look for the covariates in the \code{gating} &/or \code{expert} network formulas, if any. If not found in \code{network.data}, any supplied \code{gating} &/or \code{expert} covariates are taken from the environment from which \code{MoE_clust} is called. Try to ensure the names of variables in \code{network.data} do not match any of those in \code{data}.
 #' @param ... An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.
-#' @param x,object,digits Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 3).
+#' @param x,object,digits,classification,parameters,networks Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 3). \code{classification}, \code{parameters}, and \code{networks} are logicals which govern whether a table of the MAP classification of observations, the mixture component parameters, and the gating/expert network coefficients are printed, respectively.
 
 #' @importFrom matrixStats "colMeans2" "colSums2" "rowLogSumExps" "rowMaxs" "rowMins" "rowSums2"
 #' @importFrom mclust "emControl" "hc" "hclass" "hcE" "hcEEE" "hcEII" "hcV" "hcVII" "hcVVV" "Mclust" "mclust.options" "mclustBIC" "mclustICL" "mclustModelNames" "mclustVariance" "mstep" "mstepE" "mstepEEE" "mstepEEI" "mstepEEV" "mstepEII" "mstepEVE" "mstepEVI" "mstepEVV" "mstepV" "mstepVEE" "mstepVEI" "mstepVEV" "mstepVII" "mstepVVE" "mstepVVI" "mstepVVV" "nVarParams" "unmap"
@@ -79,7 +79,7 @@
 #' @export
 #' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #'
-#' Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
+#' Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458):611-631.
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #' @keywords clustering main
 #' @usage
@@ -122,7 +122,7 @@
 #' (step <- MoE_stepwise(ais[,3:7], ais))
 #' (comp <- MoE_compare(comp, step, optimal.only=TRUE))
 #' (best <- comp$optimal)
-#' (summ <- summary(best))
+#' (summ <- summary(best, classification=TRUE, parameters=TRUE, networks=TRUE))
 #'
 #' # Examine the expert network in greater detail
 #' # (but refrain from inferring statistical significance!)
@@ -130,7 +130,7 @@
 #'
 #' # Visualise the results, incl. the gating network and log-likelihood
 #' plot(best, what="gpairs")
-#' plot(best, what="gating")
+#' plot(best, what="gating") # equal mixing proportions!
 #' plot(best, what="loglik")
 #'
 #' # Visualise the results using the 'lattice' library
@@ -1092,7 +1092,10 @@
         x.fitG$fitted.values   <- matrix(x.tau, nrow=n, ncol=GN, byrow=TRUE)
         x.fitG$residuals       <- zN - x.fitG$fitted.values
       }
-    }
+    } 
+    if(is.matrix(x.tau))   {
+      colnames(x.tau)          <- paste0("Cluster", if(!noise.null)       c(Gseq, 0L) else Gseq)  
+    } else x.tau  <- stats::setNames(x.tau, paste0("Cluster", if(!noise.null) c(Gseq, 0L) else Gseq))
     x.fitG$lab    <- if(noise.gate && !noise.null && GN > 1)              c(Gseq, 0L) else Gseq
     gnames        <- if(G >= 1) paste0("Cluster", Gseq)                               else "Cluster0"
     if(!exp.x)     {
@@ -1143,10 +1146,14 @@
           fitdat  <- fitdat  +    z[,GN] * matrix(NoiseLoc, nrow=n, ncol=d, byrow=TRUE)
           z.norm  <- if(noise.null) z else z[,-GN, drop=FALSE]
         }
-        mean.fin  <- sweep(crossprod(fitdat, z.norm), 2L, colSums2(z.norm), FUN="/", check.margin=FALSE)
+        mean.fin  <- crossprod(fitdat, z.norm) 
+        mean.fin  <- if(GN  == 1) mean.fin/n else sweep(mean.fin, 2L, colSums2(z.norm), FUN="/", check.margin=FALSE)
       } else       {
         mean.fin  <- x.mu
       }
+      if(is.matrix(mean.fin))   {
+        colnames(mean.fin)     <- gnames
+      } else         mean.fin  <- stats::setNames(mean.fin, gnames)      
     } else    {
       mean.fin    <- vari.fin  <- NULL
     }
@@ -1532,7 +1539,7 @@
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
 #'
-#' @references Biernacki, C., Celeux, G., Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
+#' @references Biernacki, C., Celeux, G. and Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
 #'
 #' @seealso \code{\link{MoE_clust}}, \code{\link[mclust]{nVarParams}}, \code{\link[mclust]{mclustModelNames}}
 #' @usage
@@ -1994,7 +2001,7 @@
 #' # Rank only the optimal models and examine the best model
 #' (comp <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, optimal.only=TRUE))
 #' (best <- comp$optimal)
-#' (summ <- summary(best))
+#' (summ <- summary(best, classification=TRUE, parameters=TRUE, networks=TRUE))
 #'
 #' # Examine all models visited, including those already deemed suboptimal
 #' # Only print models with expert covariates & more than one component
@@ -2375,13 +2382,15 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     zstar         <- object$z
   } else       {
     gating        <- object$gating
-    if(attr(gating, "EqualPro"))  {
-      new.tau     <- matrix(params$pro, nrow=nrow(newgate), ncol=GN, byrow=TRUE)
-    } else if(noise      && attr(gating, "NoiseGate"))  {
-      new.tau     <- matrix(stats::predict(gating, type=ifelse(GN > 1, "probs", "response"), newdata=newgate), ncol=GN)
-    } else     {
-      new.tau     <- matrix(stats::predict(gating, type=ifelse(G  > 1, "probs", "response"), newdata=newgate), ncol=G)
-      new.tau     <- if(noise) .tau_noise(new.tau, if(Xgat) params$pro[1L,GN] else params$pro[GN]) else new.tau
+    if(isFALSE(nmiss))            {
+     if(attr(gating, "EqualPro")) {
+       new.tau    <- matrix(params$pro, nrow=nrow(newgate), ncol=GN, byrow=TRUE)
+     } else if(noise     && attr(gating, "NoiseGate"))  {
+       new.tau    <- matrix(stats::predict(gating, type=ifelse(GN > 1, "probs", "response"), newdata=newgate), ncol=GN)
+     } else    {
+       new.tau    <- matrix(stats::predict(gating, type=ifelse(G  > 1, "probs", "response"), newdata=newgate), ncol=G)
+       new.tau    <- if(noise) .tau_noise(new.tau, if(Xgat) params$pro[1L,GN] else params$pro[GN]) else new.tau
+     }
     }
     if(resid  && !(resid <- !yM))                 warning("'resid' can only be TRUE when response variables are supplied\n", call.=FALSE, immediate.=TRUE)
     attr(net, "Gating")  <-
@@ -2736,7 +2745,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       names(compare[[i]]$data)  <- colnames(data)
     }
     names(compare)              <- paste0("Step_", seq_along(compare))
-    message("\n\n")
+    message("\n")
       MoE_compare(compare, optimal.only=TRUE, criterion=criterion)  
   }
 
@@ -2771,7 +2780,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @method as.Mclust MoEClust
 #' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}
 #' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
-#' @references Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
+#' @references Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458):611-631.
+#' 
+#' Scrucca L., Fop M., Murphy T. B. and Raftery A. E. (2016). mclust 5: clustering, classification and density estimation using Gaussian finite mixture models. \emph{The R Journal}, 8(1):289-317.
 #' @keywords utility
 #' @usage
 #' \method{as.Mclust}{MoEClust}(x,
@@ -3397,10 +3408,19 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @rdname MoE_clust
 #' @usage
 #' \method{summary}{MoEClust}(object,
+#'         classification = TRUE,
+#'         parameters = FALSE,
+#'         networks = FALSE,
 #'         ...)
 #' @export
-  summary.MoEClust        <- function(object, ...) {
+  summary.MoEClust        <- function(object, classification = TRUE, parameters = FALSE, networks = FALSE, ...) {
     object        <- if(inherits(object, "MoECompare")) object$optimal else object
+    if(length(classification)  > 1  ||
+       !is.logical(classification))               stop("'classification' must be a single logical indicator", call.=FALSE)
+    if(length(parameters)  > 1      ||
+       !is.logical(parameters))                   stop("'parameters' must be a single logical indicator",     call.=FALSE)
+    if(length(networks)    > 1      ||
+       !is.logical(networks))                     stop("'networks' must be a single logical indicator",       call.=FALSE)
     G             <- object$G
     attr(G, "range")      <- eval(object$call$G)
     params        <- object$parameters
@@ -3410,7 +3430,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     summ          <- list(data = deparse(object$call$data), n = object$n, d = object$d, G = G, modelName = object$modelName, algo=attr(object, "Algo"),
                           loglik = object$loglik[length(object$loglik)], df = object$df, iters = object$iters, gating = object$gating, expert = object$expert, 
                           bic=unname(object$bic), icl = unname(object$icl), aic = unname(object$aic), pro = params$pro, mean = params$mean, variance = params$variance$sigma, 
-                          Vinv = params$Vinv, hypvol = hypvol, z = object$z, equalPro = equalPro, equalNoise = equalN, classification = object$classification, noise.gate = attr(object, "NoiseGate"))
+                          Vinv = params$Vinv, hypvol = hypvol, z = object$z, equalPro = equalPro, equalNoise = equalN, classification = object$classification, noise.gate = attr(object, "NoiseGate"),
+                          expert = object$expert, gating = object$gating, printClass = classification, printParams = parameters, printNetwork = networks)
     class(summ)   <- "summary_MoEClust"
       summ
  }
@@ -3440,7 +3461,6 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     exp.x         <- expert == "~1"
     equalP        <- x$equalPro && gate.x
     equalN        <- noise  && x$equalNoise && equalP
-    zs            <- table(x$classification)
     title         <- "Gaussian Parsimonious Clustering Model with Covariates"
     cat(paste0("------------------------------------------------------\n", title, "\nData: ",
                x$data,"\n", "------------------------------------------------------\n\n",
@@ -3452,11 +3472,45 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
                paste0("\nExpert Network Covariates:  ", ifelse(exp.x,  "None", expert)),
                ifelse(G  > 1  && gate.x,                paste0("\nEqual Mixing Proportions:   ",  equalP), ""),
                paste0("\nNoise Component:            ", noise, ""),
+               ifelse(noise,                            paste0("\nNoise Component Estimation: ", attr(x$hypvol, "Meth")), ""),
                ifelse(G  > 1  && !gate.x && noise,      paste0("\nNoise Component Gating:     ", x$noise.gate), ""),
                ifelse(G  > 1  && noise   && equalP,     paste0("\nNoise Proportion Estimated: ", !equalN, "\n\n"), "\n\n")))
     print(tmp, row.names = FALSE)
-    cat("\nClustering table:")
-    print(zs,  row.names = FALSE)
+    if(isTRUE(x$printClass))   {
+      cat("\nClustering table :")
+      print(table(x$classification), row.names = FALSE)
+    }
+    if(isTRUE(x$printParams))  {
+      params     <- list("Mixing proportions"  = x$pro,
+                         "Component means"     = x$mean,
+                         "Component variances" = x$variance)
+      if(!is.na(x$hypvol))     {
+        attributes(x$hypvol)  <- NULL
+        params   <- c(params, list("Hypervolume of noise component" = x$hypvol))
+      }
+      class(params)     <- "listof"
+      cat("\n")
+      print(params)
+    }
+    if(isTRUE(x$printNetwork) &&
+       !all(gate.x, exp.x))    {
+      if(isFALSE(gate.x))      {
+        gating   <- list("Gating Network"      = x$gating)
+        class(gating)   <- "listof"
+        print(gating, call = FALSE)
+        cat("\n")  
+      } else                                      message("No gating network to display\n")
+      if(isFALSE(exp.x))       {
+        expert   <- list("Expert Network"      = x$expert)
+        class(expert)   <- "listof"
+        print(expert, call = FALSE)
+        cat("\n") 
+      } else                                      message("No expert network to display\n")
+    }
+    if(isTRUE(x$printParams)  && 
+       isFALSE(exp.x)) {
+      message("\n\n\nUsers are cautioned against interpreting the component mean parameters in the presence of expert network covariates.\nThese are in fact the posterior means of the fitted values of the expert network.\nThe observation-specific component means (i.e. the fitted values themselves) should be consulted instead.\nThese can obtained via predict(object)$mean.\n")
+    }
       invisible()
   }
 
@@ -3536,35 +3590,51 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 
 #' @method print MoE_gating
 #' @export
-  print.MoE_gating       <- function(x, ...) {
+  print.MoE_gating       <- function(x, call = FALSE, ...) {
     noise         <- attr(x, "Noise")
     equalpro      <- attr(x, "EqualPro")
     formula       <- attr(x, "Formula")
-    equalNoise    <- noise && equalpro
-    gateNoise     <- noise && !equalpro && formula != "~1"
-    class(x)      <- class(x)[class(x) != "MoE_gating"]
-    print(x, ...)
-    cat(paste("Formula:",  formula,  "\n"))
-    cat(paste("Noise:",    noise,    "\n"))
+    equalNoise    <- noise   && equalpro
+    gateNoise     <- noise   && !equalpro && formula != "~1"
+    class(x)      <- class(x)[class(x)    != "MoE_gating"]
+    if(isTRUE(call)          &&
+      !is.null(cl <- x$call)) {
+      cat("Call:\n")
+      dput(cl, control = NULL)
+    }
+    cat("\nCoefficients:\n")
+    print(stats::coef(x), ...)
+    cat(paste("\nFormula:", formula, "\n"))
+    cat(paste("Noise:",     noise,   "\n"))
     if(gateNoise)    cat(paste("Noise Component Gating:", attr(x, "NoiseGate"), "\n"))
     cat(paste("EqualPro:", equalpro, ifelse(equalNoise, "\n", "")))
     if(equalNoise)   cat(paste("Noise Proportion Estimated:", attr(x, "EqualNoise")))
     if(equalpro)     message("\n\nCoefficients set to zero as this is an equal mixing proportion model")
-    message("\n\n\nUsers are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network\n")
-      invisible(x)
+      invisible()
   }
 
 #' @method print MoE_expert
 #' @export
-  print.MoE_expert       <- function(x, ...) {
-    if(is.na(x)   || (names(x) == "Cluster0"))    stop("No expert network exists for models with only a noise component", call.=FALSE)
-    formula       <- attr(x, "Formula")
-    attributes(x)[-1L]   <- NULL
-    class(x)      <- "listof"
-    print(x, ...)
-    cat(paste("Formula:", formula))
-    message("\n\n\nUsers are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network\n")
-      invisible(x)
+  print.MoE_expert       <- function(x, call = FALSE, ...) {
+   if(all(is.na(x) | (names(x) == "Cluster0")))   stop("No expert network exists for models with only a noise component", call.=FALSE)
+   formula        <- attr(x, "Formula")
+   attributes(x)[-1L]    <- NULL
+   class(x)       <- "listof"
+   cat("\n")
+   for(g in seq_along(x))                {
+     cat(paste0("Cluster", g, " :\n\n"))
+     if(isTRUE(call)     &&
+        !is.null(cl      <- x[[g]]$call)) {
+       cat("Call:\n")
+       dput(cl, control   = NULL)
+       cat("\n")
+     }
+     cat("Coefficients:\n")
+     print(stats::coef(x[[g]]), ...)
+     cat("\n")
+   }
+   cat(paste("Formula:", formula))
+     invisible()
   }
 
 #' @method summary MoE_gating
@@ -3613,17 +3683,14 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     equalpro      <- attr(x, "EqualP")
     equalNoise    <- noise && equalpro
     gateNoise     <- noise && !equalpro && formula != "~1"
-    class(x)      <- switch(EXPR=attr(x, "Class"), glm="summary.glm", "summary.multinom")
+    class(x)      <- "MoE_gating"
     print(x, ...)
-    cat("\nOddsRatios:\n")
+    cat("\n\nOddsRatios:\n")
     print(x$OddsRatios)
-    cat(paste("\nFormula:", formula, "\n"))
-    cat(paste("Noise:",     noise,   "\n"))
-    if(gateNoise)    cat(paste("Noise Component Gating:", attr(x, "NoiseG"), "\n"))
-    cat(paste("EqualPro:", equalpro, ifelse(equalNoise, "\n", "")))
-    if(equalNoise)   cat(paste("Noise Proportion Estimated:", attr(x, "EqualN")))
-    if(equalpro)     message("\n\nCoefficients set to zero as this is an equal mixing proportion model")
+    cat("\nStd. Errors:\n")
+    print(x$standard.errors)
     message("\n\n\nUsers are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network\n")
+    class(x)      <- "summary_MoEgate"
       invisible(x)
   }
 
@@ -3635,5 +3702,6 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
    print(x, ...)
    cat(paste("Formula:", attr(x, "Form"), "\n"))
    message("\n\n\nUsers are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network\n")
+   class(x)       <- "summary_MoEexp"
      invisible(x)
   }

@@ -20,6 +20,9 @@ MoE_clust(data,
       ...)
 
 \method{summary}{MoEClust}(object,
+        classification = TRUE,
+        parameters = FALSE,
+        networks = FALSE,
         ...)
 }
 \arguments{
@@ -52,7 +55,7 @@ For zero-component models with a noise component only the \code{"E"} and \code{"
 
 \item{...}{An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.}
 
-\item{x, object, digits}{Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 3).}
+\item{x, object, digits, classification, parameters, networks}{Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 3). \code{classification}, \code{parameters}, and \code{networks} are logicals which govern whether a table of the MAP classification of observations, the mixture component parameters, and the gating/expert network coefficients are printed, respectively.}
 }
 \value{
 A list (of class \code{"MoEClust"}) with the following named entries, mostly corresponding to the chosen optimal model (as determined by the \code{criterion} within \code{\link{MoE_control}}):
@@ -138,7 +141,7 @@ m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating=~BMI, network.data=ais)
 (step <- MoE_stepwise(ais[,3:7], ais))
 (comp <- MoE_compare(comp, step, optimal.only=TRUE))
 (best <- comp$optimal)
-(summ <- summary(best))
+(summ <- summary(best, classification=TRUE, parameters=TRUE, networks=TRUE))
 
 # Examine the expert network in greater detail
 # (but refrain from inferring statistical significance!)
@@ -146,7 +149,7 @@ summary(best$expert)
 
 # Visualise the results, incl. the gating network and log-likelihood
 plot(best, what="gpairs")
-plot(best, what="gating")
+plot(best, what="gating") # equal mixing proportions!
 plot(best, what="loglik")
 
 # Visualise the results using the 'lattice' library
@@ -158,7 +161,7 @@ splom(~ hema | z, groups=sex)}
 \references{
 Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 
-Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97:611-631.
+Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458):611-631.
 }
 \seealso{
 See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr

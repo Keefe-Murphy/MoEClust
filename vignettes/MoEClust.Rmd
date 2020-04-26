@@ -83,7 +83,7 @@ m5    <- MoE_clust(CO2, G=2:3, equalPro=TRUE, verbose=FALSE)
 m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
 ```
 
-Choose the best model among these.
+Choose the best model among these. Specify `optimal.only=TRUE` so that only the optimal model in each set of models is included in the comparison.
 
 ```{r}
 comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, optimal.only=TRUE)
@@ -109,7 +109,7 @@ Compare all sets of results to choose the optimal model.
 ```
 
 ```{r, eval=FALSE}
-(summ <- summary(best))
+(summ <- summary(best, classification=TRUE, parameters=FALSE, networks=FALSE))
 ```
 
 ```{r, echo=FALSE}
@@ -249,11 +249,8 @@ plot(mod, what="criterion", legendArgs=list(x="right"))
 
 Plot the gating network of the optimal model against the gating concomitant `BMI`. Note the flat horizontal line of grey circles corresponding to the noise component due to the specification of `noise.gate=FALSE` in the original function call.
 
-```{r, eval=FALSE}
-plot(mod, what="gating", x.axis=ais$BMI, type="p", xlab="BMI", pch=1)
-```
-```{r, echo=FALSE}
-plot(mod, what="gating", x.axis=ais$BMI, type="p", xlab="BMI", pch=1)
+```{r}
+plot(mod, what="gating", x.axis=ais$BMI, xlab="BMI")
 ```
 
 For the optimal model, plot the log-likelihood vs. the number of EM iterations.
@@ -288,4 +285,6 @@ splom(~ hema | z, groups=ais$sex, xlab=NULL)
 ## References
 Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 1-33. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.
 
-Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97:611-631.
+Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97(458):611-631.
+
+Scrucca L., Fop M., Murphy T. B. and Raftery A. E. (2016). mclust 5: clustering, classification and density estimation using Gaussian finite mixture models. _The R Journal_, 8(1):289-317.

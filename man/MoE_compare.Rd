@@ -93,7 +93,7 @@ m7    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, tau0=0.1)
 # Rank only the optimal models and examine the best model
 (comp <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, optimal.only=TRUE))
 (best <- comp$optimal)
-(summ <- summary(best))
+(summ <- summary(best, classification=TRUE, parameters=TRUE, networks=TRUE))
 
 # Examine all models visited, including those already deemed suboptimal
 # Only print models with expert covariates & more than one component

@@ -24,8 +24,8 @@
 #' \itemize{
 #' \item{Type: }{Package}
 #' \item{Package: }{MoEClust}
-#' \item{Version: }{1.3.0}
-#' \item{Date: }{2020-03-30 (this version), 2017-11-28 (original release)}
+#' \item{Version: }{1.3.1}
+#' \item{Date: }{2020-05-12 (this version), 2017-11-28 (original release)}
 #' \item{Licence: }{GPL (>=2)}
 #' }
 #'
@@ -52,6 +52,9 @@
 #' 
 #' # Produce a plot for the optimal model                                                   
 #' plot(comp$optimal, what="gpairs")
+#' 
+#' # Summarise its classification table, component parameters, and gating/expert networks
+#' summary(comp$optimal, classification=TRUE, parameters=TRUE, networks=TRUE)
 #'
 #' data(CO2data)
 #' CO2   <- CO2data$CO2

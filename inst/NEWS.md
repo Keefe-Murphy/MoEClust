@@ -5,6 +5,17 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.3.1 - (_9<sup>th</sup> release [patch update]: 2020-05-12_)
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Maintenance release for compatibility with R 4.0.0 - minor edits.
+* `summary.MoEClust` gains the printing-related arguments `classification=TRUE`,  
+  `parameters=FALSE`, and `networks=FALSE` (thanks to a request from Prof. Kamel Gana).
+* Related improvements to `print`/`summary` methods for `MoE_gating` & `MoE_expert` objects.
+* Minor speed-up for G=1 models with expert network covariates.
+* Improvements to `MoE_plotGate`, with new `type`, `pch`, and `xlab` defaults.
+* Added informative `dimnames` to returned `parameters` from `MoE_clust()`.
+* Documentation, vignette, examples, and references improvements.
+
 ## MoEClust v1.3.0 - (_8<sup>th</sup> release [minor update]: 2020-03-30_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Various fixes and improvements to initialisation when there are expert network covariates:  
