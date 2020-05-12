@@ -5,6 +5,12 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Further improvements to `summary` method for `MoE_expert` objects.
+* Ensured `lattice(>=0.12)`, `matrixStats(>=0.53.1)`, & `mclust(>=5.4)` in `Imports:`.
+* Ensured `clustMD(>=1.2.1)` and `geometry(>=0.4.0)` in `Suggests:`.
+* Use of `NCOL`/`NROW` where appropriate.
+
 ## MoEClust v1.3.1 - (_9<sup>th</sup> release [patch update]: 2020-05-12_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Maintenance release for compatibility with R 4.0.0 - minor edits.

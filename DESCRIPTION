@@ -13,16 +13,16 @@ URL: https://cran.r-project.org/package=MoEClust
 BugReports: https://github.com/Keefe-Murphy/MoEClust
 LazyData: true
 Imports:
-    lattice,
-    matrixStats,
-    mclust (>= 5.1),
+    lattice (>= 0.12),
+    matrixStats (>= 0.53.1),
+    mclust (>= 5.4),
     mvnfast,
     nnet,
     vcd
 Suggests:
     cluster,
-    clustMD,
-    geometry,
+    clustMD (>= 1.2.1),
+    geometry (>= 0.4.0),
     knitr,
     rmarkdown,
     snow

@@ -503,8 +503,8 @@
       if((do.md   <- exp.init$joint))  {
         exp.fac   <- ncol(expx.covs)   - nct
         if((do.md <- exp.fac   > 0))   {
-          if(!(has.md         <- suppressMessages(requireNamespace("clustMD",
-                                 quietly=TRUE)))) warning("'exp.init$clustMD' not invoked - 'clustMD' library not loaded\n", call.=FALSE, immediate.=TRUE)
+          if(!(has.md         <- suppressMessages(requireNamespace("clustMD", quietly=TRUE)) &&
+             .version_above("clustMD", "1.2.1"))) warning("'exp.init$clustMD' not invoked - 'clustMD' library not loaded\n", call.=FALSE, immediate.=TRUE)
         } else if(isTRUE(verbose))                message("'exp.init$clustMD' not invoked - no categorical or ordinal expert network covariates\n")
       }   else if(isTRUE(verbose))                message("'exp.init$clustMD' not invoked - exp.init$joint not set to TRUE\n")
     }
@@ -1355,7 +1355,7 @@
       data        <- replicate(G, as.matrix(data), simplify=FALSE)
     } else data   <- lapply(data, as.matrix)
     dat1          <- data[[1L]]
-    n             <- ifelse(is.matrix(dat1), nrow(dat1), length(dat1))
+    n             <- NROW(dat1)
     bind2         <- if(n > 1) base::cbind else base::c
     if(G > 0) {
       modelName   <- sigs$modelName
@@ -1821,7 +1821,12 @@
         noise.args$discard.noise   <- FALSE
       } else if(length(noise.args$discard.noise) > 1   ||
         !is.logical(noise.args$discard.noise))    stop("noise.args$discard.noise' must be a single logical indicator",  call.=FALSE)
-      has.lib     <- switch(EXPR=noise.args$noise.meth, manual=, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
+      has.lib     <- switch(EXPR=noise.args$noise.meth, 
+                            manual=, hypvol=TRUE, 
+                            convexhull=          {
+                              suppressMessages(requireNamespace("geometry", quietly=TRUE)) && .version_above("geometry", "0.4.0")
+                            }, 
+                            ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
       if(!has.lib)                                stop(paste0("Use of the ", noise.args$noise.meth, " option for 'noise.args$noise.meth' requires loading the ",
                                                               switch(EXPR=noise.args$noise.meth, hypvol="'mclust'", convexhull="'geometry'",
                                                               ellipsoidhull="'cluster'"), "library"),   call.=FALSE)
@@ -2553,14 +2558,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     exps.x        <- missing(expert)
     if(!is.null(network.data))         {
       if((!is.matrix(network.data)    &&
-        !is.data.frame(network.data))) {
-       network.data    <- if(ncol(as.matrix(network.data)) > 1) network.data else provideDimnames(as.matrix(network.data), base=list("", deparse(substitute(network.data))))
+        !is.data.frame(network.data))) {    
+       network.data    <- if(NCOL(network.data) > 1) network.data else provideDimnames(as.matrix(network.data), base=list("", deparse(substitute(network.data))))
       }
       if(is.null(colnames(network.data)))         stop("Invalid 'network.data': must be a matrix or data frame with named columns",      call.=FALSE)
-      if(ifelse(is.matrix(data)         ||
-                is.data.frame(data),
-         nrow(data),
-         length(data)) != nrow(network.data))     stop("Invalid 'network.data': must contain the same number of observations as 'data'", call.=FALSE)
+      if(NROW(data)    != nrow(network.data))     stop("Invalid 'network.data': must contain the same number of observations as 'data'", call.=FALSE)
     }
     
     data          <- as.data.frame(data)
@@ -2935,22 +2937,21 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @examples
 #' data(CO2data)
 #' quant_clust(CO2data$CO2, G=2)
-  quant_clust     <- function(x, G) {
-    if((is.data.frame(x) || is.matrix(x)) &&
-       (ncol(x)    > 1   || !all(is.numeric(x)))) stop("'x' must be univariate", call.=FALSE)
+  quant_clust     <- function(x, G)  {
+    if(NCOL(x)     > 1  || !all(is.numeric(x)))   stop("'x' must be univariate", call.=FALSE)
     x             <- as.vector(x)
     eps           <- stats::sd(x) * sqrt(.Machine$double.eps)
     q             <- NA
     n             <- G
-    while(length(q) < (G + 1L))   {
+    while(length(q) < (G + 1L))      {
       n           <- n   + 1L
       q           <- unique(stats::quantile(x, seq(from=0L, to=1L, length=n)))
     }
-    if(length(q)   > (G + 1L))    {
+    if(length(q)   > (G  + 1L))      {
       q           <- q[-order(diff(q))[seq_len(length(q) - G - 1L)]]
     }
-    q[1L]         <- min(x) - eps
-    q[length(q)]  <- max(x) + eps
+    q[1L]         <- min(x)  - eps
+    q[length(q)]  <- max(x)  + eps
     cl            <- vector("integer", length(x))
     for(i in seq_len(G)) {
       cl[x >= q[i] & x < q[i + 1L]] <- i
@@ -3278,6 +3279,32 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   .crits_names    <- function(x) {
       unlist(lapply(seq_along(x), function(i) stats::setNames(x[[i]], paste0(names(x[i]), "|", names(x[[i]])))))
   }
+  
+  .listof_exp     <- function(x, ...) {
+    nn            <- names(x)
+    ll            <- length(x)
+    if(length(nn) != ll)  {
+      nn          <- paste("Component", seq.int(ll))
+    }
+    for(i in seq_len(ll)) {
+      cat(nn[i], ":\n\n")
+      .listof_exp2(x[[i]], ...)
+      cat("\n")
+    }
+  }
+  
+  .listof_exp2    <- function(x, ...) {
+    nn            <- names(x)
+    ll            <- length(x)
+    if(length(nn) != ll)  {
+      nn          <- paste("Component", seq.int(ll))
+    }
+    for(i in seq_len(ll)) {
+      cat(nn[i], ":\n")
+      .summ_exp(x[[i]],    ...)
+      cat("\n")
+    }
+  }
 
   .mat_byrow      <- function(x, nrow, ncol) {
       matrix(x, nrow=nrow, ncol=ncol, byrow=any(dim(as.matrix(x)) == 1))
@@ -3337,6 +3364,71 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   .SLDC           <- function(x) sum(log(abs(rowDiffs(colRanges(x)))))
 
   .sq_mat         <- function(x) diag(sqrt(diag(x)))
+  
+  .summ_exp       <- function(x, digits = max(3L, getOption("digits") - 3L), 
+                              signif.stars = getOption("show.signif.stars"),
+                              symbolic.cor = x$symbolic.cor, ...) {
+    resid         <- x$residuals
+    df            <- x$df
+    rdf           <- df[2L]
+    cat("\n", if(!is.null(x$weights)   && diff(range(x$weights))) "Weighted ", "Residuals:\n", sep = "")
+    if(rdf         > 5L) {
+      nam         <- c("Min", "1Q", "Median", "3Q", "Max")
+      rq          <- if(length(dim(resid)) == 2L) { 
+        structure(apply(t(resid), 1L, stats::quantile), dimnames = list(nam, dimnames(resid)[[2L]]))
+      } else       {
+        zz        <- zapsmall(stats::quantile(resid), digits + 1L)
+        structure(zz, names = nam)
+      }
+      print(rq,    digits = digits, ...)
+    } else if(rdf  > 0L)  {
+      print(resid, digits = digits, ...)
+    } else         {
+      cat("ALL", df[1L], "residuals are 0: no residual degrees of freedom!")
+      cat("\n")
+    }
+    if(length(x$aliased) == 0L)         {
+      cat("\nNo Coefficients\n")
+    } else         {
+      if(singular <- df[3L] - df[1L])   {
+        cat("\nCoefficients: (", singular, " not defined because of singularities)\n", sep = "")
+      } else cat("\nCoefficients:\n")
+      coefs       <- x$coefficients
+      if(any(aliased     <- x$aliased)) {
+        cn        <- names(aliased)
+        coefs     <- matrix(NA, length(aliased), 4L, dimnames = list(cn, colnames(coefs)))
+        coefs[!aliased,] <- x$coefficients
+      }
+      stats::printCoefmat(coefs, digits = digits, signif.stars = signif.stars, na.print = "NA", ...)
+    }
+    cat("\nResidual standard error:", format(signif(x$sigma, digits)), "on", rdf, "degrees of freedom")
+    cat("\n")
+    if(nzchar(mess       <- stats::naprint(x$na.action))) cat("  (", mess, ")\n", sep = "")
+    if(!is.null(x$fstatistic))          {
+      cat("Multiple R-squared: ",    formatC(x$r.squared, digits = digits))
+      cat(",\tAdjusted R-squared: ", formatC(x$adj.r.squared, digits = digits), 
+          "\nF-statistic:",          formatC(x$fstatistic[1L], digits = digits), "on", 
+          x$fstatistic[2L], "and", x$fstatistic[3L], "DF,  p-value:", 
+          format.pval(stats::pf(x$fstatistic[1L], x$fstatistic[2L], x$fstatistic[3L], lower.tail = FALSE), digits = digits))
+      cat("\n")
+    }
+    correl        <- x$correlation
+    if(!is.null(correl))  {
+      p           <- NCOL(correl)
+      if(p > 1L)   {
+        cat("\nCorrelation of Coefficients:\n")
+        if(is.logical(symbolic.cor)    && symbolic.cor) {
+          print(stats::symnum(correl, abbr.colnames = NULL))
+        } else     {
+          correl  <- format(round(correl, 2), nsmall = 2, digits = digits)
+          correl[!lower.tri(correl)]   <- ""
+          print(correl[-1, -p, drop = FALSE], quote = FALSE)
+        } 
+      }
+    }
+    cat("\n")
+      invisible(x)
+  }
 
   .tau_noise      <- function(tau, z0) {
     t0            <- mean(z0)
@@ -3357,6 +3449,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   .unique_list    <- function(x)  {
     x             <- lapply(x, function(x) { attributes(x) <- NULL; x} )
       sum(duplicated.default(x, nmax=1L)) == length(x) - 1L
+  }
+  
+  .version_above  <- function(pkg, than) {
+      as.logical(utils::compareVersion(as.character(utils::packageVersion(pkg)), than))
   }
   
   .vol_ellipsoid  <- function(x)  {
@@ -3618,22 +3714,32 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   print.MoE_expert       <- function(x, call = FALSE, ...) {
    if(all(is.na(x) | (names(x) == "Cluster0")))   stop("No expert network exists for models with only a noise component", call.=FALSE)
    formula        <- attr(x, "Formula")
-   attributes(x)[-1L]    <- NULL
-   class(x)       <- "listof"
-   cat("\n")
-   for(g in seq_along(x))                {
-     cat(paste0("Cluster", g, " :\n\n"))
-     if(isTRUE(call)     &&
-        !is.null(cl      <- x[[g]]$call)) {
-       cat("Call:\n")
-       dput(cl, control   = NULL)
+   if(inherits(x, "summary_MoEexp"))      {
+     attributes(x)[-1L]  <- NULL
+     class(x)     <- "listof"
+     if(isTRUE(call))     {
+       print(x, ...)
+     } else        {
+       .listof_exp(x, ...)
+     }
+   }   else        {
+     attributes(x)[-1L]  <- NULL
+     class(x)     <- "listof"
+     cat("\n")
+     for(g in seq_along(x))               {
+       cat(paste0("Cluster", g, " :\n\n"))
+       if(isTRUE(call)   &&
+          !is.null(cl    <- x[[g]]$call)) {
+         cat("Call:\n")
+         dput(cl, control = NULL)
+         cat("\n")
+       }
+       cat("Coefficients:\n")
+       print(stats::coef(x[[g]]), ...)
        cat("\n")
      }
-     cat("Coefficients:\n")
-     print(stats::coef(x[[g]]), ...)
-     cat("\n")
+     cat(paste("Formula:", formula))
    }
-   cat(paste("Formula:", formula))
      invisible()
   }
 
@@ -3698,7 +3804,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @export
   print.summary_MoEexp   <- function(x, ...) {
    if(all(is.na(x) | (names(x) == "Cluster0")))   stop("No expert network exists for models with only a noise component", call.=FALSE)
-   class(x)       <- "listof"
+   class(x)       <- c("MoE_expert", class(x))
    print(x, ...)
    cat(paste("Formula:", attr(x, "Form"), "\n"))
    message("\n\n\nUsers are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network\n")
