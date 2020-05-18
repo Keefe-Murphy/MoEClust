@@ -6,10 +6,22 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* New `MoE_control` arg. `posidens=TRUE` ensures code no longer crashes when observations  
+  have positive log-density: previous behaviour is recoverable by setting `posidens=FALSE`.
+* `MoE_control` gains the arg. `asMclust` (`FALSE`, by default) which modifies the  
+  `stopping` and  `hcUse` arguments such that `MoEClust` and `mclust` behave similarly  
+  for models _with no covariates in either network_ (thanks to a request from Prof. Kamel Gana).
+* Fixed bug in `predict.MoEClust` when no `newdata` is supplied to models with no gating covariates.
 * Further improvements to `summary` method for `MoE_expert` objects.
+* Fixes to `print` & `summary` methods for `MoE_gating` objects if `G=1` or `equalPro=TRUE`.
+* Additional minor edits to `MoE_plotGate`.
+* `print.MoECompare` gains the args. `maxi`, `posidens=TRUE` & `rerank=FALSE`.
 * Ensured `lattice(>=0.12)`, `matrixStats(>=0.53.1)`, & `mclust(>=5.4)` in `Imports:`.
 * Ensured `clustMD(>=1.2.1)` and `geometry(>=0.4.0)` in `Suggests:`.
 * Use of `NCOL`/`NROW` where appropriate.
+* Package startup message now checks if newer version of package is available from CRAN.
+* Updated citation info after publication in _Advances in Data Analysis and Classification_.
+* Minor documentation & examples edits.
 
 ## MoEClust v1.3.1 - (_9<sup>th</sup> release [patch update]: 2020-05-12_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
@@ -17,7 +29,7 @@ __and a Noise Component__
 * `summary.MoEClust` gains the printing-related arguments `classification=TRUE`,  
   `parameters=FALSE`, and `networks=FALSE` (thanks to a request from Prof. Kamel Gana).
 * Related improvements to `print`/`summary` methods for `MoE_gating` & `MoE_expert` objects.
-* Minor speed-up for G=1 models with expert network covariates.
+* Minor speed-up for `G=1` models with expert network covariates.
 * Improvements to `MoE_plotGate`, with new `type`, `pch`, and `xlab` defaults.
 * Added informative `dimnames` to returned `parameters` from `MoE_clust()`.
 * Documentation, vignette, examples, and references improvements.

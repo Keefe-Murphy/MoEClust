@@ -1,6 +1,6 @@
 #' MoEClust: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component
 #'
-#' Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2019) <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
+#' Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2020) <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
 #' @section Usage:
 #' The most important function in the \pkg{MoEClust} package is: \code{\link{MoE_clust}}, for fitting the model via EM/CEM with gating and/or expert network covariates, supplied via formula interfaces.
 #'
@@ -37,11 +37,11 @@
 #' Keefe Murphy [aut, cre], Thomas Brendan Murphy [ctb]
 #'
 #' \strong{Maintainer}: Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
-#' @references Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @examples
 #' \donttest{data(ais)
 #' 
-#' # Fit two models
+#' # Fit two sets of models
 #' res1  <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
 #'                    modelNames=c("EVE", "VVE", "VEE"), network.data=ais)
 #' res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert=~sex,
@@ -85,11 +85,17 @@
 "_PACKAGE"
 
 .onAttach <- function(lib, pkg) {
-  version <- read.dcf(file.path(lib, pkg, "DESCRIPTION"), "Version")
+  path    <- file.path(lib, pkg, "DESCRIPTION")
+  version <- read.dcf(path, "Version")
+  name    <- read.dcf(path, "Package")
   if(interactive()) {
     packageStartupMessage(paste("\n___  ___      _____ _____ _           _   \n|  \\/  |     |  ___/  __ \\ |         | |     Gaussian Parsimonious \n| .  . | ___ | |__ | /  \\/ |_   _ ___| |_   Clustering Models with\n| |\\/| |/ _ \\|  __|| |   | | | | / __| __|        Covariates and a\n| |  | | (_) | |___| \\__/\\ | |_| \\__ \\ |_          Noise Component\n\\_|  |_/\\___/\\____/ \\____/_|\\__,_|___/\\__|           version", version, "\n"))
   } else   {
-    packageStartupMessage("\nPackage ", sQuote("MoEClust"), " version ", version, ".\n")
+    packageStartupMessage("\nPackage ", sQuote(name), " version ", version, ".\n")
   }
-    packageStartupMessage(paste("Type", sQuote("?MoEClust"), "to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote("MoEClust"),")")) ,"for citing the package in publications.\nType", sQuote("MoE_news()"), "to see new features recent changes and bug fixes.\n"))
+    packageStartupMessage(paste("Type", sQuote("?MoEClust"), "to see a brief guide to how to use this R package.\nType", sQuote(paste0("citation(", dQuote(name),")")) ,"for citing the package in publications.\nType", sQuote("MoE_news()"), "to see new features recent changes and bug fixes.\n"))
+  if(interactive() &&
+     name %in% utils::old.packages()[,1L]) {
+    packageStartupMessage("\n   !!! A newer version of this package is available via CRAN !!!")
+  }
 }

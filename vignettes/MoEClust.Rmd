@@ -17,7 +17,7 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7, fig.align = 'center', fig.show=
 ```
 
 ## Introduction
-__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, i.e. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM family (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2019)](https://doi.org/10.1007/s11634-019-00373-8). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
+__MoEClust__ is an R package which fits finite Gaussian Mixtures of Experts models using a range of parsimonious covariance parameterisations via the EM/CEM algorithm, i.e. allows incorporation of covariates into the mixing proportions and/or Gaussian densities of finite Gaussian mixture models under the various parsimonious covariance parameterisations in the GPCM family (e.g. __mclust__). These models were introduced by [Murphy and Murphy (2020)](https://doi.org/10.1007/s11634-019-00373-8). The package also facilitates the inclusion of an additional noise component, and allows visualisation of Gaussian mixture of experts models with parsimonious covariance parameterisations using generalised pairs plots.
 
 The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via the EM/CEM algorithm with gating and/or expert network covariates, supplied via formula interfaces.  `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc.
 
@@ -36,7 +36,7 @@ If you find bugs or want to suggest new features please visit the __MoEClust__ [
 This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
 
 ### Installing MoEClust
-__MoEClust__ will run in Windows, Mac OS X or Linux. To install it you first need to install [R](https://cran.r-project.org/). Installing [Rstudio](https://www.rstudio.com/) as a nice desktop environment for using R is also recommended.
+__MoEClust__ will run in Windows, Mac OS X, or Linux. To install it you first need to install [R](https://cran.r-project.org/). Installing [Rstudio](https://www.rstudio.com/) as a nice desktop environment for using R is also recommended.
 
 Once in R you can type at the R command prompt:
 
@@ -90,7 +90,7 @@ comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, optimal.only=TRUE)
 ```
 
 See if a better model can be found using greedy forward stepwise selection.
-Conduct a stepwise search on the same data
+Conduct a stepwise search on the same data.
 
 ```{r}
 (mod1 <- MoE_stepwise(CO2, GNP, verbose=FALSE))
@@ -108,12 +108,8 @@ Compare all sets of results to choose the optimal model.
 (best  <- MoE_compare(mod1, mod2, comp, pick=1)$optimal)
 ```
 
-```{r, eval=FALSE}
+```{r}
 (summ <- summary(best, classification=TRUE, parameters=FALSE, networks=FALSE))
-```
-
-```{r, echo=FALSE}
-(summ <- suppressWarnings(summary(best)))
 ```
 
 Visualise the results for the optimal model using a generalised pairs plot.
@@ -142,7 +138,7 @@ getden <- function(x, y, res) {
   rowSums(matrix(res$parameters$pro, nrow=length(x), ncol=G, byrow=TRUE) * den)
 }
 mat    <- matrix(getden(grid[,1L], grid[,2L], res), length(x.new), length(y.new))
-image(x.new, y.new, mat, col=c("white", heat.colors(30L)[30L:1L]), xlab="GNP", ylab=paste('CO'[2]), add=TRUE)
+image(x.new, y.new, mat, col=c("white", grDevices::heat.colors(30L, rev=TRUE)), xlab="GNP", ylab=paste('CO'[2]), add=TRUE)
 box(lwd=1)
 contour(x.new, y.new, mat, add=TRUE, col="grey60", labcex=0.75)
 points(GNP, CO2)
@@ -153,6 +149,9 @@ Convert from the `"MoEClust"` class to the `"Mclust"` class in order to further 
 ```{r, fig.height=5.5, fig.width=5.5}
 mod <- as.Mclust(comp$optimal)
 plot(mod, what="classification")
+```
+
+```{r, fig.height=5.5, fig.width=5.5}
 plot(mod, what="uncertainty")
 ```
 
@@ -270,20 +269,27 @@ require("lattice")
 z <- factor(mod$classification[mod$classification > 0], 
             labels=paste0("Cluster", seq_len(mod$G)))
 splom(~ hema | ais$sex, groups=z)
-splom(~ hema | z, groups=ais$sex)
 ```
 
 ```{r, echo=FALSE, fig.height=4}
 require("lattice", quietly=TRUE)
 z <- factor(mod$classification[mod$classification > 0], labels=paste0("Cluster", seq_len(mod$G)))
 splom(~ hema | ais$sex, groups=z, xlab=NULL)
+```
+
+```{r, eval=FALSE}
+splom(~ hema | z, groups=ais$sex)
+```
+
+```{r, echo=FALSE, fig.height=4}
+require("lattice", quietly=TRUE)
 splom(~ hema | z, groups=ais$sex, xlab=NULL)
 ```
 
 ---------
 
 ## References
-Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 1-33. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 14(2): 293-325. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.
 
 Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. _Journal of the American Statistical Association_, 97(458):611-631.
 

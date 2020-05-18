@@ -87,11 +87,12 @@ res2    <- MoE_clust(dat[,3:7], G=3, gating=~BMI + sex,
 residuals(res2, newdata=ais[ind,])
 
 # Predict held back data using only the covariates
-(pred3  <- predict(res2, newdata=list(new.x=ais[ind,c("BMI", "sex")])))
+(pred3  <- predict(res2, newdata=ais[ind,], use.y=FALSE))
+# pred3 <- predict(res2, newdata=list(new.x=ais[ind,c("BMI", "sex")]))
 # pred3 <- predict(res2, newdata=ais[ind,c("BMI", "sex")])
 }
 \references{
-Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}

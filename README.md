@@ -10,7 +10,7 @@
 
 ## Description
 
-Fits _MoEClust_ models introduced by Murphy and Murphy (2019) <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>, i.e. fits finite Gaussian mixture of experts models with gating and/or expert network covariates supplied via formula interfaces using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
+Fits _MoEClust_ models introduced by Murphy and Murphy (2020) <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>, i.e. fits finite Gaussian mixture of experts models with gating and/or expert network covariates supplied via formula interfaces using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
 
 The most important function in the __MoEClust__ package is: `MoE_clust`, for fitting the model via EM/CEM with gating and/or expert network covariates, supplied via formula interfaces. `MoE_compare` is provided for conducting model selection between different results from `MoE_clust` using different covariate combinations &/or initialisation strategies, etc. 
 
@@ -62,4 +62,4 @@ devtools::install_github('Keefe-Murphy/MoEClust', build_vignettes = TRUE)
 Alternatively, the vignette is available on the package's CRAN page.
 
 ### References
-Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 1-33. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. _Advances in Data Analysis and Classification_, 14(2): 293-325. <[doi:10.1007/s11634-019-00373-8](https://doi.org/10.1007/s11634-019-00373-8)>.

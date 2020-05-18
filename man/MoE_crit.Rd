@@ -15,7 +15,7 @@ MoE_crit(modelName,
          df = NULL)
 }
 \arguments{
-\item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models.}
+\item{modelName}{A character string indicating the model. The help file for \code{\link[mclust]{mclustModelNames}} describes the available models. Not necessary if \code{df} is supplied.}
 
 \item{loglik}{The log-likelihood for a data set with respect to the Gaussian mixture model specified in the \code{modelName} argument.}
 
@@ -27,7 +27,7 @@ MoE_crit(modelName,
 
 \item{z}{The \code{n} times \code{G} responsibility matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} belonds to the \emph{k}-th component.. If supplied the ICL is also computed and returned, otherwise only the BIC and AIC.}
 
-\item{df}{An alternative way to specify the number of estimated parameters (or 'used' degrees of freedom) exactly. If supplied, the arguments \code{d, G, gating.pen} and \code{expert.pen}, which are used to calculate the number of parameters, will be ignored. The number of parameters used in the estimation of the noise component, if any, should also be included.}
+\item{df}{An alternative way to specify the number of estimated parameters (or 'used' degrees of freedom) exactly. If supplied, the arguments \code{modelName}, \code{d}, \code{G}, \code{gating.pen}, and \code{expert.pen}, which are used to calculate the number of parameters, will be ignored. The number of parameters used in the estimation of the noise component, if any, should also be included.}
 }
 \value{
 A simplified array containing the BIC, AIC, number of estimated parameters (\code{df}) and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
@@ -61,10 +61,10 @@ z     <- model$z
 # Compare BIC from MoE_crit to the BIC of the model
 (bic2 <- MoE_crit(modelName=name, loglik=ll, n=n, d=1, G=G, z=z,
                   expert.pen=G * length(coef(model$expert[[1]])))["bic",])
-identical(bic2, unname(model$bic)) #TRUE
+identical(unname(bic2), model$bic) #TRUE
 
 # Make the same comparison with the known number of estimated parameters
-(bic3 <- MoE_crit(modelName=name, loglik=ll, n=n, G=G, df=model$df, z=z)["bic",])
+(bic3 <- MoE_crit(loglik=ll, n=n, df=model$df, z=z)["bic",])
 identical(bic3, bic2)              #TRUE
 }
 \references{

@@ -12,8 +12,11 @@ MoE_compare(...,
 
 \method{print}{MoECompare}(x,
       index = seq_len(x$pick),
+      posidens = TRUE,
+      rerank = FALSE,
       digits = 3L,
       details = TRUE, 
+      maxi = length(index),
       ...)
 }
 \arguments{
@@ -27,12 +30,15 @@ This argument is only relevant for the \code{\link{MoE_compare}} function and wi
 
 \item{optimal.only}{Logical indicating whether to only rank models already deemed optimal within each \code{"MoEClust"} object (\code{TRUE}), or to allow models which were deemed suboptimal enter the final ranking (\code{FALSE}, the default). See \code{details}.}
 
-\item{x, index, digits, details}{Arguments required for the associated \code{print} function:
+\item{x, index, posidens, rerank, digits, details, maxi}{Arguments required for the associated \code{print} function:
 \describe{
 \item{\code{x}}{An object of class \code{"MoECompare"} resulting from a call to \code{\link{MoE_compare}}.}
-\item{\code{index}}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes.}
+\item{\code{index}}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes. See \code{rerank}.}
+\item{\code{posidens}}{A logical indicating whether models which have been flagged for having positive log-densities should be included in the comparison (defaults to \code{TRUE}). Such models may correspond to spurious solutions and can be discarded by specifying \code{posidens=FALSE}. Only relevant if any of the \code{"MoEClust"} objects being compared were themselves run with \code{posidens=TRUE}.}
+\item{\code{rerank}}{A logical indicating whether the ranks should be recomputed when subsetting using \code{index}. Defaults to \code{FALSE}. Only relevant when \code{details=TRUE}.}
 \item{\code{digits}}{The number of decimal places to round model selection criteria to (defaults to 3).}
-\item{\code{details}}{Logical indicating whether some additional details should be printed, defaults to \code{TRUE}. Exists to facilitate \code{\link{MoE_stepwise}} printing.}}}
+\item{\code{details}}{Logical indicating whether some additional details should be printed, defaults to \code{TRUE}. Exists to facilitate \code{\link{MoE_stepwise}} printing.}
+\item{\code{maxi}}{A number specifying the maximum number of rows/models to print. Defaults to \code{length(index)}.}}}
 }
 \value{
 A list of class \code{"MoECompare"}, for which a dedicated print function exists, containing the following elements (each of length \code{pick}, and ranked according to \code{criterion}, where appropriate):
@@ -98,7 +104,7 @@ m7    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, tau0=0.1)
 # Examine all models visited, including those already deemed suboptimal
 # Only print models with expert covariates & more than one component
 comp2 <- MoE_compare(m1, m2, m3, m4, m5, m6, m7, pick=Inf)
-print(comp2, comp2$expert != "None" & comp2$G > 1)
+print(comp2, index=comp2$expert != "None" & comp2$G > 1)
 
 # Conduct a stepwise search on the same data
 (mod1 <- MoE_stepwise(CO2, GNP))
@@ -110,7 +116,7 @@ print(comp2, comp2$expert != "None" & comp2$G > 1)
 (best <- MoE_compare(mod1, mod2, optimal.only=TRUE)$optimal)}
 }
 \references{
-Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr

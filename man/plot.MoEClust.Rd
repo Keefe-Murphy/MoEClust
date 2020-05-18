@@ -16,12 +16,12 @@
 \item{\code{gpairs}}{A generalised pairs plot. To further customise this plot, arguments to \code{\link{MoE_gpairs}} can be supplied.}
 \item{\code{gating}}{The gating network. To further customise this plot, arguments to \code{\link{MoE_plotGate}} and \code{\link[graphics]{matplot}} can be supplied.}
 \item{\code{criterion}}{The model selection criteria. To further customise this plot, arguments to \code{\link{MoE_plotCrit}} and \code{\link[mclust]{plot.mclustBIC}} can be supplied.}
-\item{\code{loglik}}{The log-likelihood vs. the iterations of the EM algorithm. To further customise this plot, arguments to \code{\link{MoE_plotLogLik}} and \code{\link[graphics]{plot}} can be supplied.}
+\item{\code{loglik}}{The log-likelihood vs. the iterations of the EM algorithm. To further customise this plot, arguments to \code{\link{MoE_plotLogLik}} and \code{\link{plot}} can be supplied.}
 \item{\code{uncertainty}}{The clustering uncertainty for every observation. To further customise this plot, arguments to \code{\link{MoE_Uncertainty}} can be supplied.}
 }
 By default, all of the above graphs are produced.}
 
-\item{...}{Optional arguments to be passed to \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link[graphics]{matplot}}, \code{\link[mclust]{plot.mclustBIC}} and \code{\link[graphics]{plot}}. In particular, the argument \code{legendArgs} to \code{\link[mclust]{plot.mclustBIC}} can be passed to \code{\link{MoE_plotCrit}}.}
+\item{...}{Optional arguments to be passed to \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link[graphics]{matplot}}, \code{\link[mclust]{plot.mclustBIC}} and \code{\link{plot}}. In particular, the argument \code{legendArgs} to \code{\link[mclust]{plot.mclustBIC}} can be passed to \code{\link{MoE_plotCrit}}.}
 }
 \value{
 The visualisation according to \code{what} of the results of a fitted \code{MoEClust} model.
@@ -59,7 +59,7 @@ plot(res, what="gpairs", response.type="density",
      scatter.type="ci", jitter=FALSE, show.counts=FALSE)}
 }
 \references{
-Murphy, K. and Murphy, T. B. (2019). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 1-33. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}

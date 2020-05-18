@@ -21,9 +21,9 @@ res <- MoE_clust(ais[,3:7], G=3, modelNames="EEE")
 sig <- res$parameters$variance
 a   <- force_posiDiag(sig$cholSigma)
 b   <- chol(sig$Sigma)
-round(sum(a - b), 10) == 0          #TRUE
-sum(crossprod(a) != sig$Sigma) == 0 #TRUE
-sum(crossprod(b) != sig$Sigma) == 0 #TRUE
+all.equal(a, b)                    #TRUE
+all.equal(crossprod(a), sig$Sigma) #TRUE
+all.equal(crossprod(b), sig$Sigma) #TRUE
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

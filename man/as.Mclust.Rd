@@ -40,6 +40,8 @@ Mixing proportions are averaged over observations in components in the presence 
 Plots may be quite misleading in the presence of gating &/or expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
 
 The functions \code{\link[mclust]{clustCombi}} and \code{\link[mclust]{clustCombiOptim}} can be safely used (provided \code{as.Mclust(x)} is supplied as the \code{object} argument to \code{\link[mclust]{clustCombi}}), as they only rely on \code{x$z} and \code{x$G} only. See the examples below.
+
+Users may expect MoEClust models with no covariates of any kind to be identical to models fitted via \pkg{mclust}, but this is not necessarily true: see the \code{\link{MoE_control}} argument \code{asMclust}.
 }
 \examples{
 \donttest{# library(mclust)
@@ -68,12 +70,12 @@ The functions \code{\link[mclust]{clustCombi}} and \code{\link[mclust]{clustComb
 # plot(as.Mclust(res))}
 }
 \references{
-Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458):611-631.
+Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458): 611-631.
 
-Scrucca L., Fop M., Murphy T. B. and Raftery A. E. (2016). mclust 5: clustering, classification and density estimation using Gaussian finite mixture models. \emph{The R Journal}, 8(1):289-317.
+Scrucca L., Fop M., Murphy T. B. and Raftery A. E. (2016). mclust 5: clustering, classification and density estimation using Gaussian finite mixture models. \emph{The R Journal}, 8(1): 289-317.
 }
 \seealso{
-\code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}
+\code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}, \code{\link{MoE_control}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@ucd.ie}>

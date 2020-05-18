@@ -4,19 +4,18 @@ citEntry(entry  = "Article",
   author  = personList(person(given="Keefe", family="Murphy"),
                        person(given=c("Thomas", "Brendan"), family="Murphy")),
   title   = "Gaussian Parsimonious Clustering Models with Covariates and a Noise Component",
-  year    = "2019",
+  year    = "2020",
   journal = "Advances in Data Analysis and Classification",
-  note    = "advance publication",
-  volume  = "",
-  number  = "",
+  volume  = 14,
+  number  = 2,
   doi     = "10.1007/s11634-019-00373-8",
-  pages   = "1--33",
+  pages   = "293--325",
   url     = "https://doi.org/10.1007/s11634-019-00373-8",
 
   textVersion   =
-    paste0("Keefe Murphy and T. Brendan Murphy (2019). ",
+    paste0("Keefe Murphy and T. Brendan Murphy (2020). ",
            "Gaussian Parsimonious Clustering Models with Covariates and a Noise Component. ",
-           "Advances in Data Analysis and Classification, advance publication, pp. 1-33. ",
+           "Advances in Data Analysis and Classification, 14(2): 293-325. ",
            "URL: https://doi.org/10.1007/s11634-019-00373-8")
 )
 

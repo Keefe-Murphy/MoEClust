@@ -19,7 +19,7 @@ MoE_plotGate(res,
 
 \item{x.axis}{Optional argument for the x-axis against which the mixing proportions are plotted. Defaults to \code{1:res$n} if missing. Supplying \code{x.axis} changes the defaults for the \code{type} and \code{xlab} arguments. Users are advised to only use quantities related to the gating network of the fitted model here. Furthermore, use of the \code{x.axis} argument is not recommended for models with more than one gating network covariate.}
 
-\item{type, pch, xlab, ylab, ylim, col}{These graphical parameters retain their definitions from \code{\link[graphics]{matplot}}. \code{col} defaults to the settings in \code{\link[mclust]{mclust.options}}.}
+\item{type, pch, xlab, ylab, ylim, col}{These graphical parameters retain their definitions from \code{\link[graphics]{matplot}}. \code{col} defaults to the settings in \code{\link[mclust]{mclust.options}}. Note that the default value of \code{type} changes depending on whether \code{x.axis} is supplied and whether the gating network contains multiple covariates &/or categorical covariates.}
 
 \item{...}{Catches unused arguments, or additional arguments to be passed to \code{\link[graphics]{matplot}}.}
 }
