@@ -33,6 +33,6 @@ Plots the BIC, ICL, AIC, or log-likelihood values of a fitted \code{MoEClust} ob
 \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link[mclust]{plot.mclustBIC}}
 }
 \author{
-Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
+Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{plotting}

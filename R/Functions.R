@@ -16,7 +16,7 @@
 #' for multivariate data \eqn{n > d}{n > d} \tab \code{c("EII", "EEI", "EEE")}\cr
 #' for high-dimensional multivariate data \eqn{n \leq d}{n <= d}  \tab \code{c("EII", "EEI")}
 #' }
-#' For zero-component models with a noise component only the \code{"E"} and \code{"EII"} models will be fit for univariate and multivariate data, respectively. The help file for \code{\link[mclust]{mclustModelNames}} further describes the available models (though the \code{"X"} in the single-component models will be coerced to \code{"E"} if supplied that way). For single-component models, other model names equivalent to those above can be supplied, but will be coerced to those above.
+#' For zero-component models with a noise component only the \code{"E"} and \code{"EII"} models will be fitted for univariate and multivariate data, respectively, although this is clearly for naming consistency only. The help file for \code{\link[mclust]{mclustModelNames}} further describes the available models (though the \code{"X"} in the single-component models will be coerced to \code{"E"} if supplied that way). For single-component models, other model names equivalent to those above can be supplied, but will be coerced to those above.
 #' @param gating A \code{\link[stats]{formula}} for determining the model matrix for the multinomial logistic regression in the gating network when fixed covariates enter the mixing proportions. Defaults to \code{~1}, i.e. no covariates. This will be ignored where \code{G=1}. Continuous, categorical, and/or ordinal covariates are allowed. Logical covariates will be coerced to factors. Interactions, transformations, and higher order terms are permitted: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). The specification of the LHS of the formula is ignored. Intercept terms are included by default.
 #' @param expert A \code{\link[stats]{formula}} for determining the model matrix for the (multivariate) WLS in the expert network when fixed covariates are included in the component densities. Defaults to \code{~1}, i.e. no covariates. Continuous, categorical, and/or ordinal covariates are allowed. Logical covariates will be coerced to factors. Interactions, transformations, and higher order terms are permitted: the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). The specification of the LHS of the formula is ignored. Intercept terms are included by default.
 #' @param control A list of control parameters for the EM/CEM and other aspects of the algorithm. The defaults are set by a call to \code{\link{MoE_control}}. In particular, arguments pertaining to the inclusion of an additional noise component are documented here.
@@ -80,7 +80,7 @@
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #'
 #' Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458): 611-631.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords clustering main
 #' @usage
 #' MoE_clust(data,
@@ -431,19 +431,25 @@
       gate.covs   <- eval(bquote(stats::model.frame(.(stats::update.formula(gating, NULL ~ .)), data=.(call$network.data), drop.unused.levels=TRUE)), envir=parent.frame(), enclos=environment())
       gate.names  <- colnames(gate.covs)
       if(any(gate.names %in% colnames(X)))        warning("Gating covariates found in response data!\n", call.=FALSE, immediate.=TRUE)
-      gate.covs   <- cbind(gate.covs, eval(bquote(stats::model.frame(.(as.formula(paste("~", paste(eval(bquote(all.vars(.(gating))), envir=parent.frame())[-1L], collapse="+")))), data=.(call$network.data), drop.unused.levels=TRUE)), envir=parent.frame(), enclos=environment()))
+      gate.covs   <- cbind(gate.covs, eval(bquote(stats::model.frame(.(stats::as.formula(paste("~", paste(eval(bquote(all.vars(.(gating))), envir=parent.frame())[-1L], collapse="+")))), data=.(call$network.data), drop.unused.levels=TRUE)), envir=parent.frame(), enclos=environment()))
       gate.covs   <- gate.covs[,unique(colnames(gate.covs)), drop=FALSE]
+      gate.char   <- vapply(gate.covs, is.character, logical(1L))
+      gate.covs[gate.char]     <- lapply(gate.covs[gate.char], factor)
       netdat      <- gate.covs
     } 
     if(exp.x)      {
       expx.covs   <- eval(bquote(stats::model.frame(.(stats::update.formula(expert, NULL ~ .)), data=.(call$network.data), drop.unused.levels=TRUE)), envir=parent.frame(), enclos=environment())
       expx.names  <- colnames(expx.covs)
       if(any(expx.names %in% colnames(X)))        warning("Expert covariates found in response data!\n", call.=FALSE, immediate.=TRUE)
-      expx.covs   <- cbind(expx.covs, eval(bquote(stats::model.frame(.(as.formula(paste("~", paste(eval(bquote(all.vars(.(expert))), envir=parent.frame())[-1L], collapse="+")))), data=.(call$network.data), drop.unused.levels=TRUE)), envir=parent.frame(), enclos=environment()))
+      expx.covs   <- cbind(expx.covs, eval(bquote(stats::model.frame(.(stats::as.formula(paste("~", paste(eval(bquote(all.vars(.(expert))), envir=parent.frame())[-1L], collapse="+")))), data=.(call$network.data), drop.unused.levels=TRUE)), envir=parent.frame(), enclos=environment()))
       expx.covs   <- expx.covs[,unique(colnames(expx.covs)), drop=FALSE]
+      expx.char   <- vapply(expx.covs, is.character, logical(1L))
+      expx.covs[expx.char]     <- lapply(expx.covs[expx.char], factor)
       netdat      <- if(netmiss || !gate.x) expx.covs else cbind(netdat, expx.covs)
       netdat      <- netdat[,unique(colnames(netdat)), drop=FALSE]
     }
+    if((gate.x    && any(gate.char))   ||
+       (exp.x     && any(expx.char)))             message("Character covariates coerced to factors\n")
     gate.names    <- if(gate.x) gate.names   else NA
     expx.names    <- if(exp.x)  expx.names   else NA
     netnames      <- unique(c(gate.names, expx.names))
@@ -544,7 +550,7 @@
                                 "VII",  "EEE")))  warning("Consider a diagonal 'EII' or 'VII' model (or equal volume 'EEE' model) for 'hc.args$hc.meth' for initialising allocations for high-dimensional data\n", call.=FALSE)
       if(!multv   && !is.element(hcName, c("VVV",
                                 "E",      "V")))  warning("Possibly invalid 'hc.args$hc.meth' for univariate data\n", call.=FALSE)
-      Zhc         <- tryCatch(hc(XI, modelName=hcName, use=hcUse, minclus=min(g.range)), error=function(e) {
+      Zhc         <- tryCatch(hc(data=XI, modelName=hcName, use=hcUse, minclus=min(g.range)), error=function(e) {
                      if(!mdind)                   stop(paste0("Hierarchical clustering initialisation failed",
                                                               ifelse(init.z == "hc", "", " (when initialising using 'mclust')")), call.=FALSE)
                                                   else try(stop(), silent=TRUE) })
@@ -560,7 +566,7 @@
           mcfail  <- rep(FALSE, len.G)
         } else if(init.z == "hc")             {
           hc1     <- any(range.G == 1)
-          hcZ     <- hclass(Zhc, G=g.range)
+          hcZ     <- hclass(hcPairs=Zhc, G=g.range)
         }
       }
     } else hcfail <- mcfail    <- FALSE
@@ -597,7 +603,7 @@
             dfmd  <- .npars_clustMD(D=ifelse(length(n.ind) > 0, OrdIndx + sum(flevs - 1L), J), G=g, J=J, CnsIndx=CnsIndx, OrdIndx=OrdIndx, K=flevs)
             bmd   <- which(dfmd  == min(dfmd[bmd]))
           }
-          z.tmp   <- unmap(mds$Output[[(bmd - 1L) * (len.G - anyg0or1)  + h2]]$cl, groups=Gseq)
+          z.tmp   <- unmap(classification=mds$Output[[(bmd - 1L) * (len.G - anyg0or1)  + h2]]$cl, groups=Gseq)
           if(any(mdh))                           warning(paste0("\tInvoking 'exp.init$clustMD' failed for SOME clustMD model types where G=", g, ",\n\t\tprobably due to the presence of nominal expert network covariates,\n\t\tor the 'init.z' method used to initialise the call to clustMD\n"), call.=FALSE, immediate.=TRUE)
         }
       }
@@ -611,7 +617,7 @@
             class(mcl)         <- "mclustBIC"
           }
           if(multstart)         {
-            zg        <- replicate(nstarts, list(unmap(sample(x=Gseq, size=noisen, replace=TRUE), groups=Gseq)))
+            zg        <- replicate(nstarts, list(unmap(classification=sample(x=Gseq, size=noisen, replace=TRUE), groups=Gseq)))
           } else       {
             switch(EXPR=init.z, list={
             z.tmp     <- .renorm_z(z.list[[h]])
@@ -619,7 +625,7 @@
             z.tmp     <- unmap(switch(EXPR     = init.z,
                                       hc       = hcZ[,h - anyg0 - hc1],
                                       kmeans   = stats::kmeans(x=XI, centers=g, iter.max=kiters, nstart=kstarts)$cluster,
-                                      mclust   = suppressWarnings(Mclust(XI, G=g, x=mcl))$classification,
+                                      mclust   = suppressWarnings(Mclust(data=XI, G=g, x=mcl))$classification,
                                       quantile = quant_clust(x=XI, G=g),
                                       random   = sample(x=Gseq, size=noisen, replace=TRUE)), groups=Gseq)
             })
@@ -826,16 +832,16 @@
         if(isTRUE(verbose))     { message(paste0("\n\tModel: ", modtype, "\n"))
           last.T  <- modtype   == T.last
         }
-        x.df      <- ifelse(g   > 0, nVarParams(modtype, d, g), 0L) + gate.pen
+        x.df      <- ifelse(g   > 0, nVarParams(modelName=modtype, d=d, G=g), 0L) + gate.pen
         if(g > 0  && expinitG)  {
-         Mstep    <- try(mstep(modtype, G.res, z.alloc, control=control), silent=TRUE)
+         Mstep    <- try(mstep(data=G.res, modelName=modtype, z=z.alloc, control=control), silent=TRUE)
          init.exp <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
         }
         if(expold != init.exp  && !eNO) {
           failedM <- c(failedM, modtype)
         }
         if(g > 0  && !init.exp) {
-          Mstep   <- try(mstep(modtype, X, if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control), silent=TRUE)
+          Mstep   <- try(mstep(data=X, modelName=modtype, z=if(noise.null) z.init else z.init[,-gN, drop=FALSE], control=control), silent=TRUE)
           ERR     <- inherits(Mstep, "try-error")           ||   attr(Mstep, "returnCode")  < 0
         }
         if(g > 0  && !ERR)      {
@@ -903,7 +909,7 @@
           }
 
         # M-step
-          Mstep   <- try(if(exp.g) mstep(modtype, res.x, z.mat, control=control) else mstep(modtype, X, if(noise.null) z else z[,-gN, drop=FALSE], control=control), silent=TRUE)
+          Mstep   <- try(if(exp.g) mstep(data=res.x, modelName=modtype, z=z.mat, control=control) else mstep(data=X, modelName=modtype, z=if(noise.null) z else z[,-gN, drop=FALSE], control=control), silent=TRUE)
           ERR     <- (inherits(Mstep, "try-error") || attr(Mstep, "returnCode")  < 0)
           if(isTRUE(ERR))  {
             z.err <- if(exp.g) z.mat     else if(noise.null)  z  else z[,-gN, drop=FALSE]
@@ -1309,7 +1315,7 @@
     attr(LL.x, "initialization")      <- list(hcPairs = if((init.z == "hc" && someG && !hcfail) && (!mdind || isTRUE(warnmd[best.G]))) Zhc, subset = NULL, noise = if(!noise.null) noise)
     attr(df.fin, "Gate.Penalty")      <- x.gp
     attr(df.fin, "Expert.Penalty")    <- x.ep
-    attr(df.fin, "nVar.Penalty")      <- nVarParams(best.mod, d, G)
+    attr(df.fin, "nVar.Penalty")      <- nVarParams(modelName=best.mod, d=d, G=G)
     claX       <- max.col(z)
     claX[claX  == G + 1L]      <- 0L
     results       <- list(call = call2, data = as.data.frame(X), modelName = ifelse(G == 0, "", best.mod),
@@ -1354,7 +1360,7 @@
 #' @return A numeric matrix whose \code{[i,k]}-th entry is the density or log-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions. These densities are unnormalised.
 #' @keywords clustering
 #' @export
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #'
 #' @seealso \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_clust}}, \code{\link[mclust]{mclustVariance}}
 #' @usage
@@ -1455,7 +1461,7 @@
 #' @note This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities. Caution is advised using this function without explicitly naming the arguments. Models with a noise component are facilitated here too.
 #'
 #' The E-step can be replaced by a C-step, see \code{\link{MoE_cstep}} and the \code{algo} argument to \code{\link{MoE_control}}.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords clustering
 #' @seealso \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link{MoE_cstep}}, \code{\link{MoE_control}}, \code{\link[mclust]{mclustVariance}}, \code{\link[matrixStats]{rowLogSumExps}}
 #' @usage
@@ -1515,7 +1521,7 @@
 #' @note This function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities. Caution is advised using this function without explicitly naming the arguments. Models with a noise component are facilitated here too.
 #'
 #' The C-step can be replaced by an E-step, see \code{\link{MoE_estep}} and the \code{algo} argument to \code{\link{MoE_control}}.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords clustering
 #' @seealso \code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link{MoE_estep}}, \code{\link{MoE_control}}, \code{\link[mclust]{mclustVariance}}
 #' @usage
@@ -1578,7 +1584,7 @@
 #' @note In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
 #' @keywords clustering
 #' @export
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #'
 #' @references Biernacki, C., Celeux, G. and Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
 #'
@@ -1615,7 +1621,7 @@
 #' (bic3 <- MoE_crit(loglik=ll, n=n, df=model$df, z=z)["bic",])
 #' identical(bic3, bic2)              #TRUE
   MoE_crit        <- Vectorize(function(modelName, loglik, n, d, G, gating.pen = G - 1L, expert.pen = G * d, z = NULL, df = NULL) {
-    df            <- ifelse(!missing(df), df, nVarParams(modelName, d, G) + expert.pen + gating.pen)
+    df            <- ifelse(!missing(df), df, nVarParams(modelName=modelName, d=d, G=G) + expert.pen + gating.pen)
     double.ll     <- 2 * loglik
     bic.x         <- double.ll  - df * log(n)
     aic.x         <- double.ll  - df * 2
@@ -1672,8 +1678,8 @@
 #' @param z.list A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1.
 #' @param nstarts The number of random initialisations to use when \code{init.z="random"}. Defaults to \code{1}. Results will be based on the random start yielding the highest estimated log-likelihood. Note that all \code{nstarts} random initialisations are affected by \code{exp.init$mahalanobis}, if invoked in the presence of expert network covariates, which may remove some of the randomness.
 #' @param eps A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of \code{eps} allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.
-#' @param tol A vector of length three giving relative convergence tolerances for 1) the log-likelihood of the EM/CEM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step (\code{"VEI", "EVE", "VEE", "VVE", "VEV"}), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.
-#' @param itmax A vector of length three giving integer limits on the number of iterations for 1) the EM/CEM algorithm, 2) the inner loop for models with iterative M-step (\code{"VEI", "EVE", "VEE", "VVE", "VEV"}), and 3) the multinomial logistic regression in the gating network, respectively.
+#' @param tol A vector of length three giving relative convergence tolerances for 1) the log-likelihood of the EM/CEM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.
+#' @param itmax A vector of length three giving integer limits on the number of iterations for 1) the EM/CEM algorithm, 2) the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) the multinomial logistic regression in the gating network, respectively.
 #'
 #' The default is \code{c(.Machine$integer.max, .Machine$integer.max, 100L)} allowing termination to be completely governed by \code{tol} for the inner and outer loops of the EM algorithm. If only one number is supplied, it is used as the iteration limit for the outer loop only.
 #' @param hc.args A list supplying select named parameters to control the initialisation of the cluster allocations when \code{init.z="hc"} (or when \code{init.z="mclust"}, which itself relies on \code{\link[mclust]{hc}}), unless \code{isTRUE(exp.init$clustMD)}, the \code{\link[clustMD]{clustMD}} library is loaded, and none of the \code{\link[clustMD]{clustMD}} model types fail (otherwise irrelevant):
@@ -1704,7 +1710,7 @@
 #' @return A named list in which the names are the names of the arguments and the values are the values supplied to the arguments.
 #' @export
 #' @keywords control
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #'
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{aitken}}, \code{\link[mclust]{Mclust}}, \code{\link[mclust]{hc}}, \code{\link[mclust]{mclust.options}}, \code{\link{quant_clust}}, \code{\link[clustMD]{clustMD}}, \code{\link{noise_vol}}, \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}, \code{\link{MoE_compare}}, \code{\link[nnet]{multinom}}
 #' @usage
@@ -1955,7 +1961,7 @@
 #' When the \code{"aitken"} method is employed within \code{\link{MoE_clust}} (via \code{\link{MoE_control}}), \code{ll} at convergence gives the log-likelihood achieved by the estimated parameters, while \code{linf} at convergence estimates the log-likelihood that would be achieved after an infinite number of EM/CEM iterations.
 #' @export
 #' @keywords control
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @references Boehning, D., Dietz, E., Schaub, R., Schlattmann, P. and Lindsay, B. G. (1994). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.
 #'
 #' @seealso \code{\link{MoE_control}}
@@ -2040,7 +2046,7 @@
 #' @keywords clustering main
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @importFrom mclust "mclustModelNames"
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #'
 #' @seealso See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
 #' 
@@ -2295,7 +2301,7 @@
 #' 
 #' Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}
 #' @method predict MoEClust
 #' @keywords clustering main
@@ -2586,7 +2592,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' 
 #' The function will attempt to remove duplicate variables found in both \code{data} and \code{network.data}; in particular, they will be removed from \code{network.data}. Users are however advised to careful specify \code{data} and \code{network.data} such that there are no duplicates, especially if the desired variable(s) should belong to \code{network.data}.
 #' @export
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_compare}}, \code{\link{MoE_control}}
 #' @keywords clustering main
@@ -2675,6 +2681,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     dup.ind       <- if(any(is.matrix(data), is.data.frame(data)) && !any(grepl("\\$", colnames(data)))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) isTRUE(all.equal(network.data[,j], unname(unlist(data)))), logical(1L))
     if(any(dup.ind))                              warning("Removing covariates found in response data\n", call.=FALSE, immediate.=TRUE)
     network.data  <- network.data[,!dup.ind, drop=FALSE]  
+    network.data  <- as.data.frame(network.data)
+    network.char  <- vapply(network.data, is.character, logical(1L))
+    network.data[network.char]  <- lapply(network.data[network.char], factor)
+    if(any(network.char))                         message("Character covariates coerced to factors\n")
     netnames      <- colnames(network.data)
     if(suppressWarnings(!all(is.na(
        as.numeric(netnames)))))                   stop("Invalid variable names in 'network.data'", call.=FALSE)
@@ -2857,7 +2867,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @importFrom mclust "as.Mclust.default" "clustCombi" "clustCombiOptim" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "sigma2decomp" "summary.Mclust"
 #' @method as.Mclust MoEClust
 #' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}, \code{\link{MoE_control}}
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @references Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458): 611-631.
 #' 
 #' Scrucca L., Fop M., Murphy T. B. and Raftery A. E. (2016). mclust 5: clustering, classification and density estimation using Gaussian finite mixture models. \emph{The R Journal}, 8(1): 289-317.
@@ -2885,7 +2895,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'
 #' # Return the optimal number of clusters according to entropy
 #' # combi <- mclust::clustCombi(object=mod2)
-#' # optim <- mclust::clustCombiOptim(combi)
+#' # optim <- mclust::clustCombiOptim(object=combi)
 #' # table(mod2$classification, ais$sex)
 #' # table(optim$cluster.combi, ais$sex)
 #'
@@ -2931,7 +2941,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords utility
 #' @export
 #'
@@ -2979,7 +2989,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'
 #' @return An upper or lower triangular matrix with positive diagonal entries such that the matrix is still a valid decomposition of the matrix the input \code{x} is a decomposition of.
 #' @export
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords utility
 #'
 #' @examples
@@ -3044,7 +3054,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'
 #' @return The updated formula with constant variables removed.
 #' @note Formulas with and without intercepts are accommodated.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords utility
 #' @seealso \code{\link{drop_levels}}, \code{\link{I}}
 #' @export
@@ -3101,7 +3111,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'
 #' @return A \code{data.frame} like \code{newdata} with unseen factor levels replaced by \code{NA}.
 #' @note This function is untested for models other than \code{\link[stats]{lm}}.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords utility
 #' @seealso \code{\link{drop_constants}}
 #' @export
@@ -3153,7 +3163,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param identity A logical indicating whether the identity matrix is used in in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE}; \code{TRUE} corresponds to the use of the Euclidean distance. Only relevant for multivariate response data.
 #'
 #' @return A vector giving the Mahalanobis distance (or squared Mahalanobis distance) between response(s) and fitted values for each observation.
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @importFrom matrixStats "rowSums2"
 #' @keywords utility
 #' @export
@@ -3266,7 +3276,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' \item{\code{loc}}{A vector of length \code{ncol(data)} giving the location of the centre of mass.
 #' 
 #' This can help in predicting the fitted values of models fitted with noise components via \code{\link{MoE_clust}}.}}
-#' @author Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @seealso \code{\link[mclust]{hypvol}}, \code{\link[geometry]{convhulln}}, \code{\link[cluster]{ellipsoidhull}}
 #' @keywords control
 #' @export

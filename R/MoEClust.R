@@ -24,8 +24,8 @@
 #' \itemize{
 #' \item{Type: }{Package}
 #' \item{Package: }{MoEClust}
-#' \item{Version: }{1.3.1}
-#' \item{Date: }{2020-05-12 (this version), 2017-11-28 (original release)}
+#' \item{Version: }{1.3.2}
+#' \item{Date: }{2020-11-17 (this version), 2017-11-28 (original release)}
 #' \item{Licence: }{GPL (>=2)}
 #' }
 #'
@@ -36,16 +36,16 @@
 #' @author
 #' Keefe Murphy [aut, cre], Thomas Brendan Murphy [ctb]
 #'
-#' \strong{Maintainer}: Keefe Murphy - <\email{keefe.murphy@@ucd.ie}>
+#' \strong{Maintainer}: Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
 #' @examples
 #' \donttest{data(ais)
 #' 
 #' # Fit two sets of models
 #' res1  <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
-#'                    modelNames=c("EVE", "VVE", "VEE"), network.data=ais)
+#'                    modelNames=c("VEE", "EVE", "VVE"), network.data=ais)
 #' res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert=~sex,
-#'                    modelNames=c("EVE", "VVE", "VEE"), network.data=ais) 
+#'                    modelNames=c("VEE", "EVE", "VVE"), network.data=ais) 
 #'         
 #' # Compare the best model from each set of results
 #' (comp <- MoE_compare(res1, res2, optimal.only=TRUE))

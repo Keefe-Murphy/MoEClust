@@ -5,23 +5,29 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.3.2 - (_10<sup>th</sup> release [patch update]: 2020-11-17_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * New `MoE_control` arg. `posidens=TRUE` ensures code no longer crashes when observations  
   have positive log-density: previous behaviour is recoverable by setting `posidens=FALSE`.
 * `MoE_control` gains the arg. `asMclust` (`FALSE`, by default) which modifies the  
   `stopping` and  `hcUse` arguments such that `MoEClust` and `mclust` behave similarly  
   for models _with no covariates in either network_ (thanks to a request from Prof. Kamel Gana).
+* Fixes to plotting colours & symbols in `MoE_gpairs` (thanks to Dr. Natasha De Manincor):  
+  * Corrected mosaic panels (colours).
+  * Accounted for empty clusters in all panels (colours & symbols).
 * Fixed bug in `predict.MoEClust` when no `newdata` is supplied to models with no gating covariates.
+* `MoE_clust` & `MoE_stepwise` now coerce `"character"` covariates to `"factor"` (for later plotting).
 * Further improvements to `summary` method for `MoE_expert` objects.
 * Fixes to `print` & `summary` methods for `MoE_gating` objects if `G=1` or `equalPro=TRUE`.
 * Additional minor edits to `MoE_plotGate`.
-* `print.MoECompare` gains the args. `maxi`, `posidens=TRUE` & `rerank=FALSE`.
+* `print.MoECompare` gains the args. `maxi`, `posidens=TRUE`, & `rerank=FALSE`.
 * Ensured `lattice(>=0.12)`, `matrixStats(>=0.53.1)`, & `mclust(>=5.4)` in `Imports:`.
 * Ensured `clustMD(>=1.2.1)` and `geometry(>=0.4.0)` in `Suggests:`.
 * Use of `NCOL`/`NROW` where appropriate.
 * Package startup message now checks if newer version of package is available from CRAN.
 * Updated citation info after publication in _Advances in Data Analysis and Classification_.
-* Minor documentation & examples edits.
+* Updated maintainer e-mail address.
+* Minor documentation, examples, and CRAN compliance + `mclust` compatability edits.
 
 ## MoEClust v1.3.1 - (_9<sup>th</sup> release [patch update]: 2020-05-12_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits

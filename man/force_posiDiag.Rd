@@ -26,6 +26,6 @@ all.equal(crossprod(a), sig$Sigma) #TRUE
 all.equal(crossprod(b), sig$Sigma) #TRUE
 }
 \author{
-Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
+Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{utility}

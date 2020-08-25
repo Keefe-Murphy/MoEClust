@@ -98,7 +98,7 @@ Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models wit
 \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}
 }
 \author{
-Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
+Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{clustering}
 \keyword{main}

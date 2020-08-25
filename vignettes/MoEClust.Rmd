@@ -36,7 +36,7 @@ If you find bugs or want to suggest new features please visit the __MoEClust__ [
 This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
 
 ### Installing MoEClust
-__MoEClust__ will run in Windows, Mac OS X, or Linux. To install it you first need to install [R](https://cran.r-project.org/). Installing [Rstudio](https://www.rstudio.com/) as a nice desktop environment for using R is also recommended.
+__MoEClust__ will run in Windows, Mac OS X, or Linux. To install it you first need to install [R](https://cran.r-project.org/). Installing [RStudio](https://rstudio.com/) as a nice desktop environment for using R is also recommended.
 
 Once in R you can type at the R command prompt:
 

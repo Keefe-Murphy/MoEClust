@@ -48,6 +48,6 @@ inherits(mod2, "try-error") # FALSE
 \code{\link{drop_levels}}, \code{\link{I}}
 }
 \author{
-Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
+Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{utility}

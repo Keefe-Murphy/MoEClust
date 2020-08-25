@@ -59,7 +59,7 @@ Users may expect MoEClust models with no covariates of any kind to be identical 
 
 # Return the optimal number of clusters according to entropy
 # combi <- mclust::clustCombi(object=mod2)
-# optim <- mclust::clustCombiOptim(combi)
+# optim <- mclust::clustCombiOptim(object=combi)
 # table(mod2$classification, ais$sex)
 # table(optim$cluster.combi, ais$sex)
 
@@ -78,6 +78,6 @@ Scrucca L., Fop M., Murphy T. B. and Raftery A. E. (2016). mclust 5: clustering,
 \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}, \code{\link{MoE_control}}
 }
 \author{
-Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
+Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{utility}

@@ -44,6 +44,6 @@ anyNA(pred2)                 #TRUE
 \code{\link{drop_constants}}
 }
 \author{
-Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
+Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{utility}

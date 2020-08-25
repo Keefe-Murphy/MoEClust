@@ -1,6 +1,6 @@
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/MoEClust)](https://cran.r-project.org/package=MoEClust)
-[![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/MoEClust?)](https://github.com/metacran/cranlogs.app)
-[![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/MoEClust?color=82b4e8)](https://github.com/metacran/cranlogs.app)
+[![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/MoEClust?)](https://github.com/r-hub/cranlogs.app)
+[![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/MoEClust?color=82b4e8)](https://github.com/r-hub/cranlogs.app)
 
 # MoEClust R Package
 ## Gaussian Parsimonious Clustering Models

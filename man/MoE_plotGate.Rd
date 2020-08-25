@@ -53,6 +53,6 @@ MoE_plotGate(res2, x.axis=ais$sex, xlab="sex")
 \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link[graphics]{matplot}}
 }
 \author{
-Keefe Murphy - <\email{keefe.murphy@ucd.ie}>
+Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{plotting}
