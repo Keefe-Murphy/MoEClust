@@ -11,7 +11,7 @@
 #' The subsetting must include at least two variables, whether they be the MAP, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting.
 #' @param response.type The type of plot desired for the scatter plots comparing continuous response variables. Defaults to \code{"points"}.
 #'
-#' Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In so doing, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data).
+#' Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In doing so, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data).
 #'
 #' Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets).
 #' @param scatter.type A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, the options \code{"lm2"} or \code{"ci2"} can be used but this is not generally advisable.
@@ -84,7 +84,7 @@
 #' \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots. Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
-#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #'
 #' Emerson, J. W., Green, W. A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The generalized pairs plot. \emph{Journal of Computational and Graphical Statistics}, 22(1): 79-91.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_Uncertainty}}, \code{\link{expert_covar}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}
@@ -633,6 +633,7 @@ MoE_plotGate.MoEClust   <- function(res, x.axis = NULL, type = "b", pch = 1, xla
   suppressWarnings(graphics::par(pty="m"))
   N          <- res$n
   G          <- res$G
+  if(G == 1)                                          message("No clustering has taken place!\n")
   Tau        <- .mat_byrow(res$parameters$pro, nrow=N, ncol=ncol(res$z))
   vars       <- all.vars(stats::as.formula(attr(res$gating, "Formula")))
   ncovs      <- length(vars)  > 1
@@ -763,6 +764,7 @@ MoE_plotLogLik.MoEClust  <- function(res, type = "l", xlab = "Iteration", ylab =
   on.exit(suppressWarnings(graphics::par(oldpar)))
   suppressWarnings(graphics::par(pty="m"))
   xll        <- res$loglik
+  if(res$G   == 1)                                    message("EM algorithm not used; no clustering has taken place!\n")
   if(all(xll != cummax(xll)))                         warning("Log-likelihoods are not strictly increasing\n", call.=FALSE)
   base::plot(xll, type = ifelse(length(xll) == 1, "p", type), xlab = xlab, ylab = ylab, xaxt = xaxt, ...)
   if(length(xaxt) == 1   && is.character(xaxt))  {
@@ -840,17 +842,20 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
     mC       <- classError(classification=res$classification, class=as.numeric(as.factor(truth)))$misclassified
   }
   G          <- res$G + noise
+  if(G == 1)                                          message("No clustering has taken place!\n")
   oneG       <- 1/G
   min1G      <- 1   - oneG
   yx         <- unique(c(0, pretty(c(0, min1G))))
-  yx[length(yx)]   <- min1G
+  YX         <- which.min(abs(yx - min1G))
+  yx[YX]     <- min1G
+  yx         <- abs(yx[yx < 1])
   cm         <- mclust.options("classPlotColors")
   if(type    == "barplot") {
     cu       <- if(tmiss) replace(rep(cm[1L], n.obs), mC, cm[2L]) else cm[seq_len(2L)][(ucert >= oneG) + 1L]
     cu[ucert == 0] <- NA
     base::plot(ucert, type="h", ylim=range(yx), col=cu, yaxt="n", ylab="", xlab="Observations", lend=1)
     graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3L])
-    graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression(1 - frac(1, widehat(G^{'(0)'}))), expression(1 - frac(1, hat(G))))), las=2, xpd=TRUE)
+    graphics::axis(2, at=yx, labels=replace(yx, YX, ifelse(noise, expression(1 - frac(1, widehat(G^{'(0)'}))), expression(1 - frac(1, hat(G))))), las=2, xpd=TRUE)
     graphics::axis(2, at=oneG, labels=ifelse(noise, expression(frac(1, widehat(G^{'(0)'}))), expression(frac(1, hat(G)))), las=2, xpd=TRUE, side=4)
   } else      {
     ord      <- order(ucert, decreasing=decreasing)
@@ -861,7 +866,7 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
     graphics::lines(ucord)
     graphics::points(ucord, pch=15, cex=if(tmiss) replace(rep(0.5, n.obs), mcO, 0.75) else 0.5, col=if(tmiss) replace(rep(1, n.obs), mcO, cm[2L]) else 1)
     graphics::lines(x=c(0, n.obs), y=c(oneG, oneG), lty=2, col=cm[3L])
-    graphics::axis(2, at=yx, labels=replace(yx, length(yx), ifelse(noise, expression(1 - frac(1, widehat(G^{'(0)'}))), expression(1 - frac(1, hat(G))))), las=2, xpd=TRUE)
+    graphics::axis(2, at=yx, labels=replace(yx, YX, ifelse(noise, expression(1 - frac(1, widehat(G^{'(0)'}))), expression(1 - frac(1, hat(G))))), las=2, xpd=TRUE)
     graphics::axis(2, at=oneG, labels=ifelse(noise, expression(frac(1, widehat(G^{'(0)'}))), expression(frac(1, hat(G)))), las=2, xpd=TRUE, side=4)
     if(tmiss) {
       Nseq   <- (seq_len(n.obs))
@@ -904,7 +909,7 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #' Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. These can be especially useful for univariate data.
 #' @return The visualisation according to \code{what} of the results of a fitted \code{MoEClust} model.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Uncertainty}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
-#'@references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#'@references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @export
 #' @method plot MoEClust

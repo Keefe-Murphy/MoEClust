@@ -6,7 +6,7 @@
 \alias{MoEClust-package}
 \title{MoEClust: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component}
 \description{
-Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2020) <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
+Clustering via parsimonious Gaussian Mixtures of Experts using the \emph{MoEClust} models introduced by Murphy and Murphy (2020) <\doi{10.1007/s11634-019-00373-8}>. This package fits finite Gaussian mixture models with gating and/or expert network covariates using a range of parsimonious covariance parameterisations from the GPCM family via the EM/CEM algorithm. Visualisation of the results of such models using generalised pairs plots and the inclusion of an additional noise component is also facilitated.
 }
 \section{Usage}{
 
@@ -34,8 +34,8 @@ The package also contains two data sets: \code{ais} and \code{CO2data}.
 \itemize{
 \item{Type: }{Package}
 \item{Package: }{MoEClust}
-\item{Version: }{1.3.2}
-\item{Date: }{2020-11-17 (this version), 2017-11-28 (original release)}
+\item{Version: }{1.3.3}
+\item{Date: }{2020-12-29 (this version), 2017-11-28 (original release)}
 \item{Licence: }{GPL (>=2)}
 }
 }
@@ -90,7 +90,7 @@ m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE)
 (best <- MoE_compare(mod1, mod2, comp, pick=1)$optimal)}
 }
 \references{
-Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 Useful links:

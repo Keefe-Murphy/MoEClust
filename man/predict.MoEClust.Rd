@@ -57,7 +57,7 @@ The returned values of \code{pro} and \code{mean} are always the same, regardles
 \description{
 Predicts both cluster membership probabilities and fitted response values from a \code{MoEClust} model, using covariates and response data, or covariates only. The predicted MAP classification, mixing proportions, and component means are all also reported in both cases, as well as the predictions of the expert network corresponding to the most probable component.
 }
-\note{
+\details{
 Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 
 Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
@@ -92,7 +92,7 @@ residuals(res2, newdata=ais[ind,])
 # pred3 <- predict(res2, newdata=ais[ind,c("BMI", "sex")])
 }
 \references{
-Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}

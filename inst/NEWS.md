@@ -5,6 +5,13 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.3.3 - (_11<sup>th</sup> release [patch update]: 2020-12-29_)
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Minor `MoE_stepwise` speed-ups by avoiding duplication of initialisation for certain steps.
+* Minor fix to `MoE_stepwise` for univariate data sets without covariates.
+* Prettier axis labels for `MoE_uncertainty` plots.
+* Minor CRAN compliance edits to the vignette.
+
 ## MoEClust v1.3.2 - (_10<sup>th</sup> release [patch update]: 2020-11-17_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * New `MoE_control` arg. `posidens=TRUE` ensures code no longer crashes when observations  

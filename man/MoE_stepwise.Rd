@@ -87,7 +87,7 @@ The function will attempt to remove duplicate variables found in both \code{data
 # comp$optimal}
 }
 \references{
-Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_compare}}, \code{\link{MoE_control}}

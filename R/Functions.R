@@ -54,7 +54,7 @@
 #' \item{\code{pro}}{The mixing proportions: either a vector of length \code{G} or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
 #' \item{\code{mean}}{The means of each component. If there is more than one component, this is a matrix whose \emph{k}-th column is the mean of the \emph{k}-th component of the mixture model.
 #'
-#' For models with expert network covariates, this is given by the posterior mean of the fitted values, otherwise the posterior mean of the response is reported. For models with expert network covariates, the \emph{observation-specific} means can be accessed by calling \code{predict} on each object in the list given by \code{expert}.}
+#' For models with expert network covariates, this is given by the posterior mean of the fitted values, otherwise the posterior mean of the response is reported. For models with expert network covariates, the \emph{observation-specific} component means can be accessed by calling \code{predict} on each object in the list given by \code{expert}.}
 #' \item{\code{variance}}{A list of variance parameters of each component of the model. The components of this list depend on the model type specification. See the help file for \code{\link[mclust]{mclustVariance}} for details. Also see \code{\link{expert_covar}} for an alternative approach to summarising the variance parameters in the presence of expert network covariates.}
 #' \item{\code{Vinv}}{The inverse of the hypervolume parameter for the noise component if required, otherwise set to \code{NULL} (see \code{\link{MoE_control}}).}
 #' }}
@@ -65,7 +65,7 @@
 #' \item{\code{resid.data}}{In the presence of expert network covariates, this is the augmented data actually used in the clustering at convergence, as a list of \code{G} matrices of WLS residuals of dimension \code{n * d}. Will contain zero columns in the absence of expert network covariates.}
 #' \item{\code{DF}}{A matrix giving the numbers of estimated parameters (i.e. the number of 'used' degrees of freedom) for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. Subtract these numbers from \code{n} to get the degrees of freedom. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustDF"}, for which dedicated printing and plotting functions exist, respectively.}
 #' \item{\code{ITERS}}{A matrix giving the total number of EM/CEM iterations for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged. Inherits the classes \code{"MoECriterion"} and \code{"mclustITERS"}, for which dedicated printing and plotting functions exist, respectively.}
-#' Dedicated \code{\link[=plot.MoEClust]{plot}}, \code{\link[=predict.MoEClust]{predict}}, \code{print} and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link[=as.Mclust.MoEClust]{as.Mclust}}.
+#' Dedicated \code{\link[=plot.MoEClust]{plot}}, \code{\link[=predict.MoEClust]{predict}}, \code{print}, and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link[=as.Mclust.MoEClust]{as.Mclust}}.
 #' @details The function effectively allows 6 different types of Gaussian Mixture of Experts model (as well as the different models in the GPCM/\pkg{mclust} family, for each): i) the standard finite Gaussian mixture with no covariates, ii) fixed covariates only in the gating network, iii) fixed covariates only in the expert network, iv) the full Mixture of Experts model with fixed covariates entering both the mixing proportions and component densities. By constraining the mixing proportions to be equal (see \code{equalPro} in \code{\link{MoE_control}}) two extra special cases are facilitated when gating covariates are excluded. 
 #' 
 #' Note that having the same covariates in both networks is allowed. So too are interactions, transformations, and higher order terms (see \code{\link[stats]{formula}}): the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). Covariates can be continuous, categorical, logical, or ordinal, but the response must always be continuous.
@@ -77,7 +77,7 @@
 #' 
 #' \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{MoE_control}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
 #' @export
-#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #'
 #' Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458): 611-631.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
@@ -2044,7 +2044,7 @@
 #' \item{\code{equalNoise}}{Logical indicating whether the mixing proportion of the noise component for \code{equalPro} models is also equal (\code{TRUE}) or estimated (\code{FALSE}).}
 #' @export
 #' @keywords clustering main
-#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #' @importFrom mclust "mclustModelNames"
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #'
@@ -2297,10 +2297,10 @@
 #' 
 #' The returned values of \code{pro} and \code{mean} are always the same, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
 #'
-#' @note Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
+#' @details Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 #' 
 #' Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
-#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}
 #' @method predict MoEClust
@@ -2417,11 +2417,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   if(any(vapply(seq_len(ncol(newgate)),
      function(p, gp=newgate[,p])  is.factor(gp) &&
      !identical(levels(gp),
-     levels(net[,gatenames[p]])), logical(1L))))  warning("One of more categorical gating covariates in the unseen newdata has new factor levels\n", call.=FALSE, immediate.=TRUE)
+     levels(net[,gatenames[p]])), logical(1L))))  warning("One or more categorical gating covariates in the unseen newdata has new factor levels\n", call.=FALSE, immediate.=TRUE)
   if(any(vapply(seq_len(ncol(newexpx)),
      function(p, ep=newexpx[,p])  is.factor(ep) &&
      !identical(levels(ep),
-     levels(net[,expxnames[p]])), logical(1L))))  warning("One of more categorical expert covariates in the unseen newdata has new factor levels\n", call.=FALSE, immediate.=TRUE)
+     levels(net[,expxnames[p]])), logical(1L))))  warning("One or more categorical expert covariates in the unseen newdata has new factor levels\n", call.=FALSE, immediate.=TRUE)
   rownames(newdata.x)          <- NULL
   nr              <- nrow(newdata.x)
   nrseq           <- seq_len(nr)
@@ -2449,6 +2449,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(all(is.na(noise.loc)))                      warning("Can't predict the response; mean of noise component unavailable\n", call.=FALSE, immediate.=TRUE)
     retval        <- list(ystar=matrix(noise.loc, nrow=nr, ncol=object$d, byrow=TRUE),
                           classification=rep(0L, nr),
+                          pro=provideDimnames(matrix(1L,   nrow=1L, ncol=1L), base=list("pro", "Cluster0")),
                           zstar=provideDimnames(matrix(1L, nrow=nr, ncol=1L), base=list(as.character(nrseq), "Cluster0")))
     retval        <- c(retval, list(MAPy=retval$ystar))
     retval        <- if(isTRUE(resid)) c(retval, list(resids=newdata.y - retval$ystar)) else retval
@@ -2593,7 +2594,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' The function will attempt to remove duplicate variables found in both \code{data} and \code{network.data}; in particular, they will be removed from \code{network.data}. Users are however advised to careful specify \code{data} and \code{network.data} such that there are no duplicates, especially if the desired variable(s) should belong to \code{network.data}.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
-#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_compare}}, \code{\link{MoE_control}}
 #' @keywords clustering main
 #' @usage
@@ -2678,9 +2679,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(ncol(data) == 1) {
       colnames(data)   <- deparse(match.call()$data)
     }
-    dup.ind       <- if(any(is.matrix(data), is.data.frame(data)) && !any(grepl("\\$", colnames(data)))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) isTRUE(all.equal(network.data[,j], unname(unlist(data)))), logical(1L))
-    if(any(dup.ind))                              warning("Removing covariates found in response data\n", call.=FALSE, immediate.=TRUE)
-    network.data  <- network.data[,!dup.ind, drop=FALSE]  
+    if(!is.null(network.data))   {
+     dup.ind      <- if(any(is.matrix(data), is.data.frame(data)) && !any(grepl("\\$", colnames(data)))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) isTRUE(all.equal(network.data[,j], unname(unlist(data)))), logical(1L))
+     if(any(dup.ind))                             warning("Removing covariates found in response data\n", call.=FALSE, immediate.=TRUE)  
+     network.data <- network.data[,!dup.ind, drop=FALSE]  
+    }
     network.data  <- as.data.frame(network.data)
     network.char  <- vapply(network.data, is.character, logical(1L))
     network.data[network.char]  <- lapply(network.data[network.char], factor)
@@ -2722,6 +2725,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     args$tau0     <- if(isTRUE(noise)) args$tau0
     if(isTRUE(verbose))                           message("\n\tStep ", 1, "...\n")
     res           <- suppressWarnings(do.call(MoE_clust, args))
+    args$z.list   <- INIT       <- list(attr(res, "Z.init"))
+    args$z.init   <- dots$init.z
+    args$init.z   <- "list"
     compare[[j    <- 1L]]       <- res
     if(isTRUE(verbose))            suppressWarnings(print(suppressWarnings(MoE_compare(res, optimal.only=TRUE, pick=1L, criterion=criterion)), details=FALSE))
     crit          <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
@@ -2738,10 +2744,14 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       j           <- j + 1L
       if(isTRUE(verbose))                         message("\n\tStep ", j, "...\n")
       if(addE)     {
+        args$init.z             <- args$z.init
+        args$z.list             <- NULL
         exps      <- try(lapply(seq_along(ecov), function(x) { args$expert <- stats::as.formula(ecov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
         if(inherits(exps,   "try-error")) {
           exps    <- NULL
         } else       exps       <- suppressWarnings(MoE_compare(stats::setNames(exps,  seq_along(exps)),  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+        args$init.z             <- "list"
+        args$z.list             <- INIT
       }   else       exps       <- NULL
       if(addG)     {
         gates     <- try(lapply(seq_along(gcov), function(x) { args$gating <- stats::as.formula(gcov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
@@ -2758,14 +2768,20 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         args$noise.gate         <- TRUE
       }   else       Ngate      <- NULL
       if(addC)     { 
+        args$init.z             <- args$z.init
+        args$z.list             <- NULL
         args$G    <- G + 1L
         clplus    <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
         if(inherits(clplus, "try-error")) {
           clplus  <- NULL    
         } else       clplus     <- suppressWarnings(MoE_compare(clplus, optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
         args$G    <- G
+        args$init.z             <- "list"
+        args$z.list             <- INIT
       } else         clplus     <- NULL
       if(addQ)     {
+        args$init.z             <- args$z.init
+        args$z.list             <- NULL
         args$equalPro           <- TRUE
         args$G    <- G + 1L
         eqplus    <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
@@ -2780,6 +2796,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
           } else     expQ       <- suppressWarnings(MoE_compare(stats::setNames(expQ,  seq_along(expQ)),  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
         }   else     expQ       <- NULL
         args$equalPro           <- FALSE
+        args$init.z             <- "list"
+        args$z.list             <- INIT
       } else       {
         eqplus    <-
         expQ      <- NULL
@@ -2791,7 +2809,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       if(isTRUE(verbose))          suppressWarnings(print(comp, details=FALSE))
       compare[[j]]      <- res  <- comp$optimal
       crit        <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
-      args$G      <- G  <- res$G
+      if(res$G    != args$G)     {
+        args$G    <- G  <- res$G 
+        args$init.z     <- "list" 
+        args$z.list     <- INIT <- list(attr(res, "Exp.init"))
+      }
       args$expert       <- stats::as.formula(attr(res$expert, "Formula"))
       args$gating       <- stats::as.formula(attr(res$gating, "Formula"))
       if(length(ecov)    > 1    &&
@@ -2940,7 +2962,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters. Usually, the \code{modelName} of the transformed \code{variance} object will be \code{"VVV"}.
 #' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
-#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\href{https://doi.org/10.1007/s11634-019-00373-8}{doi:10.1007/s11634-019-00373-8}>.
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords utility
 #' @export
