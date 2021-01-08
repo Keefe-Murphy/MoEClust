@@ -687,7 +687,7 @@
                 } else   {
                   nexp         <- expnoise[,vapply(seq_len(ne), function(p, ep=expnoise[,p], fep=is.factor(ep)) {
                                  (!fep && !all(ep[sub] == ep[sub][1L], na.rm=TRUE)) || (fep && (nlevels(droplevels(ep[sub])) == nlevels(ep))) }, logical(1L)), drop=FALSE]
-                  px           <- try(stats::predict(stats::lm(drop_constants(nexp, expN, pna), data=nexp, subset=pna)), silent=TRUE)
+                  px           <- try(stats::lm(drop_constants(nexp, expN, pna), data=nexp, subset=pna)$fitted.values, silent=TRUE)
                   if(!inherits(px,  "try-error")) {
                     pred[pna,] <- px
                   } else {
@@ -1182,9 +1182,9 @@
           if(any(nan           <- apply(z.norm, 1L, function(x) all(is.nan(x))))) {
             z.norm[nan,]       <- 1/G
           }
-          fitdat  <- Reduce("+",  lapply(Gseq, function(g) z.norm[,g] * stats::predict(x.fitE[[g]])))
+          fitdat  <- Reduce("+",  lapply(Gseq, function(g) z.norm[,g] * x.fitE[[g]]$fitted.values))
         } else     {
-          fitdat  <- Reduce("+",  lapply(Gseq, function(g) z[,g]      * stats::predict(x.fitE[[g]])))
+          fitdat  <- Reduce("+",  lapply(Gseq, function(g) z[,g]      * x.fitE[[g]]$fitted.values))
           fitdat  <- fitdat  +    z[,GN] * matrix(NoiseLoc, nrow=n, ncol=d, byrow=TRUE)
           z.norm  <- if(noise.null) z else z[,-GN, drop=FALSE]
         }
@@ -2365,7 +2365,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   if(nmiss        <- ifelse(inherits(newdata,
                                      "list")    &&
                      length(newdata)  == 0,
-                     missing(newdata), FALSE))   {
+                     missing(newdata), is.null(newdata))) {
     newdata.x     <- net
     newdata.y     <- dat
     nL            <- FALSE
@@ -2990,17 +2990,18 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     d             <- x$d
     G             <- x$G
     if(attr(x, "Expert"))  {
-      pred.var    <- unlist(lapply(x$expert, function(expert) stats::cov(as.matrix(stats::predict(expert)))))
-     #pred.var    <- unlist(lapply(seq_len(G), function(g) stats::cov.wt(stats::predict(experts[[g]]), x$z[,g])$cov))
+     #pred.var    <- unlist(lapply(seq_len(G), function(g) stats::cov.wt(stats::predict(x$expert[[g]]), x$z[,g])$cov))
       if(d  == 1)  {
+        pred.var  <- unlist(lapply(x$expert, function(expert) stats::cov(as.matrix(expert$fitted.values))))
         x.sig$sigmasq     <- unname(x.sig$sigmasq + sqrt(pred.var))
         if(x$modelName    == "V" || length(unique(x.sig$sigmasq)) > 1) {
           x.sig$scale     <- x.sig$sigmasq
         }
       } else {
+        pred.var  <- unlist(lapply(x$expert, function(expert) stats::cov(expert$fitted.values)))
         x.sig     <- suppressWarnings(sigma2decomp(x.sig$sigma + array(pred.var, dim=c(d, d, G))))
       }
-    } else                                        message("No expert covariates: returning the variance object without modification\n")
+    }   else                                      message("No expert covariates: returning the variance object without modification\n")
       return(x.sig)
   }
 
@@ -3096,7 +3097,6 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'
 #' # Try fitting a linear model
 #' mod1  <- try(lm(form1, data=ais, subset=sub), silent=TRUE)
-#' mod1  <- try(lm(form1, data=ais, subset=sub), silent=TRUE)
 #' inherits(mod1, "try-error") # TRUE
 #'
 #' # Remove redundant variables from formula & try again
@@ -3127,12 +3127,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 
 #' Drop unused factor levels to predict from unseen data
 #'
-#' Drops unseen factor levels in \code{newdata} for which predictions are required from a \code{\link[stats]{lm}} model \code{fit}.
-#' @param fit A fitted \code{\link[stats]{lm}} model.
+#' Drops unseen factor levels in \code{newdata} for which predictions are required from a \code{\link[stats]{lm}} or \code{\link[nnet]{multinom}} model \code{fit}.
+#' @param fit A fitted \code{\link[stats]{lm}} or \code{\link[nnet]{multinom}} model.
 #' @param newdata A \code{data.frame} containing variables with which to predict.
 #'
 #' @return A \code{data.frame} like \code{newdata} with unseen factor levels replaced by \code{NA}.
-#' @note This function is untested for models other than \code{\link[stats]{lm}}.
+#' @note This function is so far untested for models other than \code{\link[stats]{lm}} or \code{\link[nnet]{multinom}}, though it \emph{may} still work for other classes.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @keywords utility
 #' @seealso \code{\link{drop_constants}}

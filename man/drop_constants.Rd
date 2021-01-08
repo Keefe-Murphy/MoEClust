@@ -36,7 +36,6 @@ sub   <- ais$sex == "male"
 
 # Try fitting a linear model
 mod1  <- try(lm(form1, data=ais, subset=sub), silent=TRUE)
-mod1  <- try(lm(form1, data=ais, subset=sub), silent=TRUE)
 inherits(mod1, "try-error") # TRUE
 
 # Remove redundant variables from formula & try again

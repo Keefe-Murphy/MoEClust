@@ -5,6 +5,9 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Minor speed-ups to some utility functions.
+
 ## MoEClust v1.3.3 - (_11<sup>th</sup> release [patch update]: 2020-12-29_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
 * Minor `MoE_stepwise` speed-ups by avoiding duplication of initialisation for certain steps.

@@ -355,7 +355,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     uncertainty$col     <- if(grDevices::dev.capabilities()$semiTransparency) unname(mapply(grDevices::adjustcolor, col=scatter.pars$col, alpha.f=bubbleX$alpha)) else scatter.pars$col
   }
   if(response.type == "density")      {
-    res$parameters$fits <- array(unlist(lapply(res$expert, stats::predict)), dim=c(res$n, res$d, G))
+    res$parameters$fits <- array(unlist(lapply(res$expert, "[[", "fitted.values")), dim=c(res$n, res$d, G))
     res$parameters$lpro <- log(if(isTRUE(attr(res, "Gating"))) colMeans2(res$parameters$pro) else res$parameters$pro)
   }
   if(is.null(density.pars$grid.size)) {
