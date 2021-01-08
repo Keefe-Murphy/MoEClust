@@ -6,6 +6,8 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Added `predict`, `fitted`, & `residuals` methods for `"MoE_gating"` objects, i.e. `x$gating`.
+* Minor fixes to returned `x$gating` object for `equalPro=TRUE` models with a noise component.
 * Minor speed-ups to some utility functions.
 
 ## MoEClust v1.3.3 - (_11<sup>th</sup> release [patch update]: 2020-12-29_)

@@ -46,8 +46,8 @@ A list with the following named components, regardless of whether \code{newdata$
 \item{\code{y}}{Aggregated fitted values of the response variables.}
 \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belongs to the \emph{k}-th component. For models with a noise component, the final column gives the probability of belonging to the so-called \emph{Cluster0}.}
 \item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}. \code{0} is returned for observations assigned to the noise component.}
-\item{\code{pro}}{The predicted mixing proportions for the \code{newdata}, i.e. predicted values of the gating network. \code{object$parameters$pro} is returned for models without gating network covariates.}
 \item{\code{mean}}{The predicted component means for the \code{newdata}, i.e. predicted values of the expert network. Given as a 3-dimensional array with dimensions given by the number of new observations, the number of variables, and the number of clusters. The first dimension is of length \code{1} when there are no expert network covariates, in which case the entries correspond to \code{object$parameters$mean}.}
+\item{\code{pro}}{The predicted mixing proportions for the \code{newdata}, i.e. predicted values of the gating network. \code{object$parameters$pro} is returned for models without gating network covariates. See \code{\link{predict.MoE_gating}}.}
 \item{\code{MAPy}}{Fitted values of the single expert network to which each observation is most probably assigned. Not returned for models with equal mixing proportions when only \code{new.x} is available. Likely to only be of use for models with gating and expert covariates when only \code{new.x} is supplied. Note that \code{MAPy} and \code{y} will coincide for models fitted via the CEM algorithm (see \code{\link{MoE_control}} and its argument \code{algo}).}
 
 When \code{residuals} is called, only the residuals (governed by \code{MAPresids}) are returned; when \code{predict} is called with \code{resid=TRUE}, the list above will also contain the element \code{resids}, containing the residuals.
@@ -62,9 +62,12 @@ Predictions can also be made for models with a noise component, in which case \c
 
 Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
 }
+\note{
+Note that a dedicated \code{\link[=predict.MoE_gating]{predict}} function is also provided for objects of class \code{"MoE_gating"} (typically \code{object$gating}, where \code{object} is of class \code{"MoEClust"}). This function is effectively a shortcut to \code{predict(object, ...)$pro}, which (unlike the \code{predict} method for \code{\link[nnet]{multinom}} on which it is based) accounts for the various ways of treating gating covariates and noise components, although its \code{type} argument defaults to \code{"probs"} rather than \code{"class"}. Notably, its \code{keep.noise} argument behaves differently from the \code{discard.noise} argument here; here, the noise component is \strong{only} discarded in the computation of the predicted responses. See \code{\link{predict.MoE_gating}} for further details.
+
+}
 \examples{
 data(ais)
-
 # Fit a MoEClust model and predict the same data
 res     <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
                      modelNames="EVE", network.data=ais)
@@ -95,11 +98,11 @@ residuals(res2, newdata=ais[ind,])
 Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}
+\code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}, \code{\link{predict.MoE_gating}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
-\keyword{clustering}
 \keyword{main}
+\keyword{prediction}
 \keyword{utility}

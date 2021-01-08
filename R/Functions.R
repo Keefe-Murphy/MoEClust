@@ -41,8 +41,8 @@
 #' \item{\code{bic}}{The BIC value corresponding to the optimal model. May not necessarily be the optimal BIC.}
 #' \item{\code{icl}}{The ICL value corresponding to the optimal model. May not necessarily be the optimal ICL.}
 #' \item{\code{aic}}{The AIC value corresponding to the optimal model. May not necessarily be the optimal AIC.}
-#' \item{\code{gating}}{An object of class \code{"MoE_gating"} and either \code{"multinom"} or \code{"glm"} (only for single-component models or noise-only models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of \code{~1}, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates or clusters. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component (and the option \code{noise.gate=TRUE} is invoked), its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
 #' \item{\code{expert}}{An object of class \code{"MoE_expert"} and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of \code{~1}, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * length(coef(expert[[1]]))}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
+#' \item{\code{gating}}{An object of class \code{"MoE_gating"} (for which dedicated \code{print}, \code{summary}, and \code{\link[=predict.MoE_gating]{predict}} methods exist) and either \code{"multinom"} or \code{"glm"} (only for single-component models or noise-only models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of \code{~1}, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates or clusters. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component (and the option \code{noise.gate=TRUE} is invoked), its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
 #' \item{\code{LOGLIK}}{A matrix of \emph{all} maximal log-likelihood values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustLoglik"}, for which dedicated printing and plotting functions exist, respectively.}
 #' \item{\code{loglik}}{The vector of increasing log-likelihood values for every EM/CEM iteration under the optimal model. The last element of this vector is the maximum log-likelihood achieved by the parameters returned at convergence.}
 #' \item{\code{linf}}{An asymptotic estimate of the final converged maximised log-likelihood. Returned when \code{stopping="aitken"} and \code{G > 1} (see \code{\link{MoE_control}} and \code{\link{aitken}}), otherwise the last element of \code{loglik} is returned instead.}
@@ -75,7 +75,7 @@
 #'
 #' @seealso See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
 #' 
-#' \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{MoE_control}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
+#' \code{\link{MoE_control}}, \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{predict.MoE_gating}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
 #' @export
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #'
@@ -1130,9 +1130,12 @@
        attr(x.fitG, "Formula") <- "~1"
       }
       if(equal.pro)        {
-        x.fitG$wts[]           <- 0L
-        x.fitG$fitted.values   <- matrix(x.tau, nrow=n, ncol=GN, byrow=TRUE)
-        x.fitG$residuals       <- zN - x.fitG$fitted.values
+       if(!noise.null          && 
+          !equal.noise)    {
+        x.fitG$wts[-(GN * 2L)] <- 0L  
+       } else x.fitG$wts[]     <- 0L  
+       x.fitG$fitted.values    <- matrix(x.tau, nrow=n, ncol=GN, byrow=TRUE)
+       x.fitG$residuals        <- zN - x.fitG$fitted.values
       }
     } 
     if(is.matrix(x.tau))   {
@@ -1156,12 +1159,16 @@
     exp.gate      <- c(exp.x, bG)
     net.msg       <- ifelse(any(exp.gate), paste0(" (incl. ", ifelse(all(exp.gate), "gating and expert", ifelse(exp.x, "expert", ifelse(bG, "gating", ""))), paste0(" network covariates", ifelse(bG, "", ifelse(equal.pro && G > 1, ", with equal mixing proportions", "")), 
                      ifelse(noise.null, ")", ", and a noise component)"))), ifelse(noise.null, ifelse(equal.pro && G > 1, " (and equal mixing proportions)", ""), ifelse(equal.pro && G > 1, " (with equal mixing proportions and a noise component)", " (and a noise component)")))
+    attr(x.fitG, "Data")       <- z
     attr(x.fitG, "Maxit")      <- g.itmax
     attr(x.fitG, "Reltol")     <- g.reltol
     attr(x.fitG, "EqualPro")   <- equal.pro
     attr(x.fitG, "EqualNoise") <- n0pro
     attr(x.fitG, "Formula")    <- ifelse(is.null(attr(x.fitG, "Formula")), Reduce(paste, deparse(gating[-2L])), attr(x.fitG, "Formula"))
+    attr(x.fitG, "G")          <- G
+    attr(x.fitG, "NoGate")     <- if(attr(x.fitG, "Formula") == "~1") x.tau
     attr(x.fitG, "NoiseGate")  <- noise.gate
+    attr(x.fitG, "NoisePro")   <- if(!noise.null && !noise.gate) ifelse(is.matrix(x.tau), x.tau[1L,GN], x.tau[GN])
     attr(x.fitG, "Noise")      <-
     attr(x.fitE, "Noise")      <- G == 0 || !noise.null
     attr(x.fitE, "Formula")    <- Reduce(paste, deparse(expert[-2L]))
@@ -2289,8 +2296,8 @@
 #' \item{\code{y}}{Aggregated fitted values of the response variables.}
 #' \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belongs to the \emph{k}-th component. For models with a noise component, the final column gives the probability of belonging to the so-called \emph{Cluster0}.}
 #' \item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}. \code{0} is returned for observations assigned to the noise component.}
-#' \item{\code{pro}}{The predicted mixing proportions for the \code{newdata}, i.e. predicted values of the gating network. \code{object$parameters$pro} is returned for models without gating network covariates.}
 #' \item{\code{mean}}{The predicted component means for the \code{newdata}, i.e. predicted values of the expert network. Given as a 3-dimensional array with dimensions given by the number of new observations, the number of variables, and the number of clusters. The first dimension is of length \code{1} when there are no expert network covariates, in which case the entries correspond to \code{object$parameters$mean}.}
+#' \item{\code{pro}}{The predicted mixing proportions for the \code{newdata}, i.e. predicted values of the gating network. \code{object$parameters$pro} is returned for models without gating network covariates. See \code{\link{predict.MoE_gating}}.}
 #' \item{\code{MAPy}}{Fitted values of the single expert network to which each observation is most probably assigned. Not returned for models with equal mixing proportions when only \code{new.x} is available. Likely to only be of use for models with gating and expert covariates when only \code{new.x} is supplied. Note that \code{MAPy} and \code{y} will coincide for models fitted via the CEM algorithm (see \code{\link{MoE_control}} and its argument \code{algo}).}
 #'
 #' When \code{residuals} is called, only the residuals (governed by \code{MAPresids}) are returned; when \code{predict} is called with \code{resid=TRUE}, the list above will also contain the element \code{resids}, containing the residuals.
@@ -2300,11 +2307,13 @@
 #' @details Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 #' 
 #' Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
+#' @note Note that a dedicated \code{\link[=predict.MoE_gating]{predict}} function is also provided for objects of class \code{"MoE_gating"} (typically \code{object$gating}, where \code{object} is of class \code{"MoEClust"}). This function is effectively a shortcut to \code{predict(object, ...)$pro}, which (unlike the \code{predict} method for \code{\link[nnet]{multinom}} on which it is based) accounts for the various ways of treating gating covariates and noise components, although its \code{type} argument defaults to \code{"probs"} rather than \code{"class"}. Notably, its \code{keep.noise} argument behaves differently from the \code{discard.noise} argument here; here, the noise component is \strong{only} discarded in the computation of the predicted responses. See \code{\link{predict.MoE_gating}} for further details.
+#' 
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
-#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}, \code{\link{predict.MoE_gating}}
 #' @method predict MoEClust
-#' @keywords clustering main
+#' @keywords prediction main
 #' @importFrom matrixStats "rowSums2"
 #' @export
 #' @usage
@@ -2317,7 +2326,6 @@
 #'         ...)
 #' @examples
 #' data(ais)
-#'
 #' # Fit a MoEClust model and predict the same data
 #' res     <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
 #'                      modelNames="EVE", network.data=ais)
@@ -2464,17 +2472,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     zstar         <- if(isTRUE(use.y))   object$z else new.tau
   } else       {
     if(isFALSE(nmiss))            {
-      if(isFALSE(Xgat))   {
-        new.tau   <- matrix(params$pro, nrow=nrow(newgate), ncol=GN, byrow=TRUE)
-      }   else {
-        gating    <- object$gating
-        if(noise  && attr(gating, "NoiseGate"))  {
-          new.tau <- matrix(stats::predict(gating, type=ifelse(GN > 1, "probs", "response"), newdata=newgate), ncol=GN)
-        } else {
-          new.tau <- matrix(stats::predict(gating, type=ifelse(G  > 1, "probs", "response"), newdata=newgate), ncol=G)
-          new.tau <- if(noise) .tau_noise(new.tau, params$pro[1L,GN]) else new.tau
-        }
-      }
+      new.tau     <- predict.MoE_gating(object$gating, newdata=newgate, type="probs", keep.noise=TRUE, droplevels=FALSE)
     }
     if(resid  && !(resid <- !yM))                 warning("'resid' can only be TRUE when response variables are supplied\n", call.=FALSE, immediate.=TRUE)
     attr(net, "Gating")  <-
@@ -2545,7 +2543,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 
 #' @rdname predict.MoEClust
 #' @method residuals MoEClust
-#' @keywords clustering utility
+#' @keywords prediction utility
 #' @importFrom matrixStats "rowSums2"
 #' @usage
 #' \method{residuals}{MoEClust}(object,
@@ -2556,6 +2554,129 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     args   <- c(list(resid=TRUE), as.list(match.call())[-1L])
     resids <- do.call(predict.MoEClust, args[unique(names(args))])$resids
       if(!is.null(resids))  return(resids)
+  }
+  
+
+#' Predictions from MoEClust gating networks
+#' 
+#' Predicts mixing proportions from MoEClust gating networks. Effectively akin to predicting from a multinomial logistic regression via \code{\link[nnet]{multinom}}, although here the noise component (if any) is properly accounted for. So too are models with no gating covariates at all, or models with the equal mixing proportion constraint. Prior probabilities are returned by default.
+#' @param object An object of class \code{"MoE_gating"} (typically \code{x$gating}, where \code{x} is of class \code{"MoEClust"}).
+#' @param newdata A matrix or data frame of test examples. If omitted, the fitted values are used.
+#' @param type The type of output desired. The default (\code{"probs"}) returns prior probabilities, while \code{"class"} returns labels indicating the most likely group \emph{a priori}. Note that observations classified assigned the noise component (if any) are given a label of \code{0}.
+#' @param keep.noise A logical indicating whether the output should acknowledge the noise component (if any). Defaults to \code{TRUE}; when \code{FALSE}, this column is discarded and the matrix of probabilities is renormalised accordingly.
+#' @param droplevels A logical indicating whether unseen factor levels in categorical variables within \code{newdata} should be dropped (with \code{NA} predicted in their place). Defaults to \code{FALSE}. See \code{\link{drop_levels}}.
+#' @param ... Catches unused arguments or allows the \code{type} and \code{keep.noise} arguments to be passed through \code{fitted} and the \code{keep.noise} argument to be passed through \code{residuals}.
+#' 
+#' @return The return value depends on whether \code{newdata} is supplied or not and whether the model includes gating covariates to begin with. When \code{newdata} is not supplied, the fitted values are returned (as a matrix if the model contained gating covariates, otherwise as a vector as per \code{x$parameters$pro}). If \code{newdata} is supplied, the output is always a matrix with the same number of rows as the \code{newdata}.
+#' @details This function is effectively a shortcut to \code{\link{predict.MoEClust}(x, ...)$pro}, which (unlike the \code{predict} method for \code{\link[nnet]{multinom}} on which \code{predict.MoE_gating} is based) accounts for the various ways of treating gating covariates, equal mixing proportion constraints, and noise components, although its \code{type} argument defaults to \code{"probs"} rather than \code{"class"}.
+#' @note Note that the \code{keep.noise} argument does \strong{not} correspond in any way to the \code{discard.noise} argument to \code{\link{predict.MoEClust}}; there, the noise component is respected in the computation of the mixing proportions and only discarded (if at all) in the prediction of the responses.
+#' 
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
+#' @seealso \code{\link{predict.MoEClust}}, \code{\link[nnet]{multinom}}, \code{\link{predict.MoE_expert}}, \code{\link{drop_levels}}
+#' @method predict MoE_gating
+#' @keywords prediction utility
+#' @importFrom nnet "multinom"
+#' @export
+#' @usage 
+#' \method{predict}{MoE_gating}(object,
+#'         newdata = NULL,
+#'         type = c("probs", "class"),
+#'         keep.noise = TRUE,
+#'         droplevels = FALSE,
+#'         ...)
+#' @examples 
+#' data(ais)
+#' mod    <- MoE_clust(ais[,3:7], G=2, modelNames="EEE", gating=~SSF + Ht,
+#'                  expert=~sex, network.data=ais, tau0=0.1, noise.gate=FALSE)
+#' (preds <- predict(mod$gating, newdata=ais[1:5,]))
+#' 
+#' all.equal(preds, predict(mod, newdata=ais[1:5,])$pro) #TRUE
+#' 
+#' # Note that the predictions are not the same as the multinom predict method
+#' # in this instance, owing to the invocation of noise.gate=FALSE above
+#' mod2   <- mod 
+#' class(mod2$gating) <- c("multinom", "nnet")
+#' predict(mod2$gating, newdata=ais[1:5,], type="probs")
+#' 
+#' # We can make this function behave in the same way by invoking keep.noise=FALSE
+#' predict(mod$gating, keep.noise=FALSE, newdata=ais[1:5,])
+#' 
+#' # ... although keep.noise=FALSE in predict.MoE_gating does not
+#' # yield the same output as discard.noise=TRUE in predict.MoEClust
+#' predict(mod, discard.noise=TRUE, newdata=ais[1:5,])$pro
+  predict.MoE_gating     <- function(object, newdata = NULL, type = c("probs", "class"), keep.noise = TRUE, droplevels = FALSE, ...) {
+    if(!is.null(newdata) &&
+       all(!is.matrix(newdata), 
+           !is.data.frame(newdata)))               stop("'newdata' must be a matrix or data frame if supplied", call.=FALSE)
+    if(!missing(type)    && 
+       length(type)  > 1 || !is.character(type))   stop("'type' must be a single character string",             call.=FALSE)
+    if(length(keep.noise) > 1   ||
+       !is.logical(keep.noise))                    stop("'keep.noise' must be a single logical indicator",      call.=FALSE)
+    if(length(droplevels) > 1   ||
+       !is.logical(droplevels))                    stop("'droplevels' must be a single logical indicator",      call.=FALSE)
+    class(object)        <- class(object)[-1L]
+    fits   <- object$fitted.values
+    noise  <- attr(object, "Noise")
+    G      <- attr(object, "G")
+    GN     <- G + noise
+    gnames <- paste0("Cluster",      if(noise) replace(seq_len(GN), GN, "0")             else seq_len(GN))
+    gat    <- attr(object, "Formula")
+    if(gat == "~1")       {
+      fits <- matrix(attr(object, "NoGate"), nrow=ifelse(is.null(newdata), 1L, NROW(newdata)), ncol=GN, byrow=TRUE)
+    } else if(!is.null(newdata)) { 
+      fits <- stats::predict(object, if(isTRUE(droplevels)) drop_levels(object, newdata) else newdata, type="probs")
+    }
+    if(all(noise, !attr(object, "NoiseGate"))) {
+      fits <- .tau_noise(fits, attr(object, "NoisePro"))
+    }
+    colnames(fits)       <- NULL
+    if(isFALSE(keep.noise)      && noise)      {
+      if(G == 0)                                   stop("Nothing to return as the model has only a noise component: use keep.noise=TRUE", call.=FALSE)
+      fits <- .renorm_z(fits[,-GN, drop=FALSE])
+    }
+      switch(EXPR=match.arg(type), 
+             probs=provideDimnames(fits, base=list(ifelse(nrow(fits) == 1, "pro", ""), gnames)), {
+        if(attr(object, "EqualPro") && GN > 1) {
+          if(!all(noise, keep.noise, !attr(object, "EqualNoise"),
+                  max(fits)     == fits[GN]))      message("class predicted at random due to the equal mixing proportion constraint\n")  
+        }
+        CL <- max.col(fits)
+          if(all(noise, isTRUE(keep.noise))) replace(CL, CL == GN, 0L) else CL
+      })
+  }
+
+#' @rdname predict.MoE_gating
+#' @method fitted MoE_gating
+#' @keywords prediction utility
+#' @importFrom nnet "multinom"
+#' @usage 
+#' \method{fitted}{MoE_gating}(object,
+#'        ...)
+#' @export
+  fitted.MoE_gating      <- function(object, ...) {
+    args   <- c(list(newdata=NULL), as.list(match.call())[-1L])
+    fits   <- do.call(predict.MoE_gating, args[unique(names(args))])
+      if(!is.null(fits))    return(fits)
+  }
+  
+#' @rdname predict.MoE_gating
+#' @method residuals MoE_gating
+#' @keywords prediction utility
+#' @importFrom nnet "multinom"
+#' @usage 
+#' \method{residuals}{MoE_gating}(object,
+#'           ...)
+#' @export
+  residuals.MoE_gating   <- function(object, ...) {
+    dat.z  <- attr(object, "Data")
+    args   <- c(list(type="probs", newdata=dat.z), as.list(match.call())[-1L])
+    keep   <- !any(names(list(...)) == "keep.noise") || isTRUE(args$keep.noise)
+    fits   <- do.call(fitted.MoE_gating, args[unique(names(args))])
+    dat.z  <- if(isTRUE(keep) || !attr(object, "Noise")) dat.z else .renorm_z(dat.z[,-ncol(dat.z), drop=FALSE])
+    dat.z[is.nan(dat.z)]      <- 0L
+    fits   <- if(nrow(fits)   == nrow(dat.z))             fits else matrix(fits, nrow=nrow(dat.z), ncol=ncol(dat.z), byrow=TRUE)
+      tryCatch(dat.z - fits, error=function(e) 1L - fits)
   }
   
 #' Stepwise model/variable selection for MoEClust models
