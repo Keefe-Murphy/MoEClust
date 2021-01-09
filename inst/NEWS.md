@@ -6,7 +6,10 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Added `fitted` method for `"MoEClust"`objects (a wrapper to `predict.MoEClust`).
 * Added `predict`, `fitted`, & `residuals` methods for `"MoE_gating"` objects, i.e. `x$gating`.
+* Added `predict`, `fitted`, & `residuals` methods for `"MoE_expert"` objects, i.e. `x$expert`.
+* Minor edit to `predict.MoEClust` for models without expert network covariates.
 * Minor fixes to returned `x$gating` object for `equalPro=TRUE` models with a noise component.
 * Minor speed-ups to some utility functions.
 

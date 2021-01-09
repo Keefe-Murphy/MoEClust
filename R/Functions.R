@@ -41,8 +41,8 @@
 #' \item{\code{bic}}{The BIC value corresponding to the optimal model. May not necessarily be the optimal BIC.}
 #' \item{\code{icl}}{The ICL value corresponding to the optimal model. May not necessarily be the optimal ICL.}
 #' \item{\code{aic}}{The AIC value corresponding to the optimal model. May not necessarily be the optimal AIC.}
-#' \item{\code{expert}}{An object of class \code{"MoE_expert"} and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of \code{~1}, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * length(coef(expert[[1]]))}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
 #' \item{\code{gating}}{An object of class \code{"MoE_gating"} (for which dedicated \code{print}, \code{summary}, and \code{\link[=predict.MoE_gating]{predict}} methods exist) and either \code{"multinom"} or \code{"glm"} (only for single-component models or noise-only models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of \code{~1}, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates or clusters. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component (and the option \code{noise.gate=TRUE} is invoked), its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
+#' \item{\code{expert}}{An object of class \code{"MoE_expert"} (for which dedicated \code{print}, \code{summary}, and \code{\link[=predict.MoE_expert]{predict}} methods exist) and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of \code{~1}, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * length(coef(expert[[1]]))}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
 #' \item{\code{LOGLIK}}{A matrix of \emph{all} maximal log-likelihood values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustLoglik"}, for which dedicated printing and plotting functions exist, respectively.}
 #' \item{\code{loglik}}{The vector of increasing log-likelihood values for every EM/CEM iteration under the optimal model. The last element of this vector is the maximum log-likelihood achieved by the parameters returned at convergence.}
 #' \item{\code{linf}}{An asymptotic estimate of the final converged maximised log-likelihood. Returned when \code{stopping="aitken"} and \code{G > 1} (see \code{\link{MoE_control}} and \code{\link{aitken}}), otherwise the last element of \code{loglik} is returned instead.}
@@ -54,7 +54,7 @@
 #' \item{\code{pro}}{The mixing proportions: either a vector of length \code{G} or, if \code{gating} covariates were supplied, a matrix with an entry for each observation (rows) and component (columns).}
 #' \item{\code{mean}}{The means of each component. If there is more than one component, this is a matrix whose \emph{k}-th column is the mean of the \emph{k}-th component of the mixture model.
 #'
-#' For models with expert network covariates, this is given by the posterior mean of the fitted values, otherwise the posterior mean of the response is reported. For models with expert network covariates, the \emph{observation-specific} component means can be accessed by calling \code{predict} on each object in the list given by \code{expert}.}
+#' For models with expert network covariates, this is given by the posterior mean of the fitted values, otherwise the posterior mean of the response is reported. For models with expert network covariates, the \emph{observation-specific} component means can be accessed by calling \code{\link[=predict.MoE_expert]{predict}} on the \code{expert} object above.}
 #' \item{\code{variance}}{A list of variance parameters of each component of the model. The components of this list depend on the model type specification. See the help file for \code{\link[mclust]{mclustVariance}} for details. Also see \code{\link{expert_covar}} for an alternative approach to summarising the variance parameters in the presence of expert network covariates.}
 #' \item{\code{Vinv}}{The inverse of the hypervolume parameter for the noise component if required, otherwise set to \code{NULL} (see \code{\link{MoE_control}}).}
 #' }}
@@ -75,7 +75,7 @@
 #'
 #' @seealso See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
 #' 
-#' \code{\link{MoE_control}}, \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{predict.MoE_gating}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
+#' \code{\link{MoE_control}}, \code{\link{MoE_compare}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{predict.MoE_gating}}, \code{\link{predict.MoE_expert}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, \code{\link{MoE_crit}}, \code{\link{MoE_estep}}, \code{\link{MoE_cstep}}, \code{\link{MoE_dens}}, \code{\link[mclust]{mclustModelNames}}, \code{\link[mclust]{mclustVariance}}, \code{\link{expert_covar}}, \code{\link{aitken}}, \code{\link{I}}
 #' @export
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #'
@@ -1171,9 +1171,12 @@
     attr(x.fitG, "NoisePro")   <- if(!noise.null && !noise.gate) ifelse(is.matrix(x.tau), x.tau[1L,GN], x.tau[GN])
     attr(x.fitG, "Noise")      <-
     attr(x.fitE, "Noise")      <- G == 0 || !noise.null
+    attr(x.fitE, "Data")       <- as.data.frame(X)
     attr(x.fitE, "Formula")    <- Reduce(paste, deparse(expert[-2L]))
     attr(x.fitE, "Criterion")  <- if(exp.crit) crit.exp
+    attr(x.fitE, "d")          <- d
     attr(x.fitE, "Iterations") <- if(exp.crit) iter.exp
+    attr(x.fitE, "NoExp")      <- if(attr(x.fitE, "Formula") == "~1") x.mu
     class(x.fitG) <- c("MoE_gating", class(x.fitG))
     class(x.fitE) <- c("MoE_expert", class(x.fitE))
     if(G > 0) {
@@ -2290,28 +2293,31 @@
 #' @param discard.noise A logical governing how predictions of the responses are made for models with a noise component (otherwise this argument is irrelevant). By default (\code{FALSE}), the mean of the noise component is accounted for. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied through \code{\link{MoE_control}} via \code{noise.args$noise.vol}), prediction of the responses is performed using a \code{z} matrix which is renormalised after discarding the column corresponding to the noise component. The renormalisation approach can be forced by specifying \code{TRUE}, even when the mean of the noise component is available. For models with a noise component fitted with \code{algo="CEM"}, a small extra E-step is conducted for observations assigned to the non-noise components in this case.
 #' @param MAPresids A logical indicating whether residuals are computed against \code{y} (\code{TRUE}, the default) or \code{MAPy} when \code{FALSE}. Not relevant for models with equal mixing proportions when only \code{new.x} is available. See \strong{Value} below for more details.
 #' @param use.y A logical indicating whether the response variables (supplied either via \code{new.y} or via \code{newdata} itself) are actually used in the prediction. Defaults to \code{TRUE}, but useful when \code{FALSE} for computing residuals as though only the covariates in \code{new.x} were supplied.
-#' @param ... Catches unused arguments (and allows the \code{predict} arguments \code{discard.noise}, \code{MAPresids}, and \code{use.y} to be passed through \code{residuals}).
+#' @param ... Catches unused arguments (and allows the \code{predict} arguments \code{discard.noise} &/or \code{use.y} to be passed through \code{fitted} or the \code{discard.noise}, \code{MAPresids}, and/or \code{use.y} arguments to be passed through \code{residuals}).
 #'
 #' @return A list with the following named components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
 #' \item{\code{y}}{Aggregated fitted values of the response variables.}
 #' \item{\code{z}}{A matrix whose \code{[i,k]}-th entry is the probability that observation \emph{i} of the \code{newdata} belongs to the \emph{k}-th component. For models with a noise component, the final column gives the probability of belonging to the so-called \emph{Cluster0}.}
 #' \item{\code{classification}}{The vector of predicted cluster labels for the \code{newdata}. \code{0} is returned for observations assigned to the noise component.}
-#' \item{\code{mean}}{The predicted component means for the \code{newdata}, i.e. predicted values of the expert network. Given as a 3-dimensional array with dimensions given by the number of new observations, the number of variables, and the number of clusters. The first dimension is of length \code{1} when there are no expert network covariates, in which case the entries correspond to \code{object$parameters$mean}.}
 #' \item{\code{pro}}{The predicted mixing proportions for the \code{newdata}, i.e. predicted values of the gating network. \code{object$parameters$pro} is returned for models without gating network covariates. See \code{\link{predict.MoE_gating}}.}
+#' \item{\code{mean}}{The predicted component means for the \code{newdata}, i.e. predicted values of the expert network. Given as a 3-dimensional array with dimensions given by the number of new observations, the number of variables, and the number of clusters. The first dimension is of length \code{1} when there are no expert network covariates, in which case the entries correspond to \code{object$parameters$mean}. See \code{\link{predict.MoE_expert}}.}
 #' \item{\code{MAPy}}{Fitted values of the single expert network to which each observation is most probably assigned. Not returned for models with equal mixing proportions when only \code{new.x} is available. Likely to only be of use for models with gating and expert covariates when only \code{new.x} is supplied. Note that \code{MAPy} and \code{y} will coincide for models fitted via the CEM algorithm (see \code{\link{MoE_control}} and its argument \code{algo}).}
 #'
 #' When \code{residuals} is called, only the residuals (governed by \code{MAPresids}) are returned; when \code{predict} is called with \code{resid=TRUE}, the list above will also contain the element \code{resids}, containing the residuals.
 #' 
 #' The returned values of \code{pro} and \code{mean} are always the same, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
+#' 
+#' Finally, \code{fitted} is simply a wrapper to \code{predict.MoEClust(object)$y} without any \code{newdata}, and with the \code{resid} and \code{MAPresids} arguments also ignored.
 #'
 #' @details Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 #' 
 #' Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
 #' @note Note that a dedicated \code{\link[=predict.MoE_gating]{predict}} function is also provided for objects of class \code{"MoE_gating"} (typically \code{object$gating}, where \code{object} is of class \code{"MoEClust"}). This function is effectively a shortcut to \code{predict(object, ...)$pro}, which (unlike the \code{predict} method for \code{\link[nnet]{multinom}} on which it is based) accounts for the various ways of treating gating covariates and noise components, although its \code{type} argument defaults to \code{"probs"} rather than \code{"class"}. Notably, its \code{keep.noise} argument behaves differently from the \code{discard.noise} argument here; here, the noise component is \strong{only} discarded in the computation of the predicted responses. See \code{\link{predict.MoE_gating}} for further details.
 #' 
+#' Similarly, a dedicated \code{\link[=predict.MoE_expert]{predict}} function is also provided for objects of class \code{"MoE_expert"} (typically \code{object$expert}, where \code{object} is of class \code{"MoE_expert"}). This function is effectively a wrapper to \code{predict(object, ...)$mean}, albeit it returns a list (by default) rather than a 3-dimensional array and also \emph{always} preserves the dimensions of \code{newdata}, even for models without expert network covariates. See \code{\link{predict.MoE_expert}} for further details. 
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
-#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}, \code{\link{predict.MoE_gating}}
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}, \code{\link{predict.MoE_gating}}, \code{\link{predict.MoE_expert}}
 #' @method predict MoEClust
 #' @keywords prediction main
 #' @importFrom matrixStats "rowSums2"
@@ -2330,6 +2336,10 @@
 #' res     <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
 #'                      modelNames="EVE", network.data=ais)
 #' pred1   <- predict(res)
+#' 
+#' # Get only the fitted responses
+#' fits    <- fitted(res)
+#' all.equal(pred1$y, fits) #TRUE
 #'
 #' # Remove some rows of the data for prediction purposes
 #' ind     <- sample(1:nrow(ais), 5)
@@ -2464,7 +2474,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     class(retval) <- "listof"
       return(retval)
   }
-  pred.exp        <- lapply(object$expert, stats::predict, newdata=newexpx)
+  pred.exp        <- predict.MoE_expert(object$expert, newdata=newexpx, simplify=FALSE, droplevels=FALSE)
   new.exp         <- 
   mus             <- NULL 
   if(isTRUE(nmiss))       {
@@ -2542,6 +2552,20 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 }
 
 #' @rdname predict.MoEClust
+#' @method fitted MoEClust
+#' @keywords prediction utility
+#' @importFrom matrixStats "rowSums2"
+#' @usage 
+#' \method{fitted}{MoEClust}(object,
+#'        ...)
+#' @export
+  fitted.MoEClust        <- function(object, ...) {
+    args   <- c(list(newdata=NULL), as.list(match.call())[-1L])
+    fits   <- do.call(predict.MoEClust, args[unique(names(args))])$y
+      if(!is.null(fits))    return(fits)
+  }
+
+#' @rdname predict.MoEClust
 #' @method residuals MoEClust
 #' @keywords prediction utility
 #' @importFrom matrixStats "rowSums2"
@@ -2556,6 +2580,95 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       if(!is.null(resids))  return(resids)
   }
   
+#' Predictions from MoEClust expert networks
+#' 
+#' Predictions (point estimates) of observation-specific component means from each (non-noise) component's expert network linear regression.
+#' @param object An object of class \code{"MoE_expert"} (typically \code{x$expert}, where \code{x} is of class \code{"MoEClust"}).
+#' @param newdata A matrix or data frame of test examples. If omitted, the fitted values are used.
+#' @param simplify Logical indicating whether to simplify the output (in the form of a list) to a 3-dimensional array with dimensions given by the number of new observations, the number of variables, and the number of clusters. The first dimension of such an array is of length \code{1} when there are no expert network covariates, in which case the entries correspond to \code{object$parameters$mean}. Defaults to \code{FALSE}.
+#' @param droplevels A logical indicating whether unseen factor levels in categorical variables within \code{newdata} should be dropped (with \code{NA} predicted in their place). Defaults to \code{FALSE}. See \code{\link{drop_levels}}.
+#' @param ... Catches unused arguments or allows the \code{simplify} argument to be passed through \code{fitted} and \code{residuals}.
+#' 
+#' @return For \code{simplify=FALSE}, either a list of vectors or predictions (for univariate data) or a list of matrices of predictions (for multivariate data). These lists are of the same length as number of non-noise components in the fitted model. When \code{simplify=TRUE}, a 3-dimensional array of predictions is returned, with respective dimensions given by the number of observations, variables, and non-noise components.
+#' @details This function is effectively just a shortcut to \code{lapply(x$expert, predict.lm, newdata=...)}. It can also be thought of as a wrapper to \code{\link{predict.MoEClust}(x, ...)$mean}, although it returns a list (by default) rather than a 3-dimensional array and also \emph{always} preserves the dimensions of \code{newdata}, even for models without expert network covariates.
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
+#' @seealso \code{\link{predict.MoEClust}}, \code{\link[stats]{lm}}, \code{\link{predict.MoE_gating}}, \code{\link{drop_levels}}
+#' @method predict MoE_expert
+#' @keywords prediction utility
+#' @export
+#' @usage 
+#' \method{predict}{MoE_expert}(object,
+#'         newdata = NULL,
+#'         simplify = FALSE,
+#'         droplevels = FALSE,
+#'         ...)
+#' @examples 
+#' data(CO2data)
+#' res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert=~ GNP, network.data=CO2data)
+#' predict(res$expert)
+#' 
+#' # Try with newdata and simplify=TRUE
+#' predict(res$expert, newdata=CO2data[1:5,"GNP", drop=FALSE], simplify=TRUE)
+  predict.MoE_expert     <- function(object, newdata = NULL, simplify=FALSE, droplevels = FALSE, ...) {
+    if(!is.null(newdata) &&
+       all(!is.matrix(newdata), 
+           !is.data.frame(newdata)))               stop("'newdata' must be a matrix or data frame if supplied", call.=FALSE)
+    if(length(simplify)   > 1    ||
+       !is.logical(simplify))                      stop("'simplify' must be a single logical indicator",        call.=FALSE)
+    if(length(droplevels) > 1    ||
+       !is.logical(droplevels))                    stop("'droplevels' must be a single logical indicator",      call.=FALSE)
+    fits   <- lapply(object, "[[", "fitted.values")
+    nr     <- ifelse(is.null(newdata), object[[1L]]$df.residual + 1L, NROW(newdata))
+    G      <- length(object)
+    d      <- attr(object, "d")
+    gnames <- paste0("Cluster", seq_along(fits))
+    dnames <- if(d == 1) names(fits[[1L]]) else dimnames(fits[[1L]])
+    exp    <- attr(object, "Formula")
+    if(exp == "~1")       {
+      mus  <- attr(object, "NoExp")
+      if(d == 1) {
+        fits    <- lapply(seq_len(G), function(g) stats::setNames(rep(mus[g], nr), dnames))
+      } else     {
+        fits    <- lapply(seq_len(G), function(g) provideDimnames(matrix(mus[,g], nrow=nr, ncol=d, byrow=TRUE), base=dnames))
+      }
+      fits      <- stats::setNames(fits, gnames)
+    } else if(!is.null(newdata))  {
+      newdata   <- if(isTRUE(droplevels)) drop_levels(object[[1L]], newdata) else newdata
+      fits      <- lapply(object, stats::predict, newdata=newdata, type="response")
+    }
+      if(isTRUE(simplify)) provideDimnames(array(unlist(fits), dim=c(nr, d, G)), base=if(d == 1) list(dnames, all.vars(stats::as.formula(exp)), gnames) else c(dnames, list(gnames))) else fits
+  }
+  
+#' @rdname predict.MoE_expert
+#' @method fitted MoE_expert
+#' @keywords prediction utility
+#' @usage 
+#' \method{fitted}{MoE_expert}(object,
+#'        ...)
+#' @export
+  fitted.MoE_expert      <- function(object, ...) {
+    args   <- c(list(newdata=NULL), as.list(match.call())[-1L])
+    fits   <- do.call(predict.MoE_expert, args[unique(names(args))])
+      if(!is.null(fits))    return(fits)
+  }
+  
+#' @rdname predict.MoE_expert
+#' @method residuals MoE_expert
+#' @keywords prediction utility
+#' @usage 
+#' \method{residuals}{MoE_expert}(object,
+#'           ...)
+#' @export
+  residuals.MoE_expert   <- function(object, ...)  {
+    args   <- c(list(simplify=FALSE), as.list(match.call())[-1L])
+    simple <- any(names(list(...)) == "simplify") && isTRUE(args$simplify)
+    fits   <- do.call(fitted.MoE_expert, args[unique(names(args))])
+    dat    <- attr(object, "Data")
+    dat    <- if(ncol(dat) == 1) dat[[1L]] else dat
+    fits   <- lapply(fits, function(x) dat - x)
+      if(isTRUE(simple)) provideDimnames(array(unlist(fits), dim=c(dim(fits[[1L]]), length(fits))), 
+                                         base=c(dimnames(fits[[1L]]), list(names(fits)))) else fits
+  }
 
 #' Predictions from MoEClust gating networks
 #' 
