@@ -6,6 +6,18 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
+* Various edits to `MoE_stepwise()` (thanks, in part, to requests from Dr. Konstantinos Perrakis):  
+  * Added `initialModel` arg. for specifying an initial model from which to begin the search,  
+  which may already be a mixture and may already include covariates, etc.
+  * Added `initialG` arg. as a simpler alternative when the only available  
+  prior information is on the number of components.
+  * Added `stepG` arg. (defaults to `TRUE`) for fixing the number of components  
+  & searching only over different covariate configurations (i.e. when `FALSE`).
+  * Speedups by preventing superfluous searches for equal  
+  mixing proportion models when there are gating covariates.
+  * `noise.gate` arg. now also invoked when adding components to models with gating covariates  
+  & a noise component (previously only when adding gating covariates to models with noise).
+  * `equalPro` & `noise.gate` args. gain new default `"all"` (see documentation for details).
 * Added `fitted` method for `"MoEClust"`objects (a wrapper to `predict.MoEClust`).
 * Added `predict`, `fitted`, & `residuals` methods for `"MoE_gating"` objects, i.e. `x$gating`.
 * Added `predict`, `fitted`, & `residuals` methods for `"MoE_expert"` objects, i.e. `x$expert`.
