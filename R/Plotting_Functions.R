@@ -8,15 +8,17 @@
 #' \item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the response variables.}
 #' \item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the covariates.}
 #' }
-#' The subsetting must include at least two variables, whether they be the MAP, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting.
-#' @param response.type The type of plot desired for the scatter plots comparing continuous response variables. Defaults to \code{"points"}.
+#' The result of the subsetting must include at least two variables, whether they be the MAP classification, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting.
+#' @param response.type The type of plot desired for the scatter plots comparing continuous response variables. Defaults to \code{"points"}. See \code{scatter.pars} below.
 #'
-#' Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In doing so, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data).
+#' Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In doing so, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data). See \code{scatter.pars} below.
 #'
-#' Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets).
-#' @param scatter.type A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, the options \code{"lm2"} or \code{"ci2"} can be used but this is not generally advisable.
-#' @param conditional A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"barcode"} and \code{"violin"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network. Comparisons of two categorical variables (which can only ever be covariates) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}).
-#' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data (\code{"yes"} or \code{"no"}). The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$eci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
+#' Alternatively, the bivariate \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets). See \code{density.pars} below.
+#' @param scatter.type A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, the options \code{"lm2"} or \code{"ci2"} can be used but this is not generally advisable. See \code{scatter.pars} below.
+#' @param conditional A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"violin"} and \code{"barcode"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network, unless \code{show.MAP} is \code{TRUE}. Comparisons of two categorical variables (which can only ever be covariates or the MAP classification) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}). 
+#' 
+#' All \code{conditional} panel types can be customised further; see \code{stripplot.pars}, \code{boxplot.pars} (for both \code{"boxplot"} and \code{"violin"} plots), \code{barcode.pars}, and \code{mosaic.pars} below. Note that when \code{conditional} is of length 1, that plot type will be used in \emph{both} the upper and lower triangular portions of the plot, where relevant.
+#' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data. The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$eci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. The \code{"yes"} or \code{"no"} options merely govern whether the ellipses are drawn, i.e. \code{"yes"} draws ellipses without any colouring. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
 #'
 #' Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
 #' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
@@ -36,29 +38,42 @@
 #'
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(scat.pch=if(response.type == "uncertainty") 19 else res$classification,
-#' scat.size=unit(0.25, "char"), scat.col=res$classification, 
-#' eci.col=res$classification, noise.size=unit(0.2, "char")),}
-#' where \code{eci.col} gives the colour of the fitted lines &/or confidence intervals when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and the colour of the ellipses when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"}. Note that \code{scatter.pars$scat.size} will be modified on an observation by observation level when \code{response.type} is \code{"uncertainty"}. Note also that the default for \code{scatter.pars$scat.pch} changes depending on whether \code{response.type} is given as \code{"points"} or \code{"uncertainty"}, though it can of course be modified in both cases. Finally, \code{scatter.pars$noise.size} can be used to modify \code{scatter.pars$scat.size} for observations assigned to the noise component (if any), but only when \code{response.type="points"}.
+#'      scat.col=res$classification, scat.size=unit(0.25, "char"), 
+#'      eci.col=1:res$G, noise.size=unit(0.2, "char")),}
+#' where \code{scat.pch}, \code{scat.col}, and \code{scat.size} give the plotting symbols, colours, and sizes of the points in scatterplot panels, respectively. Note that \code{eci.col} gives both a) the colour of the fitted lines &/or confidence intervals for expert-related panels when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and b) the colour of the ellipses (if any) when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"} and the response data is multivariate. Note that \code{eci.col} will inherit a suitable default from \code{scat.col} instead if the latter is supplied but the former is not. 
+#' 
+#' Note also that \code{scat.size} will be modified on an observation-by-observation level when \code{response.type} is \code{"uncertainty"}. Furthermore, note that the default for \code{scat.pch} changes depending on whether \code{response.type} is given as \code{"points"} or \code{"uncertainty"}, though it can of course be modified in both cases. Finally, \code{noise.size} can be used to modify \code{scat.size} for observations assigned to the noise component (if any), but only when \code{response.type="points"}.
 #' @param density.pars A list supplying select parameters for visualising the bivariate density contours, only when \code{response.type} is \code{"density"}.
 #'
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(grid.size=c(100, 100), dcol="grey50",
-#' nlevels=11, show.labels=TRUE, label.style="mixed"),}
-#' where \code{density.pars$grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively, and \code{density.pars$dcol} is either a single colour or a vector of length \code{density.pars$nlevels} colours (although note that \code{density.pars$dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{density.pars$label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.
-#' @param stripplot.pars A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"stripplot"}.
+#'      nlevels=11, show.labels=TRUE, label.style="mixed"),}
+#' where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively, and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.
+#' @param stripplot.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"stripplot"}.
 #'
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(strip.pch=res$classification, strip.size=unit(0.5, "char"),
-#' strip.col=res$classification, jitter=TRUE, size.noise=unit(0.4, "char")),}
-#' where \code{stripplot.pars$strip.size} and \code{stripplot.pars$size.noise} retain the definitions for the similar arguments under \code{scatter.pars} above. However, \code{stripplot.pars$noise.size} is invoked regardless of the \code{response.type}.
-#' @param barcode.pars A list supplying select parameters for continuous vs. categorical panels when one of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
+#'      strip.col=res$classification, jitter=TRUE, size.noise=unit(0.4, "char")),}
+#' where \code{strip.size} and \code{size.noise} retain the definitions for the similar arguments under \code{scatter.pars} above. However, \code{stripplot.pars$size.noise} is invoked regardless of the \code{response.type} (in contrast to \code{scatter.pars$noise.size}). Notably, \code{strip.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
+#' @param boxplot.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"boxplot"} or \code{"violin"}.
+#' 
+#' \code{NULL} is equivalent to:
+#' \preformatted{list(box.pch="|", box.col="black", varwidth=FALSE,
+#'      notch=FALSE, notch.frac=0.5, box.fill=1:res$G).}
+#' All of the above are relevant for \code{"boxplot"} panels, are passed to \code{\link[lattice]{panel.bwplot}} when producing boxplots, and retain the same definitions as the similarly named arguments therein. However, only \code{box.col}, \code{varwidth}, and \code{box.fill} are relevant for \code{"violin"} panels, and in both cases \code{box.fill} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}). See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related boxplot/violin panels. Notably, \code{box.fill} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
+#' @param barcode.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
 #'
 #' \code{NULL} is equivalent to:
-#' \preformatted{list(bar.col=res$classification, nint=0, ptsize=unit(0.25, "char"), 
-#' ptpch=1, bcspace=NULL, use.points=FALSE),}
-#' where \code{barcode.pars$bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}) if it is of length greater than 1, otherwise it is used for all relevant panels. See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related barcode panels.
-#' @param mosaic.pars A list supplying select parameters for categorical vs. categorical panels. \code{NULL}. Currently \code{shade, gp_labels, gp,} and \code{gp_args} are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles.
-#' @param axis.pars A list supplying select parameters for controlling axes.
+#' \preformatted{list(bar.col=res$G:1, nint=0, ptsize=unit(0.25, "char"), 
+#'      ptpch=1, bcspace=NULL, use.points=FALSE),}
+#' where \code{bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}) if it is of length greater than 1, otherwise it is used for all relevant panels. See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related barcode panels. Notably, \code{bar.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
+#' @param mosaic.pars A list supplying select parameters for categorical vs. categorical panels (if any). 
+#'
+#' \code{NULL} is equivalent to:
+#' \preformatted{list(shade=NULL, gp_labels=grid::gpar(fontsize=9), 
+#'      gp_args=list(), gp=list(), mfill=TRUE, mcol=1:res$G).}
+#' The current default arguments and values thereof are passed through to \code{\link[vcd]{strucplot}} for producing mosaic tiles. When \code{shade} is not \code{FALSE}, \code{mfill} is a logical which governs the colouring scheme for panels (if any) involving the MAP classification. When \code{mfill} is \code{TRUE} (the default), \code{gp} is invoked here in such a way that tiles will inherit appropriate interior colours via \code{gp$fill} from \code{mcol} and a \code{"black"} outer colour via \code{gp$col}. When \code{mfill} is \code{FALSE}, or the panel involves two categorical covariates, the outer colours are inherited from \code{mcol} and the interior fill colour is inherited from \code{bg.col}. See \code{diag.pars$hist.color} for controlling the interior fill colour of non-MAP-related mosaic panels. Notably, \code{mcol} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
+#' @param axis.pars A list supplying select parameters for controlling the axes.
 #'
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(n.ticks=5, axis.fontsize=9).}
@@ -67,27 +82,29 @@
 #'
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
-#' hist.color=hist.color, show.counts=TRUE),}
-#' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the fill colour for boxplot panels except those involving covariates only, as well as the colour of barcode panels not related to the MAP classification. By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. The MAP classification is always coloured by cluster membership. \code{show.counts} is only relevant for categorical variables.
+#'      hist.color=hist.color, show.counts=TRUE),}
+#' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. \code{show.counts} is only relevant for categorical variables.
 #'
 #' When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
-#' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars, barcode.pars, mosaic.pars, axis.pars} and \code{diag.pars}.
+#' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, \code{axis.pars}, and \code{diag.pars}.
 #'
 #' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "colMeans2" "rowLogSumExps"
-#' @importFrom mclust "sigma2decomp"
+#' @importFrom mclust "mclust.options" "sigma2decomp"
 #' @importFrom vcd "strucplot"
 #'
 #' @return A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
 #' @note For \code{MoEClust} models with more than one associated covariate (entering either network), fitted lines produced in continuous covariate vs. continuous response scatter plots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
 #'
 #' \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots. Caution is advised producing generalised pairs plots when the dimension of the data is large.
+#' 
+#' Finally, note that all colour-related defaults in \code{scatter.pars}, \code{stripplot.pars}, \code{barcode.pars}, and \code{mosaic.pars} above assume a specific colour-palette (see \code{\link[mclust]{mclust.options}("classPlotColors")}). Thus, for instance, specifying \code{scatter.pars$scat.col=res$classification} will produce different results compared to leaving this argument unspecified. This is especially true for models with a noise component, for which the default is handled quite differently (for one thing, \code{res$G} is the number of \emph{non-noise} components). Similarly, all \code{pch}-related defaults in \code{scatter.pars} and \code{stripplot.pars} above assume a specific set of plotting symbols also (see \code{\link[mclust]{mclust.options}("classPlotSymbols")}). Generally, all colour and symbol related arguments are strongly recommended to be left at their default values, unless being supplied as a single character string, e.g. \code{"black"} for colours. To help in this regard, colour-related arguments sensibly inherent their default from \code{scatter.pars$scat.col} if that is supplied and the argument in question is not.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 #'
 #' Emerson, J. W., Green, W. A., Schloerke, B., Crowley, J., Cook, D., Hofmann, H. and Wickham, H. (2013). The generalized pairs plot. \emph{Journal of Computational and Graphical Statistics}, 22(1): 79-91.
-#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_Uncertainty}}, \code{\link{expert_covar}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{plot.MoEClust}}, \code{\link{MoE_Uncertainty}}, \code{\link{expert_covar}}, \code{\link[lattice]{panel.stripplot}}, \code{\link[lattice]{panel.bwplot}}, \code{\link[lattice]{panel.violin}}, \code{\link[vcd]{strucplot}}, \code{\link[mclust]{mclust.options}}
 #' @keywords plotting
 #' @usage
 #' MoE_gpairs(res,
@@ -111,6 +128,7 @@
 #'            scatter.pars = list(...),
 #'            density.pars = list(...),
 #'            stripplot.pars = list(...),
+#'            boxplot.pars = list(...),
 #'            barcode.pars = list(...),
 #'            mosaic.pars = list(...),
 #'            axis.pars = list(...),
@@ -123,15 +141,17 @@
 #' MoE_gpairs(res)
 #'
 #' # Produce the same plot, but with a violin plot in the lower triangle.
-#' # Add fitted lines to the scatter plots. 
+#' # Colour the outline of the mosaic tiles rather than the interior.
 #' # Size points in the response vs. response panels by their clustering uncertainty.
+#' 
 #' MoE_gpairs(res, conditional=c("stripplot", "violin"),
-#'            scatter.type=c("lm2", "points"), response.type="uncertainty")
+#'            mfill=FALSE, response.type="uncertainty")
 #'
-#' # Instead show the bivariate density contours of the reponse variables (without labels).
+#' # Instead show the bivariate density contours of the response variables (without labels).
 #' # (Plotting may be slow when response.type="density" for models with expert covariates.)
 #' # Use different colours for histograms of covariates in the gating/expert/both networks.
 #' # Also use different colours for response vs. covariate & covariate vs. response panels.
+#' 
 #' MoE_gpairs(res, response.type="density", show.labels=FALSE,
 #'            hist.color=c("black", "cyan", "hotpink", "chartreuse"),
 #'            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
@@ -140,14 +160,16 @@
 #' # Reorder the covariates and omit the variabes "Hc" and "Hg".
 #' # Use barcode plots for the categorical/continuous pairs.
 #' # Magnify the size of scatter points assigned to the noise component.
+#' 
 #' resN  <- MoE_clust(ais[,3:7], G=2, gating=~SSF + Ht, expert=~sex,
 #'                    network.data=ais, modelNames="EEE", tau0=0.1, noise.gate=FALSE)
+#'                    
 #' MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), 
-#' conditional="barcode", noise.size=grid::unit(0.5, "char"))}
+#'            conditional="barcode", noise.size=grid::unit(0.5, "char"))}
 MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), expert.covar = TRUE, border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025,
-                                uncert.cov = FALSE, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
+                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025, uncert.cov = FALSE, 
+                                scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), boxplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
     UseMethod("MoE_gpairs")
 }
 
@@ -155,8 +177,8 @@ MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", 
 #' @export
 MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), expert.covar = TRUE, border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
-                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025, 
-                                uncert.cov = FALSE, scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
+                                outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025, uncert.cov = FALSE, 
+                                scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), boxplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
 
   res   <- if(inherits(res, "MoECompare")) res$optimal else res
   opar  <- suppressWarnings(graphics::par(no.readonly=TRUE))
@@ -340,11 +362,19 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   } else scatter.pars$noise.size  <- scatter.pars$noise.size
   if(length(scatter.pars$noise.size)   > 1 ||
      !inherits(scatter.pars$noise.size,     "unit"))  stop("'scatter.pars$noise.size' must be a single item of class 'unit'", call.=FALSE)
-  if(is.null(scatter.pars$scat.col))  {
+  scat.null             <- is.null(scatter.pars$scat.col)
+  if(isTRUE(scat.null))  {
     scatter.pars$col    <- colors[claSS]
   } else scatter.pars$col    <- scatter.pars$scat.col
   if(is.null(scatter.pars$eci.col))   {
-    scatter.pars$eci.col     <- colors[claSS]
+    if(isFALSE(scat.null))    {
+      scatter.pars$eci.col   <- unique(scatter.pars$col[claSS != G + 1])[stats::na.omit(match(Gseq, uni.c))]
+    } else scatter.pars$eci.col      <- colors[Gseq]
+  }
+  if(length(scatter.pars$eci.col)    != G)  {
+    if(length(scatter.pars$eci.col)  == 1)  {
+      scatter.pars$eci.col   <- rep(scatter.pars$eci.col, G)
+    } else                                            stop("'scatter.pars$eci.col' must be of length 1 or G", call.=FALSE)
   }
   if(response.type == "uncertainty")  {
     uncertainty         <- res$uncertainty
@@ -444,14 +474,35 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     stripplot.pars$size <- replace(rep(stripplot.pars$size, nrow(dat)), clust == 0, stripplot.pars$size.noise)
   }
   if(is.null(stripplot.pars$strip.col))  {
-    stripplot.pars$col  <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else colors[claSS]
+    stripplot.pars$col  <- if(response.type  == "uncertainty" && uncert.cov)           uncertainty$col else if(isFALSE(scat.null)) scatter.pars$col else colors[claSS]
   } else stripplot.pars$col       <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else stripplot.pars$strip.col
   if(is.null(stripplot.pars$jitter)) {
   stripplot.pars$jitter <- TRUE
   }
+  noise.cols <- scatter.pars$col
+  noise.cols <- unique(noise.cols)[stats::na.omit(match(if(noise) c(Gseq, G + 1) else Gseq, unique(claSS)))]
+  if(is.null(boxplot.pars$box.pch))  {
+   boxplot.pars$box.pch <- "|"
+  }
+  if(is.null(boxplot.pars$box.col))  {
+   boxplot.pars$box.col <- "black"
+  }
+  if(is.null(boxplot.pars$notch.frac))    {
+    boxplot.pars$notch.frac         <- 0.5
+  }
+  boxplot.pars$varwidth <- is.null(boxplot.pars$varwidth) || isTRUE(boxplot.pars$varwidth)
+  boxplot.pars$notch    <- is.null(boxplot.pars$notch)    || isTRUE(boxplot.pars$notch)
+  if(is.null(boxplot.pars$box.fill))      {
+   boxplot.pars$box.fill            <- noise.cols
+  } else {
+   if(length(boxplot.pars$box.fill) == 1) {
+    boxplot.pars$box.fill           <- rep(boxplot.pars$box.fill, L)
+   }
+   if(!(length(boxplot.pars$box.fill) %in% c(1L, L))) stop("'boxplot.pars$box.fill' must be a scalar or a vector with length given by the number of components (incl. the noise component, if any)", call.=FALSE)
+  }
   bar.col               <- FALSE
   if(is.null(barcode.pars$bar.col))  {
-    barcode.pars$col    <- colors[rev(seq_along(unique(claSS)))]
+    barcode.pars$col    <- if(isFALSE(scat.null)) rev(noise.cols) else colors[rev(seq_along(unique(claSS)))]
   } else {
     if(length(barcode.pars$bar.col) == 1) {
       bar.col           <- TRUE
@@ -480,9 +531,16 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(mosaic.pars$shade))     {
     mosaic.pars$shade   <- NULL
   }
-  noise.cols <- scatter.pars$col
-  scatter.pars$ecol     <- unique(noise.cols[claSS != G + 1])[stats::na.omit(match(Gseq, uni.c))]
-  noise.cols <- unique(noise.cols)[stats::na.omit(match(if(noise) c(Gseq, G + 1) else Gseq, unique(claSS)))]
+  if(is.null(mosaic.pars$mcol))      {
+    mosaic.pars$mcol    <- noise.cols
+  } else {
+    if(length(mosaic.pars$mcol)     == 1) {
+      mosaic.pars$mcol  <- rep(mosaic.pars$mcol, L)
+    }
+    if(!(length(mosaic.pars$mcol) %in% c(1L, L)))     stop("'mosaicpars$mcol' must be a scalar or a vector with length given by the number of components (incl. the noise component, if any)", call.=FALSE)
+  }
+  mosaic.pars$gp$col    <- if(is.null(mosaic.pars$gp$col)) "black" else mosaic.pars$gp$col
+  mosaic.pars$mfill     <- is.null(mosaic.pars$mfill) || isTRUE(mosaic.pars$mfill)
   grid::grid.newpage()
   vp.main    <- grid::viewport(x=outer.margins$bottom, y=outer.margins$left,
                                width=grid::unit(1,  "npc") - outer.margins$right - outer.margins$left,
@@ -520,10 +578,10 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
       }
       if(i == j) {
         .diag_panel(x=x[,i], varname=names(x)[i], diag.pars=diag.pars, hist.col=if(i == 1 && names(x)[i] == "MAP") list(noise.cols) else diag.pars$hist.color, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, index=i, outer.rot=outer.rot)
-      } else {
+      } else  {
         if(xor(is.factor(x[,i]), is.factor(x[,j]))) {
-          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) noise.cols else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border)
-          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) noise.cols else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border)
+          if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, boxplot.pars=boxplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) boxplot.pars$box.fill else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border)
+          if(i > j & low.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=low.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, boxplot.pars=boxplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) boxplot.pars$box.fill else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border)
           if(i < j & upr.cond == "barcode") {
             grid::pushViewport(grid::viewport(gp=grid::gpar(fill=bg)))
             if(is.factor(x[,i])) {
@@ -563,11 +621,11 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
           } else {
             .scatter_panel(x=x[,j], y=x[,i], type=ifelse(j > dcol && i <= dcol, ifelse(upr.gate || (j %in% c(expx, both)), upr.exp, "points"), ifelse(j <= dcol && i <= dcol, ifelse(drawEllipses, "ellipses", "points"), ifelse(j <= dcol && (low.gate || (i %in% c(expx, both))), low.exp, "points"))),
                            scatter.pars=scatter.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, z=z, G=G, res=res, dimens=c(subset$data.ind[j - subset$show.map], subset$data.ind[i - subset$show.map]), outer.rot=outer.rot, bg=bg, mvn.type=addEllipses, border=border,
-                           uncertainty=if(response.type == "uncertainty" && (uncert.cov || (i <= dcol && j <= dcol))) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$ecol)
+                           uncertainty=if(response.type == "uncertainty" && (uncert.cov || (i <= dcol && j <= dcol))) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$eci.col)
           }
         }
         if(all(is.factor(x[,i]),  is.factor(x[,j]))) {
-          .mosaic_panel(x=x[,j], y=x[,i], mosaic.pars=mosaic.pars, mosaic.outer=if(j == 1) rep(noise.cols, each=nlevels(x[,i])) else if(i == 1) rep(noise.cols, nlevels(x[,j])) else mosaic.pars$gp$col, axis.pars=axis.pars, xpos=xpos, ypos=ypos, outer.rot=outer.rot, bg=bg)
+          .mosaic_panel(x=x[,j], y=x[,i], mosaic.pars=mosaic.pars, mosaic.inner=if(j == 1) rep(mosaic.pars$mcol, each=nlevels(x[,i]))   else if(i == 1) rep(mosaic.pars$mcol, nlevels(x[,j])) else hist.col[4L], axis.pars=axis.pars, xpos=xpos, ypos=ypos, outer.rot=outer.rot, bg=ifelse(i == 1 || j == 1, ifelse(isFALSE(mosaic.pars$mfill), bg, mosaic.pars$gp$col), bg), mfill=(i == 1 || j == 1) && isTRUE(mosaic.pars$mfill))
         }
       }
       grid::popViewport(1)
@@ -902,7 +960,7 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #' @details For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}} and \code{\link{MoE_Uncertainty}} directly.
 #' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "rowLogSumExps"
-#' @importFrom mclust "plot.mclustBIC" "plot.mclustICL" "sigma2decomp"
+#' @importFrom mclust "mclust.options" "plot.mclustBIC" "plot.mclustICL" "sigma2decomp"
 #' @importFrom vcd "strucplot"
 #' @note Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #'
@@ -936,8 +994,8 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #' plot(res, what="gpairs")
 #'
 #' # Modify the gpairs plot by passing arguments to MoE_gpairs()
-#' plot(res, what="gpairs", response.type="density",
-#'      scatter.type="ci", jitter=FALSE, show.counts=FALSE)}
+#' plot(res, what="gpairs", response.type="density", varwidth=TRUE,
+#'      data.ind=c(5,3,4,1,2), jitter=FALSE, show.counts=FALSE)}
 plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "uncertainty"), ...) {
   if(!missing(what) && !all(is.character(what)))      stop("'what' must be a character string", call.=FALSE)
   what        <- match.arg(what, several.ok=TRUE)
@@ -1034,19 +1092,19 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   }
   k        <- length(cat.labels)
   if(!is.null(xpos)) {
-    if(!is.null(cat.labels) && !horiz) {
+    if(!is.null(cat.labels) && isFALSE(horiz)) {
       grid::grid.text(cat.labels, x=grid::unit(seq_len(k), "native"), y=grid::unit(rep(1 * (1 - xpos), k), "npc") + grid::unit(rep(-1 * xpos + 1 * (1 - xpos), k), "lines"), rot=outer.rot[1L], gp=grid::gpar(fontsize=axis.pars$fontsize))
-    } else  grid::grid.xaxis(at=if(x.fac) seq_along(px) else px, gp=grid::gpar(fontsize=axis.pars$fontsize), main=xpos, label=px)
+    } else  grid::grid.xaxis(at=if(x.fac) seq_along(px)      else px, gp=grid::gpar(fontsize=axis.pars$fontsize), main=xpos, label=px)
   }
   if(!is.null(ypos)) {
-    if(!is.null(cat.labels) && horiz)  {
+    if(!is.null(cat.labels) && isTRUE(horiz))  {
       grid::grid.text(cat.labels, y=grid::unit(seq_len(k), "native"), x=grid::unit(rep(1 * (1 - ypos), k), "npc") + grid::unit(rep(-1 * ypos + 1 * (1 - ypos), k), "lines"), rot=outer.rot[2L], gp=grid::gpar(fontsize=axis.pars$fontsize))
-    } else  grid::grid.yaxis(at=if(y.fac) seq_along(py) else py, gp=grid::gpar(fontsize=axis.pars$fontsize), main=ypos, label=py)
+    } else  grid::grid.yaxis(at=if(y.fac) rev(seq_along(py)) else py, gp=grid::gpar(fontsize=axis.pars$fontsize), main=ypos, label=py)
   }
 }
 
 #' @importFrom lattice "panel.bwplot" "panel.stripplot" "trellis.par.get" "trellis.par.set"
-.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, outer.rot, bg, box.fill, border) {
+.boxplot_panel <- function(x, y, type, axis.pars, xpos, ypos, buffer, stripplot.pars, boxplot.pars, outer.rot, bg, box.fill, border) {
   xlim         <- NULL
   ylim         <- NULL
   old.color    <- trellis.par.get("box.rectangle")$col
@@ -1077,9 +1135,10 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     .draw_axis(x=cont.var, y=cat.var, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=cat.labels, horiz=horiz, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
     grid::popViewport(1)
     grid::pushViewport(grid::viewport(xscale=xlim, yscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5), clip=TRUE))
-    if(type == "boxplot")   panel.bwplot(cont.var, cat.var, horizontal=horiz, col="black", pch="|", gp=grid::gpar(box.umbrella=list(col="black")), fill=box.fill)
+    if(type == "boxplot")   panel.bwplot(cont.var, cat.var, horizontal=horiz, col=boxplot.pars$box.col, pch=boxplot.pars$box.pch, gp=grid::gpar(box.umbrella=list(col=boxplot.pars$box.col)), 
+                                         varwidth=boxplot.pars$varwidth, notch=boxplot.pars$notch, notch.frac=boxplot.pars$notch.frac, fill=rev(box.fill))
     if(type == "stripplot") panel.stripplot(cont.var, cat.var, horizontal=horiz, jitter.data=stripplot.pars$jitter, col=stripplot.pars$col, cex=stripplot.pars$size, pch=stripplot.pars$pch)
-    if(type == "violin")    .violin_panel(cont.var, cat.var, horizontal=horiz, col=rev(box.fill))
+    if(type == "violin")    .violin_panel(cont.var, cat.var, horizontal=horiz, varwidth=boxplot.pars$varwidth, border=boxplot.pars$box.col, col=rev(box.fill))
   } else    {
     ylim       <- cont.range + c(-buffer * (diff(cont.range)), buffer * (diff(cont.range)))
     grid::pushViewport(grid::viewport(yscale=ylim, xscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5)))
@@ -1087,9 +1146,10 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     .draw_axis(x=cat.var, y=cont.var, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=cat.labels, horiz=horiz, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
     grid::popViewport(1)
     grid::pushViewport(grid::viewport(yscale=ylim, xscale=c(0.5, max(cat.var, na.rm=TRUE) + 0.5), clip=TRUE))
-    if(type == "boxplot")   panel.bwplot(cat.var, cont.var, horizontal=horiz, col="black", pch="|", gp=grid::gpar(box.umbrella=list(col="black")), fill=box.fill)
+    if(type == "boxplot")   panel.bwplot(cat.var, cont.var, horizontal=horiz, col=boxplot.pars$box.col, pch=boxplot.pars$box.pch, gp=grid::gpar(box.umbrella=list(col=boxplot.pars$box.col)), 
+                                         varwidth=boxplot.pars$varwidth, notch=boxplot.pars$notch, notch.frac=boxplot.pars$notch.frac, fill=box.fill)
     if(type == "stripplot") panel.stripplot(cat.var, cont.var, horizontal=horiz, jitter.data=stripplot.pars$jitter, col=stripplot.pars$col, cex=stripplot.pars$size, pch=stripplot.pars$pch)
-    if(type == "violin")    .violin_panel(cat.var, cont.var, horizontal=horiz, col=box.fill)
+    if(type == "violin")    .violin_panel(cat.var, cont.var, horizontal=horiz, varwidth=boxplot.pars$varwidth, border=boxplot.pars$box.col, col=box.fill)
   }
   grid::popViewport(1)
   trellis.par.set(name="box.rectangle", value=list(col=old.color))
@@ -1216,19 +1276,24 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 }
 
 #' @importFrom vcd "strucplot"
-.mosaic_panel <- function(x, y, mosaic.pars, mosaic.outer, axis.pars, xpos, ypos, outer.rot, bg) {
-  mosaic.pars$gp$fill  <- bg
-  mosaic.pars$gp$col   <- mosaic.outer
+.mosaic_panel <- function(x, y, mosaic.pars, mosaic.inner, axis.pars, xpos, ypos, outer.rot, bg, mfill) {
+  if(isTRUE(mfill))        {
+    mosaic.pars$gp$fill   <- mosaic.inner
+    mosaic.pars$gp$col    <- bg
+  } else       {
+    mosaic.pars$gp$fill   <- bg
+    mosaic.pars$gp$col    <- mosaic.inner
+  }
   if(!is.null(xpos)       && !is.null(ypos)) {
-    strucplot(table(y, x), margins=c(0, 0, 0, 0), newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp,
-              gp_args=mosaic.pars$gp_args, labeling_args=list(tl_labels=c(xpos, !ypos), gp_labels=mosaic.pars$gp_labels, varnames=c(FALSE, FALSE), rot_labels=rep(outer.rot, 2)))
+    suppressWarnings(strucplot(table(y, x), margins=c(0, 0, 0, 0), newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp,
+                     gp_args=mosaic.pars$gp_args, labeling_args=list(tl_labels=c(xpos, !ypos), gp_labels=mosaic.pars$gp_labels, varnames=c(FALSE, FALSE), rot_labels=rep(outer.rot, 2))))
   } else if(is.null(xpos) && is.null(ypos))  {
-      strucplot(table(y, x), margins=c(0, 0, 0, 0), shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp, gp_args=mosaic.pars$gp_args, newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, labeling=NULL)
+      suppressWarnings(strucplot(table(y, x), margins=c(0, 0, 0, 0), shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp, gp_args=mosaic.pars$gp_args, newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, labeling=NULL))
   } else if(is.null(xpos)) {
-      strucplot(table(y, x), margins=c(0, 0, 0, 0), newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp, gp_args=mosaic.pars$gp_args,
-                labeling_args=list(labels=c(TRUE, FALSE), tl_labels=c(ypos, FALSE), gp_labels=mosaic.pars$gp_labels, varnames=c(FALSE, FALSE), rot_labels=rep(outer.rot, 2)))
-  } else strucplot(table(y, x), margins=c(0, 0, 0, 0), newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp, gp_args=mosaic.pars$gp_args,
-                     labeling_args=list(labels=c(FALSE, TRUE), tl_labels=c(FALSE, !xpos), gp_labels=mosaic.pars$gp_labels, varnames=c(FALSE, FALSE), rot_labels=rep(outer.rot, 2)))
+      suppressWarnings(strucplot(table(y, x), margins=c(0, 0, 0, 0), newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp, gp_args=mosaic.pars$gp_args,
+                       labeling_args=list(labels=c(TRUE, FALSE), tl_labels=c(ypos, FALSE), gp_labels=mosaic.pars$gp_labels, varnames=c(FALSE, FALSE), rot_labels=rep(outer.rot, 2))))
+  } else suppressWarnings(strucplot(table(y, x), margins=c(0, 0, 0, 0), newpage=FALSE, pop=FALSE, keep_aspect_ratio=FALSE, shade=mosaic.pars$shade, legend=FALSE, gp=mosaic.pars$gp, gp_args=mosaic.pars$gp_args,
+                          labeling_args=list(labels=c(FALSE, TRUE), tl_labels=c(FALSE, !xpos), gp_labels=mosaic.pars$gp_labels, varnames=c(FALSE, FALSE), rot_labels=rep(outer.rot, 2))))
 }
 
 #' @importFrom lattice "panel.abline"
@@ -1247,7 +1312,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   switch(EXPR=type, ellipses= {
     mu    <- array(res$parameters$mean[dimens,], c(2, G))
     sigma <- array(res$parameters$varianceX$sigma[dimens, dimens,], c(2, 2, G))
-    for(g in rev(seq_len(G))) try(.mvn2D_panel(mu=mu[,g], sigma=sigma[,,g], k=15L, col=if(mvn.type == "inner") c("grey30", mvn.col[g], mvn.col[g]) else if(mvn.type == "outer") c(mvn.col[g], "grey30", "grey30") else if(mvn.type == "both") rep(mvn.col[g], 3)), silent=TRUE)
+    for(g in rev(seq_len(G))) try(.mvn2D_panel(mu=mu[,g], sigma=sigma[,,g], k=15L, col=if(mvn.type == "inner") c("grey30", mvn.col[g], mvn.col[g]) else if(mvn.type == "outer") c(mvn.col[g], "grey30", "grey30") else if(mvn.type == "both") rep(mvn.col[g], 3L)), silent=TRUE)
   }, lm=   {
     for(g in seq_len(G)) {
       xy.lm <- stats::lm(y ~ x, weights=z[,g])

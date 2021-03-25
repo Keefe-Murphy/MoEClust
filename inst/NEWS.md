@@ -18,12 +18,21 @@ __and a Noise Component__
   * `noise.gate` arg. now also invoked when adding components to models with gating covariates  
   & a noise component (previously only when adding gating covariates to models with noise).
   * `equalPro` & `noise.gate` args. gain new default `"all"` (see documentation for details).
-* Added `fitted` method for `"MoEClust"`objects (a wrapper to `predict.MoEClust`).
-* Added `predict`, `fitted`, & `residuals` methods for `"MoE_gating"` objects, i.e. `x$gating`.
-* Added `predict`, `fitted`, & `residuals` methods for `"MoE_expert"` objects, i.e. `x$expert`.
-* Minor edit to `predict.MoEClust` for models without expert network covariates.
-* Minor fixes to returned `x$gating` object for `equalPro=TRUE` models with a noise component.
-* Minor speed-ups to some utility functions.
+* New methods and edits related to prediction:  
+  * Added `fitted` method for `"MoEClust"`objects (a wrapper to `predict.MoEClust`).
+  * Added `predict`, `fitted`, & `residuals` methods for `"MoE_gating"` objects, i.e. `x$gating`.
+  * Added `predict`, `fitted`, & `residuals` methods for `"MoE_expert"` objects, i.e. `x$expert`.
+  * Minor edits to `predict.MoEClust` for models without expert network covariates.
+  * Minor fixes to returned `x$gating` object for `equalPro=TRUE` models with a noise component.
+* Various edits & documentation improvements to `MoE_gpairs`:  
+  * `mosaic.pars` gains logical arg. `mfill=TRUE`, to toggle between filling select tiles with colour  
+  (new default behaviour), or outlining select tiles with colour (old behaviour).
+  * `boxplot.pars` arg. added to allow customising boxplot and violin plot panels,  
+  with related fixes to colourisation in upper-triangular panels.
+  * Fixes re: `scatter.pars$eci.col`: now governs colours of ellipses and regression lines.
+  * Fixes to axis labels for diagonal panels involving factors.
+  * Various colour-related args. now inherit sensible defaults if scatter plot colours are specified.
+* Minor speed-ups to some other utility functions.
 
 ## MoEClust v1.3.3 - (_11<sup>th</sup> release [patch update]: 2020-12-29_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits

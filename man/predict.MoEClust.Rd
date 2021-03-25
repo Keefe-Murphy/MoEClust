@@ -27,7 +27,7 @@
 \item{newdata}{A list with two \emph{named} components, each of which must be a \code{data.frame} or \code{matrix} with named columns, giving the data for which predictions are desired.
 \describe{
 \item{\code{new.x}}{The new covariates for the \code{gating} &/or \code{expert} networks. \strong{Must} be supplied when \code{newdata$new.y} is supplied.}
-\item{\code{new.y}}{(Optional) response data. When supplied, cluster and response prediction is based on both \code{newdata$new.x} and \code{newdata$new.y}, otherwise only on the covariates in \code{newdata$new.x}.}
+\item{\code{new.y}}{(Optional) response data (see \code{use.y} below). When supplied, cluster and response prediction is based on both \code{newdata$new.x} and \code{newdata$new.y}, otherwise only on the covariates in \code{newdata$new.x}.}
 }
 If supplied as a list with elements \code{new.x} and \code{new.y}, both \strong{must} have the same number of rows.
 
@@ -41,7 +41,7 @@ When \code{newdata} is not supplied in any way, the covariates and response vari
 
 \item{MAPresids}{A logical indicating whether residuals are computed against \code{y} (\code{TRUE}, the default) or \code{MAPy} when \code{FALSE}. Not relevant for models with equal mixing proportions when only \code{new.x} is available. See \strong{Value} below for more details.}
 
-\item{use.y}{A logical indicating whether the response variables (supplied either via \code{new.y} or via \code{newdata} itself) are actually used in the prediction. Defaults to \code{TRUE}, but useful when \code{FALSE} for computing residuals as though only the covariates in \code{new.x} were supplied.}
+\item{use.y}{A logical indicating whether the response variables (if any are supplied either via \code{new.y} or via \code{newdata} itself) are actually used in the prediction. Defaults to \code{TRUE}, but useful when \code{FALSE} for computing residuals as though only the covariates in \code{new.x} were supplied. For out-of-sample prediction, typically \code{new.y} would not be supplied anyway and so the \code{use.y=TRUE} default becomes irrelevant.}
 
 \item{...}{Catches unused arguments (and allows the \code{predict} arguments \code{discard.noise} &/or \code{use.y} to be passed through \code{fitted} or the \code{discard.noise}, \code{MAPresids}, and/or \code{use.y} arguments to be passed through \code{residuals}).}
 }
@@ -67,6 +67,8 @@ Predicts both cluster membership probabilities and fitted response values from a
 Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 
 Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
+
+Please be aware that a model considered optimal from a clustering point of view may not necessarily be optimal from a prediction point of view. In particular, full MoE models with covariates in both networks (for which both the cluster membership probabilities and component means are observation-specific) are recommended for out-of-sample prediction when only new covariates are observed (see \code{new.x} and \code{new.y} above, as well as \code{use.y}).
 }
 \note{
 Note that a dedicated \code{\link[=predict.MoE_gating]{predict}} function is also provided for objects of class \code{"MoE_gating"} (typically \code{object$gating}, where \code{object} is of class \code{"MoEClust"}). This function is effectively a shortcut to \code{predict(object, ...)$pro}, which (unlike the \code{predict} method for \code{\link[nnet]{multinom}} on which it is based) accounts for the various ways of treating gating covariates and noise components, although its \code{type} argument defaults to \code{"probs"} rather than \code{"class"}. Notably, its \code{keep.noise} argument behaves differently from the \code{discard.noise} argument here; here, the noise component is \strong{only} discarded in the computation of the predicted responses. See \code{\link{predict.MoE_gating}} for further details.

@@ -2282,7 +2282,7 @@
 #' @param newdata A list with two \emph{named} components, each of which must be a \code{data.frame} or \code{matrix} with named columns, giving the data for which predictions are desired.
 #' \describe{
 #' \item{\code{new.x}}{The new covariates for the \code{gating} &/or \code{expert} networks. \strong{Must} be supplied when \code{newdata$new.y} is supplied.}
-#' \item{\code{new.y}}{(Optional) response data. When supplied, cluster and response prediction is based on both \code{newdata$new.x} and \code{newdata$new.y}, otherwise only on the covariates in \code{newdata$new.x}.}
+#' \item{\code{new.y}}{(Optional) response data (see \code{use.y} below). When supplied, cluster and response prediction is based on both \code{newdata$new.x} and \code{newdata$new.y}, otherwise only on the covariates in \code{newdata$new.x}.}
 #' }
 #' If supplied as a list with elements \code{new.x} and \code{new.y}, both \strong{must} have the same number of rows.
 #'
@@ -2292,7 +2292,7 @@
 #' @param resid A logical indicating whether to return the residuals also. Defaults to \code{FALSE}. Only allowed when response variables are supplied in some form. The function \code{residuals} is a wrapper to \code{predict} with the argument \code{resid} set to \code{TRUE}, with only the residuals returned.
 #' @param discard.noise A logical governing how predictions of the responses are made for models with a noise component (otherwise this argument is irrelevant). By default (\code{FALSE}), the mean of the noise component is accounted for. Otherwise, or when the mean of the noise component is unavailable (due to having been manually supplied through \code{\link{MoE_control}} via \code{noise.args$noise.vol}), prediction of the responses is performed using a \code{z} matrix which is renormalised after discarding the column corresponding to the noise component. The renormalisation approach can be forced by specifying \code{TRUE}, even when the mean of the noise component is available. For models with a noise component fitted with \code{algo="CEM"}, a small extra E-step is conducted for observations assigned to the non-noise components in this case.
 #' @param MAPresids A logical indicating whether residuals are computed against \code{y} (\code{TRUE}, the default) or \code{MAPy} when \code{FALSE}. Not relevant for models with equal mixing proportions when only \code{new.x} is available. See \strong{Value} below for more details.
-#' @param use.y A logical indicating whether the response variables (supplied either via \code{new.y} or via \code{newdata} itself) are actually used in the prediction. Defaults to \code{TRUE}, but useful when \code{FALSE} for computing residuals as though only the covariates in \code{new.x} were supplied.
+#' @param use.y A logical indicating whether the response variables (if any are supplied either via \code{new.y} or via \code{newdata} itself) are actually used in the prediction. Defaults to \code{TRUE}, but useful when \code{FALSE} for computing residuals as though only the covariates in \code{new.x} were supplied. For out-of-sample prediction, typically \code{new.y} would not be supplied anyway and so the \code{use.y=TRUE} default becomes irrelevant.
 #' @param ... Catches unused arguments (and allows the \code{predict} arguments \code{discard.noise} &/or \code{use.y} to be passed through \code{fitted} or the \code{discard.noise}, \code{MAPresids}, and/or \code{use.y} arguments to be passed through \code{residuals}).
 #'
 #' @return A list with the following named components, regardless of whether \code{newdata$new.x} and \code{newdata$new.y} were used, or \code{newdata$new.x} only.
@@ -2312,6 +2312,8 @@
 #' @details Predictions can also be made for models with a noise component, in which case \code{z} will include the probability of belonging to \code{"Cluster0"} & \code{classification} will include labels with the value \code{0} for observations classified as noise (if any). The argument \code{discard.noise} governs how the responses are predicted in the presence of a noise component (see \code{\link{noise_vol}} for more details).
 #' 
 #' Note that the argument \code{discard.noise} is invoked for any models with a noise component, while the similar \code{\link{MoE_control}} argument \code{noise.args$discard.noise} is only invoked for models with both a noise component and expert network covariates.
+#' 
+#' Please be aware that a model considered optimal from a clustering point of view may not necessarily be optimal from a prediction point of view. In particular, full MoE models with covariates in both networks (for which both the cluster membership probabilities and component means are observation-specific) are recommended for out-of-sample prediction when only new covariates are observed (see \code{new.x} and \code{new.y} above, as well as \code{use.y}).
 #' @note Note that a dedicated \code{\link[=predict.MoE_gating]{predict}} function is also provided for objects of class \code{"MoE_gating"} (typically \code{object$gating}, where \code{object} is of class \code{"MoEClust"}). This function is effectively a shortcut to \code{predict(object, ...)$pro}, which (unlike the \code{predict} method for \code{\link[nnet]{multinom}} on which it is based) accounts for the various ways of treating gating covariates and noise components, although its \code{type} argument defaults to \code{"probs"} rather than \code{"class"}. Notably, its \code{keep.noise} argument behaves differently from the \code{discard.noise} argument here; here, the noise component is \strong{only} discarded in the computation of the predicted responses. See \code{\link{predict.MoE_gating}} for further details.
 #' 
 #' Similarly, a dedicated \code{\link[=predict.MoE_expert]{predict}} function is also provided for objects of class \code{"MoE_expert"} (typically \code{object$expert}, where \code{object} is of class \code{"MoE_expert"}). This function is effectively a wrapper to \code{predict(object, ...)$mean}, albeit it returns a list (by default) rather than a 3-dimensional array and also \emph{always} preserves the dimensions of \code{newdata}, even for models without expert network covariates. See \code{\link{predict.MoE_expert}} for further details. 
@@ -2379,6 +2381,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   noise           <- !is.na(hypvol)
   yM              <- FALSE
   dot             <- list(...)
+  if(any(names(dot) == "MAPWARN"))     {
+    MAPWARN       <- dot$MAPWARN
+    dot           <- dot[names(dot)         != "MAPWARN"]
+    newdata       <- newdata[names(newdata) != "MAPWARN"]
+    newdata       <- if(length(newdata)     != 0) newdata
+  } else MAPWARN  <- TRUE
   if(any(!(names(dot) %in% c("new.x", "new.y")))) stop("Invalid arguments passed through '...' construct", call.=FALSE)
   if(nmiss        <- ifelse(inherits(newdata,
                                      "list")    &&
@@ -2464,7 +2472,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   noise.loc       <- attr(hypvol, "Location")
   noise.loc       <- if(is.null(noise.loc)) rep(NA, nc) else noise.loc
   if(G == 0)   {
-    if(all(is.na(noise.loc)))                      warning("Can't predict the response; mean of noise component unavailable\n", call.=FALSE, immediate.=TRUE)
+    if(all(is.na(noise.loc)))                     warning("Can't predict the response; mean of noise component unavailable\n", call.=FALSE, immediate.=TRUE)
     retval        <- list(ystar=matrix(noise.loc, nrow=nr, ncol=object$d, byrow=TRUE),
                           classification=rep(0L, nr),
                           pro=provideDimnames(matrix(1L,   nrow=1L, ncol=1L), base=list("pro", "Cluster0")),
@@ -2535,9 +2543,14 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   }
   retval          <- list(y=ystar, classification=claX, z=zstar, pro=new.tau, mean=mu)
   if((isTRUE(yM)  || isFALSE(use.y))  && 
-     attr(object, "EqualPro"))         {           warning("'MAPy' not returned due to randomness induced by the equal mixing proportions and the absent response variables\n", call.=FALSE, immediate.=TRUE)
-    if(isTRUE(MAPresids))              {           warning("Hence, 'MAPresids' is forced to FALSE\n", call.=FALSE, immediate.=TRUE)
-      MAPresids   <- FALSE
+     attr(object, "EqualPro"))         {
+    if(isTRUE(MAPWARN))                {           
+      warnMAP     <- "'MAPy' not available due to randomness induced by the equal mixing proportions and the absent response variables\n"
+      if(isTRUE(MAPresids)) {                      
+        MAPresids <- FALSE
+        warnMAP   <- paste0(warnMAP, "\nHence, 'MAPresids' is forced to FALSE\n")
+      }
+                                                  warning(warnMAP, call.=FALSE, immediate.=TRUE)
     }
   } else           {
     MAPy          <- ystar
@@ -2575,7 +2588,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'           ...)
 #' @export
   residuals.MoEClust     <- function(object, newdata = list(...), ...) {
-    args   <- c(list(resid=TRUE), as.list(match.call())[-1L])
+    dots   <- list(...)
+    MAPW   <- any(names(dots) == "MAPresids") && isTRUE(dots$MAPresids)
+    args   <- c(list(resid=TRUE, MAPWARN=MAPW),  as.list(match.call())[-1L])
     resids <- do.call(predict.MoEClust, args[unique(names(args))])$resids
       if(!is.null(resids))  return(resids)
   }
@@ -2618,11 +2633,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(length(droplevels) > 1    ||
        !is.logical(droplevels))                    stop("'droplevels' must be a single logical indicator",      call.=FALSE)
     fits   <- lapply(object, "[[", "fitted.values")
-    nr     <- ifelse(is.null(newdata), object[[1L]]$df.residual + 1L, NROW(newdata))
+    nr     <- ifelse(is.null(newdata), nrow(object[[1]]$model), NROW(newdata))
     G      <- length(object)
     d      <- attr(object, "d")
     gnames <- paste0("Cluster", seq_along(fits))
     dnames <- if(d == 1) names(fits[[1L]]) else dimnames(fits[[1L]])
+    dnames <- if(is.null(newdata))  dnames else as.character(seq_len(NROW(newdata)))
     exp    <- attr(object, "Formula")
     if(exp == "~1")       {
       mus  <- attr(object, "NoExp")
@@ -2636,7 +2652,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       newdata   <- if(isTRUE(droplevels)) drop_levels(object[[1L]], newdata) else newdata
       fits      <- lapply(object, stats::predict, newdata=newdata, type="response")
     }
-      if(isTRUE(simplify)) provideDimnames(array(unlist(fits), dim=c(nr, d, G)), base=if(d == 1) list(dnames, all.vars(stats::as.formula(exp)), gnames) else c(dnames, list(gnames))) else fits
+      if(isTRUE(simplify)) provideDimnames(array(unlist(fits), dim=c(nr, d, G)), base=if(d == 1) list(dnames, if(exp != "~1") all.vars(stats::as.formula(exp)) else "", gnames) else c(dnames, list(gnames))) else fits
   }
   
 #' @rdname predict.MoE_expert
@@ -2739,6 +2755,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       fits <- matrix(attr(object, "NoGate"), nrow=ifelse(is.null(newdata), 1L, NROW(newdata)), ncol=GN, byrow=TRUE)
     } else if(!is.null(newdata)) { 
       fits <- stats::predict(object, if(isTRUE(droplevels)) drop_levels(object, newdata) else newdata, type="probs")
+      fits <- if(is.matrix(fits)) fits else matrix(fits, nrow=1L, ncol=length(fits), byrow=TRUE)
     }
     if(all(noise, !attr(object, "NoiseGate"))) {
       fits <- .tau_noise(fits, attr(object, "NoisePro"))
