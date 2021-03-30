@@ -33,20 +33,18 @@ In the presence of expert network covariates, the component-specific covariance 
 The \code{signif} argument is intended only to aid visualisation via \code{\link[mclust]{plot.Mclust}}, as plots therein can be sensitive to outliers, particularly with regard to axis limits.
 }
 \note{
-Of the functions which can be applied to the result of the conversion, \code{\link[mclust]{logLik.Mclust}} shouldn't be trusted in the presence of either expert network covariates, or (for models with more than 1 component) gating network covariates.
-
 Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
 
-Plots may be quite misleading in the presence of gating &/or expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
+Plots may be quite misleading in the presence of gating &/or (especially) expert network covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
+
+Predictions (via \code{\link[mclust]{predict.Mclust}}) will also be misleading in the presence of covariates of any kind when \code{newdata} is supplied; thus, users are \strong{strongly} encouraged to use \code{\link{predict.MoEClust}} instead. 
 
 The functions \code{\link[mclust]{clustCombi}} and \code{\link[mclust]{clustCombiOptim}} can be safely used (provided \code{as.Mclust(x)} is supplied as the \code{object} argument to \code{\link[mclust]{clustCombi}}), as they only rely on \code{x$z} and \code{x$G} only. See the examples below.
 
 Users may expect MoEClust models with no covariates of any kind to be identical to models fitted via \pkg{mclust}, but this is not necessarily true: see the \code{\link{MoE_control}} argument \code{asMclust}.
 }
 \examples{
-\donttest{# library(mclust)
-
-# Fit a gating network mixture of experts model to the ais data
+\donttest{# Fit a gating network mixture of experts model to the ais data
 # data(ais)
 # mod   <- MoE_clust(ais[,3:7], G=1:9, gating= ~ BMI + sex, network.data=ais)
 

@@ -8,6 +8,8 @@ vignette: >
   %\VignetteIndexEntry{MoEClust}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteDepends{mclust}
+  %\VignetteDepends{lattice}
 ---
 
 ```{r setup, include=FALSE}
@@ -32,13 +34,13 @@ The most important function in the __MoEClust__ package is: `MoE_clust`, for fit
 
 A dedicated plotting function exists for visualising the results using generalised pairs plots, for examining the gating network, and/or log-likelihood, and/or clustering uncertainties, and/or graphing model selection criteria values. The generalised pairs plots (`MoE_gpairs`) visualise all pairwise relationships between clustered response variables and associated continuous, categorical, and/or ordinal covariates in the gating &/or expert networks, coloured according to the MAP classification, and also give the marginal distributions of each variable (incl. the covariates) along the diagonal.
 
-An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates). Finally, a `predict` method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response data, or new covariates only.
+An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates). 
 
-Other functions also exist, e.g. `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. The package also contains two data sets: `ais` and `CO2data`.
+Finally, a `predict` method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response data, or new covariates only.
 
-If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). 
+Other functions also exist, e.g. `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. The package also contains two data sets: `CO2data` and `ais`. 
 
-This vignette aims to demonstrate the __MoEClust__ models via application to well-known univariate and multivariate data sets provided with the package.
+This vignette aims to demonstrate the __MoEClust__ models via application to these two well-known univariate and multivariate data sets, respectively.
 
 ### Installing MoEClust
 __MoEClust__ will run in Windows, Mac OS X, or Linux. To install it you first need to install [R](https://cran.r-project.org/). Installing [RStudio](https://rstudio.com/) as a nice desktop environment for using R is also recommended.
@@ -58,6 +60,10 @@ To instead install the latest stable official release of the package from CRAN g
 install.packages('MoEClust')
 ```
 
+```{r, echo=FALSE}
+suppressMessages(library(mclust))
+```
+
 In either case, if you then type:
 
 ```{r}
@@ -66,7 +72,9 @@ library(MoEClust)
 
 it will load in all the __MoEClust__ functions.
 
-The GitHub version contains a few more features but some of these may not yet be fully tested, and occasionally this version might be liable to break when it is in the process of being updated.
+The GitHub version contains a few more features but some of these may not yet be fully tested, and occasionally this version might be liable to break when it is in the process of being updated. 
+
+If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). 
 
 ## CO2 Data
 Load the CO2 data.
@@ -94,20 +102,19 @@ Choose the best model among these. Specify `optimal.only=TRUE` so that only the 
 comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, optimal.only=TRUE)
 ```
 
-See if a better model can be found using greedy forward stepwise selection.
-Conduct a stepwise search on the same data.
+Now, see if a better model can be found using greedy forward stepwise selection, with the aid of the `MoE_stepwise` function, on the same data. By default, this starts from a single-component model and successively adds components and covariates to both networks, while evaluating each action over all possible model types, until a model which is optimal according to some criterion is found.
 
 ```{r}
 (mod1 <- MoE_stepwise(CO2, GNP, verbose=FALSE))
 ```
 
-Conduct another stepwise search considering models with a noise component.
+Next, conduct another stepwise search considering models with a noise component. This notably starts from a model with only a uniform noise component and then proceeds as above to add Gaussian components and covariates one at a time, accepting each action that increases a chosen criterion (`"bic"`, by default).
 
 ```{r} 
 (mod2 <- MoE_stepwise(CO2, GNP, noise=TRUE, verbose=FALSE))
 ```
 
-Compare all sets of results to choose the optimal model.
+Finally, compare all sets of results to choose the optimal model.
 
 ```{r}
 (best  <- MoE_compare(mod1, mod2, comp, pick=1)$optimal)
@@ -171,6 +178,10 @@ as.vector(suppressWarnings(predict(comp$optimal)$y))
 ```
 
 Now let's build a model on some of the CO2 data and retain the indices of the withheld observations:
+
+```{r, echo=FALSE}
+set.seed(4321)
+```
 
 ```{r, results="hide"}
 ind     <- sample(1:nrow(CO2data), 2)
@@ -273,7 +284,7 @@ Produce further visualisations for the Gaussian components with the aid of the `
 require("lattice")
 z <- factor(mod$classification[mod$classification > 0], 
             labels=paste0("Cluster", seq_len(mod$G)))
-splom(~ hema | ais$sex, groups=z)
+splom(~ hema | ais$sex, groups=z, xlab=NULL)
 ```
 
 ```{r, echo=FALSE, fig.height=4}
@@ -283,7 +294,7 @@ splom(~ hema | ais$sex, groups=z, xlab=NULL)
 ```
 
 ```{r, eval=FALSE}
-splom(~ hema | z, groups=ais$sex)
+splom(~ hema | z, groups=ais$sex, xlab=NULL)
 ```
 
 ```{r, echo=FALSE, fig.height=4}

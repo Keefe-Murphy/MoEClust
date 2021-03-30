@@ -335,7 +335,10 @@
       gate.x      <- FALSE
     }
     gate.G        <- ifelse((range.G + !noise.null) > 1, gate.x, FALSE)
-    if(gate.x)    {
+    if(gate.x)     {
+      gvars       <- setdiff(all.vars(gating), c(".", x.names))
+      if(!netmiss && length(gvars)   > 0 &&
+         !all(gvars %in% names(netdat)))          stop("One or more variables in 'gating' formula not found in 'network.data'", call.=FALSE)
       if(inherits(try(stats::terms(gating), silent=TRUE), "try-error")) {
         if(netmiss)                               stop("Can't use '.' in 'gating' formula without supplying 'network.data' argument", call.=FALSE)
         gating    <- setdiff(attr(stats::terms(gating, data=network.data), "term.labels"), x.names)
@@ -370,6 +373,9 @@
       exp.x       <- FALSE
     }
     if(exp.x)      {
+      evars       <- setdiff(all.vars(expert), c(".", x.names))
+      if(!netmiss && length(evars)   > 0 &&
+         !all(evars %in% names(netdat)))          stop("One or more variables in 'expert' formula not found in 'network.data'", call.=FALSE)
       if(inherits(try(stats::terms(expert), silent=TRUE), "try-error"))   {
         if(netmiss)                               stop("Can't use '.' in 'expert' formula without supplying 'network.data' argument", call.=FALSE)
         expert    <- setdiff(attr(stats::terms(expert, data=network.data), "term.labels"), x.names)
@@ -3279,11 +3285,6 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(any(res$posidens))                         warning("Potentially spurious solutions with positive log-densities were chosen at one or more steps\n", call.=FALSE)
       return(res)
   }
-
-#' @export
-  as.Mclust       <- function(x, ...) {
-      UseMethod("as.Mclust")
-  }
   
 #' Convert MoEClust objects to the Mclust class
 #'
@@ -3299,17 +3300,17 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' In the presence of expert network covariates, the component-specific covariance matrices are (by default, via the argument \code{expert.covar}) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
 #'
 #' The \code{signif} argument is intended only to aid visualisation via \code{\link[mclust]{plot.Mclust}}, as plots therein can be sensitive to outliers, particularly with regard to axis limits.
-#' @note Of the functions which can be applied to the result of the conversion, \code{\link[mclust]{logLik.Mclust}} shouldn't be trusted in the presence of either expert network covariates, or (for models with more than 1 component) gating network covariates.
+#' @note Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
 #'
-#' Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
-#'
-#' Plots may be quite misleading in the presence of gating &/or expert covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
+#' Plots may be quite misleading in the presence of gating &/or (especially) expert network covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
+#' 
+#' Predictions (via \code{\link[mclust]{predict.Mclust}}) will also be misleading in the presence of covariates of any kind when \code{newdata} is supplied; thus, users are \strong{strongly} encouraged to use \code{\link{predict.MoEClust}} instead. 
 #'
 #' The functions \code{\link[mclust]{clustCombi}} and \code{\link[mclust]{clustCombiOptim}} can be safely used (provided \code{as.Mclust(x)} is supplied as the \code{object} argument to \code{\link[mclust]{clustCombi}}), as they only rely on \code{x$z} and \code{x$G} only. See the examples below.
 #' 
 #' Users may expect MoEClust models with no covariates of any kind to be identical to models fitted via \pkg{mclust}, but this is not necessarily true: see the \code{\link{MoE_control}} argument \code{asMclust}.
 #' @importFrom matrixStats "colMeans2"
-#' @importFrom mclust "as.Mclust.default" "clustCombi" "clustCombiOptim" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "sigma2decomp" "summary.Mclust"
+#' @importFrom mclust "as.Mclust" "clustCombi" "clustCombiOptim" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "sigma2decomp" "summary.Mclust"
 #' @method as.Mclust MoEClust
 #' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}, \code{\link{MoE_control}}
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
@@ -3325,9 +3326,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @export
 #' @name as.Mclust
 #' @examples
-#' \donttest{# library(mclust)
-#' 
-#' # Fit a gating network mixture of experts model to the ais data
+#' \donttest{# Fit a gating network mixture of experts model to the ais data
 #' # data(ais)
 #' # mod   <- MoE_clust(ais[,3:7], G=1:9, gating= ~ BMI + sex, network.data=ais)
 #'
@@ -3363,15 +3362,16 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     x$uncertainty         <- if(uni)                 unname(x$uncertainty) else x$uncertainty
     x$classification      <- if(uni)              unname(x$classification) else x$classification
     x$parameters$pro      <- if(gating)        colMeans2(x$parameters$pro) else x$parameters$pro
-    x$parameters$variance <- if(isTRUE(expert.covar)    &&
+    x$parameters$variance <- if(isTRUE(expert.covar) &&
                                 expert)  suppressWarnings(expert_covar(x)) else x$parameters$variance
     x$data        <- if(signif > 0)   apply(x$data, 2L, .trim_out, signif) else x$data
     x$modelName   <- ifelse(x$G == 0, "EII", x$modelName)
     colnames(x$z) <- NULL
-    x             <- x[-which(is.element(names(x), c("ICL", "icl", "AIC", "aic", "gating", "expert", "LOGLIK", "linf", "iters", "net.covs", "resid.data", "DF", "ITERS")))]
+    x             <- x[-which(is.element(names(x), c("ICL", "AIC", "aic", "gating", "expert", "LOGLIK", "linf", "iters", "net.covs", "resid.data", "DF", "ITERS")))]
     name.x        <- names(x)
     attributes(x) <- NULL
     names(x)      <- name.x
+    x             <- x[c("call", "data", "modelName", "n", "d", "G", "BIC", "loglik", "df", "bic", "icl", "hypvol", "parameters", "z", "classification", "uncertainty")]
     class(x)      <- "Mclust"
       x
   }
@@ -4028,9 +4028,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     noise         <- !is.na(hypvol)
     equalP        <- G <= 1  || attr(x$gating,   "EqualPro")
     equalN        <- noise   && attr(x$gating, "EqualNoise") && equalP
-    cat(paste0("\nBest Model", ifelse(length(x$BIC) > 1, paste0(" (according to ", toupper(attr(x, "Criterion")), "): "), ": "), 
+    cat(paste0("\nBest Model", ifelse(length(x$BIC) > 1, paste0(" (according to ", toupper(attr(x, "Criterion")), "):\n"), ":\n"), 
                ifelse(G == 0, "single noise component",  paste0(mclustModelNames(name)$type, " (", name, "), with ",
-               G, " component", ifelse(G   > 1, "s",   ""))), ifelse(G == 0 || !noise,   "\n", " (and a noise component)\n"),
+               G, " component", ifelse(G   > 1, "s",   ""))), ifelse(G == 0 || !noise,   "\n\n", " (and a noise component)\n\n"),
                ifelse(!equalP |
                       G <= 1,  "",   paste0("Equal Mixing Proportions", ifelse(equalN | G <= 1 | !noise, "\n", " (with estimated noise component mixing proportion)\n"))),
                ifelse(!noise,  "",   paste0("Hypervolume of Noise Component: ", round(hypvol, digits), "\n")),

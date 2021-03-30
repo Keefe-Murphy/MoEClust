@@ -487,11 +487,11 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(boxplot.pars$box.col))  {
    boxplot.pars$box.col <- "black"
   }
+  boxplot.pars$varwidth <- !is.null(boxplot.pars$varwidth) && isTRUE(boxplot.pars$varwidth)
+  boxplot.pars$notch    <- !is.null(boxplot.pars$notch)    && isTRUE(boxplot.pars$notch)
   if(is.null(boxplot.pars$notch.frac))    {
     boxplot.pars$notch.frac         <- 0.5
   }
-  boxplot.pars$varwidth <- is.null(boxplot.pars$varwidth) || isTRUE(boxplot.pars$varwidth)
-  boxplot.pars$notch    <- is.null(boxplot.pars$notch)    || isTRUE(boxplot.pars$notch)
   if(is.null(boxplot.pars$box.fill))      {
    boxplot.pars$box.fill            <- noise.cols
   } else {

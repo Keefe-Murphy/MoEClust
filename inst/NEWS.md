@@ -32,7 +32,11 @@ __and a Noise Component__
   * Fixes re: `scatter.pars$eci.col`: now governs colours of ellipses and regression lines.
   * Fixes to axis labels for diagonal panels involving factors.
   * Various colour-related args. now inherit sensible defaults if scatter plot colours are specified.
+* Fixed conflict between `mclust::as.Mclust` & `MoEClust::as.Mclust`:  
+`as.Mclust.MoEClust` now works regardless of order in which `mclust` & `MoEClust` are loaded.
+* Stronger checks for variables in `gating` & `expert` formulas which are not found in `network.data`.
 * Minor speed-ups to some other utility functions.
+* Minor vignette edits.
 
 ## MoEClust v1.3.3 - (_11<sup>th</sup> release [patch update]: 2020-12-29_)
 ### New Features, Improvements, Bug Fixes & Miscellaneous Edits
