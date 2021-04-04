@@ -8,6 +8,7 @@ vignette: >
   %\VignetteIndexEntry{MoEClust}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteDepends{grDevices}
   %\VignetteDepends{mclust}
   %\VignetteDepends{lattice}
 ---
@@ -141,8 +142,8 @@ y.name <- names(res$data)
 x      <- as.matrix(res$net.covs)
 y      <- as.matrix(res$data)
 plot(x=x, y=y, main=substitute(atop(paste('CO'[2], " Data"), paste(Mname, " model, G=", rG, ", equal mixing proportions, incl. expert network covariate: GNP")), list(Mname=res$modelName, rG=G)), ylab=expression('CO'[2]), xlab="GNP", type="n", cex.main=0.95)
-x.new  <- setNames(seq(par("usr")[1L], par("usr")[2L], length=100L), rep("GNP", 100L))
-y.new  <- setNames(seq(par("usr")[3L], par("usr")[4L], length=100L), rep("CO2", 100L))
+x.new  <- setNames(seq(par("usr")[1L], par("usr")[2L], length=500L), rep("GNP", 500L))
+y.new  <- setNames(seq(par("usr")[3L], par("usr")[4L], length=500L), rep("CO2", 500L))
 grid   <- expand.grid(x.new, y.new)
 getden <- function(x, y, res) {
   sig  <- res$parameters$variance$modelName
@@ -238,7 +239,7 @@ Visualise the results for the optimal model using a generalised pairs plot.
 plot(mod, what="gpairs")
 ```
 
-Replace the scatter plots in response vs. response panels with bivariate density contours. Note that this is liable to be slow for models with expert network covariates.
+Replace the scatterplots in response vs. response panels with bivariate density contours. Note that this is liable to be slow for models with expert network covariates.
 
 ```{r}
 plot(mod, what="gpairs", response.type="density")

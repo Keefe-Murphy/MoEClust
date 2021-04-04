@@ -44,7 +44,9 @@ The functions \code{\link[mclust]{clustCombi}} and \code{\link[mclust]{clustComb
 Users may expect MoEClust models with no covariates of any kind to be identical to models fitted via \pkg{mclust}, but this is not necessarily true: see the \code{\link{MoE_control}} argument \code{asMclust}.
 }
 \examples{
-\donttest{# Fit a gating network mixture of experts model to the ais data
+\donttest{# library(mclust)
+
+# Fit a gating network mixture of experts model to the ais data
 # data(ais)
 # mod   <- MoE_clust(ais[,3:7], G=1:9, gating= ~ BMI + sex, network.data=ais)
 

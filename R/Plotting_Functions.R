@@ -9,7 +9,7 @@
 #' \item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the covariates.}
 #' }
 #' The result of the subsetting must include at least two variables, whether they be the MAP classification, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting.
-#' @param response.type The type of plot desired for the scatter plots comparing continuous response variables. Defaults to \code{"points"}. See \code{scatter.pars} below.
+#' @param response.type The type of plot desired for the scatterplots comparing continuous response variables. Defaults to \code{"points"}. See \code{scatter.pars} below.
 #'
 #' Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In doing so, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data). See \code{scatter.pars} below.
 #'
@@ -21,7 +21,7 @@
 #' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data. The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$eci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. The \code{"yes"} or \code{"no"} options merely govern whether the ellipses are drawn, i.e. \code{"yes"} draws ellipses without any colouring. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
 #'
 #' Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
-#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
+#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} and only relevant for models with expert network covariates.
 #' @param border.col A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 #'
 #' Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.
@@ -32,17 +32,17 @@
 #' @param outer.labels The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.
 #' @param outer.rot A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels. Defaults to \code{c(0, 90)}.
 #' @param gap The gap between the tiles; defaulting to \code{0.05} of the width of a tile.
-#' @param buffer The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to \code{0.025}, i.e. 2.5 percent of the range.
-#' @param uncert.cov A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and stripplot panels.
-#' @param scatter.pars A list supplying select parameters for the continuous vs. continuous scatter plots.
+#' @param buffer The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to \code{0.025}, i.e. 2.5 percent of the range. Particularly useful when ellipses are drawn (see \code{addEllipses}) to ensure ellipses are visible in full.
+#' @param uncert.cov A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and strip plot panels. When \code{TRUE}, \code{scatter.pars$uncert.pch} is invoked as the plotting symbols for covariate-related scatterplot and strip plot panels, otherwise \code{scatter.pars$scat.pch} and \code{stripplot.pars$strip.pch} is invoked for such panels.
+#' @param scatter.pars A list supplying select parameters for the continuous vs. continuous scatterplots.
 #'
 #' \code{NULL} is equivalent to:
-#' \preformatted{list(scat.pch=if(response.type == "uncertainty") 19 else res$classification,
+#' \preformatted{list(scat.pch=res$classification, uncert.pch=19,
 #'      scat.col=res$classification, scat.size=unit(0.25, "char"), 
 #'      eci.col=1:res$G, noise.size=unit(0.2, "char")),}
 #' where \code{scat.pch}, \code{scat.col}, and \code{scat.size} give the plotting symbols, colours, and sizes of the points in scatterplot panels, respectively. Note that \code{eci.col} gives both a) the colour of the fitted lines &/or confidence intervals for expert-related panels when \code{scatter.type} is one of \code{"ci"} or \code{"lm"} and b) the colour of the ellipses (if any) when \code{addEllipses} is one of \code{"outer"}, \code{"inner"}, or \code{"both"} and the response data is multivariate. Note that \code{eci.col} will inherit a suitable default from \code{scat.col} instead if the latter is supplied but the former is not. 
 #' 
-#' Note also that \code{scat.size} will be modified on an observation-by-observation level when \code{response.type} is \code{"uncertainty"}. Furthermore, note that the default for \code{scat.pch} changes depending on whether \code{response.type} is given as \code{"points"} or \code{"uncertainty"}, though it can of course be modified in both cases. Finally, \code{noise.size} can be used to modify \code{scat.size} for observations assigned to the noise component (if any), but only when \code{response.type="points"}.
+#' Note also that \code{scat.size} will be modified on an observation-by-observation level when \code{response.type} is \code{"uncertainty"}. Furthermore, note that the behaviour for plotting symbols when \code{response.type="uncertainty"} changes compared to \code{response.type="points"} depending on the value of the \code{uncert.cov} argument above. \code{uncert.pch} gives the plotting symbol used for all scatterplot (and strip plot) panels when \code{response.type="uncertainty"} and \code{uncert.cov} is \code{TRUE}. However, when \code{uncert.cov} is \code{FALSE}, \code{scat.pch} is invoked for scatterplots involving covariates and \code{uncert.pch} is used for panels involving only response variables. Finally, \code{noise.size} can be used to modify \code{scat.size} for observations assigned to the noise component (if any), but only when \code{response.type="points"}.
 #' @param density.pars A list supplying select parameters for visualising the bivariate density contours, only when \code{response.type} is \code{"density"}.
 #'
 #' \code{NULL} is equivalent to:
@@ -54,7 +54,7 @@
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(strip.pch=res$classification, strip.size=unit(0.5, "char"),
 #'      strip.col=res$classification, jitter=TRUE, size.noise=unit(0.4, "char")),}
-#' where \code{strip.size} and \code{size.noise} retain the definitions for the similar arguments under \code{scatter.pars} above. However, \code{stripplot.pars$size.noise} is invoked regardless of the \code{response.type} (in contrast to \code{scatter.pars$noise.size}). Notably, \code{strip.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
+#' where \code{strip.size} and \code{size.noise} retain the definitions for the similar arguments under \code{scatter.pars} above. However, \code{stripplot.pars$size.noise} is invoked regardless of the \code{response.type} (in contrast to \code{scatter.pars$noise.size}). Notably, \code{strip.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not. Note also that the \code{strip.pch} default is modified to \code{scatter.pars$uncert.pch} if \code{uncert.cov} is \code{TRUE}.
 #' @param boxplot.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"boxplot"} or \code{"violin"}.
 #' 
 #' \code{NULL} is equivalent to:
@@ -94,7 +94,7 @@
 #' @importFrom vcd "strucplot"
 #'
 #' @return A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
-#' @note For \code{MoEClust} models with more than one associated covariate (entering either network), fitted lines produced in continuous covariate vs. continuous response scatter plots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
+#' @note For \code{MoEClust} models with more than one expert network covariate, fitted lines produced in continuous covariate vs. continuous response scatterplots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
 #'
 #' \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots. Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #' 
@@ -302,7 +302,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(res$d  > 1) {
     res$parameters$varianceX    <- if(isTRUE(drawEllipses) && 
                                       isTRUE(expert.covar) &&
-                                      attr(res, "Expert")) suppressMessages(expert_covar(res)) else res$parameters$variance
+                                      attr(res, "Expert")) suppressMessages(expert_covar(res, ...)) else res$parameters$variance
   }
   upr.gate <- grepl("2", scatter.type[1L])
   low.gate <- grepl("2", scatter.type[2L])
@@ -350,8 +350,11 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(length(buffer)     != 1    || (!is.numeric(buffer) ||
      buffer < 0))                                     stop("'buffer' must be single strictly non-negative number", call.=FALSE)
   if(is.null(scatter.pars$scat.pch))  {
-    scatter.pars$pch    <- if(response.type == "uncertainty") 19 else symbols[claSS]
-  } else scatter.pars$pch         <- scatter.pars$scat.pch
+    scatter.pars$scat.pch         <- symbols[claSS]
+  }
+  if(is.null(scatter.pars$uncert.pch))       {
+    scatter.pars$uncert.pch       <- 19L
+  }
   if(is.null(scatter.pars$scat.size)) {
     scatter.pars$size   <- grid::unit(0.25, "char")
   } else scatter.pars$size        <- scatter.pars$scat.size
@@ -450,8 +453,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   } else if(length(diag.pars$show.counts) > 1 ||
             !is.logical(diag.pars$show.counts))       stop("'diag.pars$show.counts' must be a single logical indicator", call.=FALSE)
   if(is.null(stripplot.pars$strip.pch)) {
-    stripplot.pars$pch  <- if(response.type   == "uncertainty" && uncert.cov) 19L else symbols[claSS]
-  } else stripplot.pars$pch       <- if(response.type  == "uncertainty" && uncert.cov) 19L else stripplot.pars$strip.pch
+    stripplot.pars$pch            <- if(response.type == "uncertainty" && uncert.cov) scatter.pars$uncert.pch else symbols[claSS]
+  } else stripplot.pars$pch       <- if(response.type == "uncertainty" && uncert.cov) scatter.pars$uncert.pch else stripplot.pars$strip.pch
   if(length(uncert.cov)  > 1                  ||
      !is.logical(uncert.cov))                         stop("'uncert.cov' must be a single logical indicator", call.=FALSE)
   uncert.cov            <- uncert.cov   && response.type == "uncertainty"
@@ -619,9 +622,10 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
           if(response.type == "density" && all(j <= dcol, i <= dcol)) {
             .density_panel(cbind(x[,j], x[,i]), dimens=c(subset$data.ind[j - subset$show.map], subset$data.ind[i - subset$show.map]), res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border)
           } else {
-            .scatter_panel(x=x[,j], y=x[,i], type=ifelse(j > dcol && i <= dcol, ifelse(upr.gate || (j %in% c(expx, both)), upr.exp, "points"), ifelse(j <= dcol && i <= dcol, ifelse(drawEllipses, "ellipses", "points"), ifelse(j <= dcol && (low.gate || (i %in% c(expx, both))), low.exp, "points"))),
+            scatter.pars$pch   <- if(response.type == "uncertainty" && (all(j <= dcol, i <= dcol) || isTRUE(uncert.cov))) scatter.pars$uncert.pch else scatter.pars$scat.pch
+            .scatter_panel(x=x[,j], y=x[,i], type=ifelse(j > dcol   && i <= dcol, ifelse(upr.gate || (j %in% c(expx, both)), upr.exp, "points"), ifelse(j <= dcol && i <= dcol, ifelse(drawEllipses, "ellipses", "points"), ifelse(j <= dcol && (low.gate || (i %in% c(expx, both))), low.exp, "points"))),
                            scatter.pars=scatter.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, z=z, G=G, res=res, dimens=c(subset$data.ind[j - subset$show.map], subset$data.ind[i - subset$show.map]), outer.rot=outer.rot, bg=bg, mvn.type=addEllipses, border=border,
-                           uncertainty=if(response.type == "uncertainty" && (uncert.cov || (i <= dcol && j <= dcol))) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$eci.col)
+                           uncertainty=if(response.type == "uncertainty" && (uncert.cov  || (i <= dcol && j <= dcol))) uncertainty else NA, mvn.col=if(colEllipses) scatter.pars$eci.col)
           }
         }
         if(all(is.factor(x[,i]),  is.factor(x[,j]))) {
@@ -1321,7 +1325,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   }, ci=   {
     for(g in seq_len(G)) {
       xy.lm <- stats::lm(y ~ x, weights=z[,g])
-      xy    <- data.frame(x = seq(min(x, na.rm=TRUE), max(x, na.rm=TRUE), length.out=25))
+      xy    <- data.frame(x = seq(min(x, na.rm=TRUE), max(x, na.rm=TRUE), length.out=25L))
       yhat  <- stats::predict(xy.lm, newdata=xy, interval="confidence")
       ci    <- data.frame(lower=yhat[, "lwr"], upper=yhat[, "upr"])
       panel.abline(xy.lm$coef[1L], xy.lm$coef[2L], col=scatter.pars$eci.col[g], lwd=1)
