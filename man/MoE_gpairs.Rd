@@ -183,7 +183,7 @@ MoE_gpairs(res, response.type="density", show.labels=FALSE,
 # Use barcode plots for the categorical/continuous pairs.
 # Magnify the size of scatter points assigned to the noise component.
 
-resN  <- MoE_clust(ais[,3:7], G=2, gating=~SSF + Ht, expert=~sex,
+resN  <- MoE_clust(ais[,3:7], G=2, gating= ~ SSF + Ht, expert= ~ sex,
                    network.data=ais, modelNames="EEE", tau0=0.1, noise.gate=FALSE)
                    
 MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), 

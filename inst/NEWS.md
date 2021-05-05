@@ -5,6 +5,7 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.4.0 - (_12<sup>th</sup> release [minor update]: 2021-06-21_)
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
 * Various edits to `MoE_stepwise()` (thanks, in part, to requests from Dr. Konstantinos Perrakis):  
   * Added `initialModel` arg. for specifying an initial model from which to begin the search,  
@@ -39,12 +40,18 @@ __and a Noise Component__
 * `expert_covar` gains the arg. `weighted` to ensure cluster membership probabilities are properly  
   accounted for in estimating the extra variability due to the component means: defaults to `TRUE`,  
   but `weighted=FALSE` is provided as an option for recovering the old (not recommended) behaviour.
+* A warning message is now printed if the MLR in the gating network ever fails to converge,  
+  prompting the user to modify the `itmax` arg. to `MoE_control`: the 3<sup>rd</sup> element of this arg. governs  
+  the maximum number of MLR iterations --- consequently, its default has been modified from `100` to  
+  `1000` (thanks to a prompt from Dr. Georgios Karagiannis), which has the effect of slowing down  
+  internal calls to `nnet::multinom` but generally reduces the required number of EM iterations. 
 * Minor fix to `MoE_compare` whenever the optimal model needs to be refitted.
 * Fixed conflict between `mclust::as.Mclust` & `MoEClust::as.Mclust`:  
 `as.Mclust.MoEClust` now works regardless of order in which `mclust` & `MoEClust` are loaded.
 * Stronger checks for variables in `gating` & `expert` formulas which are not found in `network.data`.
+* Minor speed-up to initialisation for univariate response data with expert network covariates.
 * Minor speed-ups to some other utility functions.
-* Minor documentation and vignette edits.
+* Minor documentation, vignette, and vignette styling edits.
 
 ## MoEClust v1.3.3 - (_11<sup>th</sup> release [patch update]: 2020-12-29_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
@@ -75,7 +82,7 @@ __and a Noise Component__
 * Package startup message now checks if newer version of package is available from CRAN.
 * Updated citation info after publication in _Advances in Data Analysis and Classification_.
 * Updated maintainer e-mail address.
-* Minor documentation, examples, and CRAN compliance + `mclust` compatability edits.
+* Minor documentation, examples, and CRAN compliance + `mclust` compatibility edits.
 
 ## MoEClust v1.3.1 - (_9<sup>th</sup> release [patch update]: 2020-05-12_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
@@ -94,7 +101,7 @@ __and a Noise Component__
     * `MoE_mahala` now correctly uses the covariance of `resids` rather than the response.
     * New `MoE_mahala` arg. `identity` allow use of Euclidean distance instead:  
     this argument can also be passed via `exp.init$identity` to `MoE_control`.
-    * Convergence of the initialisation procedure now explictly monitored & sped-up.
+    * Convergence of the initialisation procedure now explicitly monitored & sped-up.
     * Values of the criterion being minimised are now returned as an attribute.
     * The number of iterations of the initialisation algorithm are also returned as an attribute.
     * `MoE_control` arg. `exp.init$max.init` now defaults to `.Machine$integer.max`.
@@ -263,7 +270,7 @@ __and a Noise Component__
 * Final `linf` estimate now returned for optimal model when `stopping="aitken"` & G > 1.
 * Removed redundant extra M-step after convergence for models without expert covariates.
 * Removed redundant & erroneous `resid` & `residuals` args. to `as.Mclust` & `MoE_gpairs`.
-* `MoE_plotCrit`, `MoE_plotGate` & `MoE_plotLogLik` now invisibly return revelant quantities.
+* `MoE_plotCrit`, `MoE_plotGate` & `MoE_plotLogLik` now invisibly return relevant quantities.
 * Corrected degrees of freedom calculation for `G=0` models when `noise.init` is not supplied.
 * Fixed `drop_levels` to handle alphanumeric variable names and ordinal variables.
 * Fixed `MoE_compare` when a mix of models with and without a noise component are supplied.

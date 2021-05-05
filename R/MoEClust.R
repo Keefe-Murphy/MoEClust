@@ -24,8 +24,8 @@
 #' \itemize{
 #' \item{Type: }{Package}
 #' \item{Package: }{MoEClust}
-#' \item{Version: }{1.3.3}
-#' \item{Date: }{2020-12-29 (this version), 2017-11-28 (original release)}
+#' \item{Version: }{1.4.0}
+#' \item{Date: }{2021-06-21 (this version), 2017-11-28 (original release)}
 #' \item{Licence: }{GPL (>=2)}
 #' }
 #'
@@ -42,9 +42,9 @@
 #' \donttest{data(ais)
 #' 
 #' # Fit two sets of models
-#' res1  <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
+#' res1  <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
 #'                    modelNames=c("VEE", "EVE", "VVE"), network.data=ais)
-#' res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert=~sex,
+#' res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert= ~ sex,
 #'                    modelNames=c("VEE", "EVE", "VVE"), network.data=ais) 
 #'         
 #' # Compare the best model from each set of results
@@ -89,7 +89,7 @@
   version <- read.dcf(path, "Version")
   name    <- read.dcf(path, "Package")
   if(interactive()) {
-    packageStartupMessage(paste("\n___  ___      _____ _____ _           _   \n|  \\/  |     |  ___/  __ \\ |         | |     Gaussian Parsimonious \n| .  . | ___ | |__ | /  \\/ |_   _ ___| |_   Clustering Models with\n| |\\/| |/ _ \\|  __|| |   | | | | / __| __|        Covariates and a\n| |  | | (_) | |___| \\__/\\ | |_| \\__ \\ |_          Noise Component\n\\_|  |_/\\___/\\____/ \\____/_|\\__,_|___/\\__|           version", version, "\n"))
+    packageStartupMessage(paste("\n___  ___      _____ _____ _           _   \n|  \\/  |     |  ___/  __ \\ |         | |     Gaussian Parsimonious \n| .  . | ___ | |__ | /  \\/ |_   _ ___| |_   Clustering Models with\n| |\\/| |/ _ \\|  __|| |   | | | | / __| __|\t  Covariates and a\n| |  | | (_) | |___| \\__/\\ | |_| \\__ \\ |_\t   Noise Component\n\\_|  |_/\\___/\\____/ \\____/_|\\__,_|___/\\__|\t     version", version, "\n"))
   } else   {
     packageStartupMessage("\nPackage ", sQuote(name), " version ", version, ".\n")
   }

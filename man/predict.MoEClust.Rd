@@ -78,7 +78,7 @@ Similarly, a dedicated \code{\link[=predict.MoE_expert]{predict}} function is al
 \examples{
 data(ais)
 # Fit a MoEClust model and predict the same data
-res     <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
+res     <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
                      modelNames="EVE", network.data=ais)
 pred1   <- predict(res)
 
@@ -91,7 +91,7 @@ ind     <- sample(1:nrow(ais), 5)
 dat     <- ais[-ind,]
 
 # Fit another MoEClust model to the retained data
-res2    <- MoE_clust(dat[,3:7], G=3, gating=~BMI + sex,
+res2    <- MoE_clust(dat[,3:7], G=3, gating= ~ BMI + sex,
                      modelNames="EEE", network.data=dat)
 
 # Predict held back data using the covariates & response variables

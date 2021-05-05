@@ -40,7 +40,7 @@ This function is effectively just a shortcut to \code{lapply(x$expert, predict.l
 }
 \examples{
 data(CO2data)
-res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert=~ GNP, network.data=CO2data)
+res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert= ~ GNP, network.data=CO2data)
 predict(res$expert)
 
 # Try with newdata and simplify=TRUE

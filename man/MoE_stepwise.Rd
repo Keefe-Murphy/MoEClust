@@ -100,7 +100,7 @@ Finally, if the user intends to search for the best model according to the \code
 # Look for models with noise & only those where the noise component's mixing proportion is constant
 # Speed up the search with an initialModel, fix G, and restrict the covariates & model type
 # init   <- MoE_clust(ais[,3:7], G=2, modelNames="EEE", 
-#                     expert=~sex, network.data=ais, tau0=0.1)
+#                     expert= ~ sex, network.data=ais, tau0=0.1)
 # (mod3  <- MoE_stepwise(ais[,3:7], ais, noise=TRUE, expert="sex",
 #                        gating=c("SSF", "Ht"), noise.gate="no", 
 #                        initialModel=init, stepG=FALSE, modelNames="EEE"))

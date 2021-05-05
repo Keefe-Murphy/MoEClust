@@ -16,7 +16,7 @@ MoE_control(init.z = c("hc", "quantile", "kmeans", "mclust", "random", "list"),
             nstarts = 1L,
             eps = .Machine$double.eps,
             tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08),
-            itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
+            itmax = c(.Machine$integer.max, .Machine$integer.max, 1000L),
             hc.args = list(...),
             km.args = list(...),
             posidens = TRUE,
@@ -85,11 +85,13 @@ Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"ai
 
 \item{eps}{A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of \code{eps} allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.}
 
-\item{tol}{A vector of length three giving relative convergence tolerances for 1) the log-likelihood of the EM/CEM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.}
+\item{tol}{A vector of length three giving \emph{relative} convergence tolerances for 1) the log-likelihood of the EM/CEM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.}
 
 \item{itmax}{A vector of length three giving integer limits on the number of iterations for 1) the EM/CEM algorithm, 2) the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) the multinomial logistic regression in the gating network, respectively.
 
-The default is \code{c(.Machine$integer.max, .Machine$integer.max, 100L)} allowing termination to be completely governed by \code{tol} for the inner and outer loops of the EM algorithm. If only one number is supplied, it is used as the iteration limit for the outer loop only.}
+The default is \code{c(.Machine$integer.max, .Machine$integer.max, 1000L)}, allowing termination to be completely governed by \code{tol[1]} & \code{tol[2]} for the inner and outer loops of the EM/CEM algorithm. If only one number is supplied, it is used as the iteration limit for the outer loop only and the other elements of \code{itmax} retain their usual defaults.
+
+If, for any model with gating covariates, the multinomial logistic regression in the gating network fails to converge in \code{itmax[3]} iterations at any stage of the EM/CEM algorithm, an appropriate warning will be printed, prompting the user to modify this argument.}
 
 \item{hc.args}{A list supplying select named parameters to control the initialisation of the cluster allocations when \code{init.z="hc"} (or when \code{init.z="mclust"}, which itself relies on \code{\link[mclust]{hc}}), unless \code{isTRUE(exp.init$clustMD)}, the \code{\link[clustMD]{clustMD}} library is loaded, and none of the \code{\link[clustMD]{clustMD}} model types fail (otherwise irrelevant):
 \describe{
@@ -156,11 +158,11 @@ res4  <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, control=ctrl1, init.z="kmea
 ctrl2 <- MoE_control(exp.init=list(clustMD=TRUE), init.crit="icl", equalPro=TRUE)
 data(ais)
 library(clustMD)
-res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
+res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
                    network.data=ais, control=ctrl2)
 
 # Include a noise component by specifying its prior mixing proportion
-res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
+res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
                    network.data=ais, tau0=0.1)}
 }
 \seealso{

@@ -113,7 +113,7 @@
 #' m5    <- MoE_clust(hema, G=2:3, expert= ~ sex + BMI, equalPro=TRUE)
 #' 
 #' # Fit models with gating covariates & an additional noise component
-#' m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating=~BMI, network.data=ais)
+#' m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating= ~ BMI, network.data=ais)
 #'
 #' # Extract the model with highest BIC
 #' (comp <- MoE_compare(m1, m2, m3, m4, m5, m6, criterion="bic"))
@@ -241,7 +241,7 @@
     gate.noise    <- (!noise.null     && ctrl$noise.gate) || noise.null
     if(missing(G) && !noise.null) G   <- 0L:9L
     if(any(G      != floor(G))        &&
-       any(G < ifelse(noise.null, 1, 0)))         stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")),   call.=FALSE)
+       any(G       < as.integer(noise.null)))     stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")),   call.=FALSE)
     if(any(G      >= n))        {
       G           <- G[G <= n]
       if(length(G) > 1)         {                 warning("Removing G values >= the number of observations\n",  call.=FALSE, immediate.=TRUE)
@@ -286,6 +286,7 @@
         mf1       <- c("EII", "EEI")
       }
     }
+    sq_maha       <- !uni
     low.dim       <- !uni && low.dim
     x.names       <- colnames(X)
     if(!multi)    {
@@ -326,7 +327,8 @@
       netdat      <- network.data
       if((!is.matrix(netdat)   &&
        !is.data.frame(netdat)) ||
-       is.null(colnames(netdat)))                 stop("'network.data' must be a data.frame or a matrix with named columns if supplied", call.=FALSE)
+         (ncol(netdat)   > 0   &&
+       is.null(colnames(netdat))))                stop("'network.data' must be a data.frame or a matrix with named columns if supplied", call.=FALSE)
       netdat      <- call$network.data <- as.data.frame(network.data)
     }
 
@@ -334,7 +336,7 @@
     if(allg0 && gate.x)         { if(verbose)     message("Can't include gating network covariates in a noise-only model\n")
       gate.x      <- FALSE
     }
-    gate.G        <- ifelse((range.G + !noise.null) > 1, gate.x, FALSE)
+    gate.G        <- (range.G   + !noise.null) > 1 & gate.x
     if(gate.x)     {
       gvars       <- setdiff(all.vars(gating), c(".", x.names))
       if(!netmiss && length(gvars)   > 0 &&
@@ -361,12 +363,12 @@
       gate.names  <- stats::terms(gating)
       gate.names  <- labels(gate.names)[attr(gate.names, "order") <= 1]
     } else gating <- stats::as.formula(zN ~ 1)
-    gate.noise    <- ifelse(gate.G, gate.noise, TRUE)
+    gate.noise    <- !gate.G    | gate.noise
     if(equalPro   && gate.x)    { if(verbose)     message("Can't constrain mixing proportions to be equal when gating covariates are supplied\n")
       equalPro    <- FALSE
     }
-    equal.tau     <- ifelse((range.G + !noise.null) == 1, TRUE, isTRUE(equalPro))   & !gate.G
-    equal.noise   <- ifelse((range.G + !noise.null) == 1, TRUE, isTRUE(equalNoise)) & equal.tau
+    equal.tau     <- (((range.G + !noise.null) == 1) | isTRUE(equalPro))   & !gate.G
+    equal.noise   <- (((range.G + !noise.null) == 1) | isTRUE(equalNoise)) & equal.tau
 
   # Define the expert formula
     if(allg0 && exp.x)          { if(verbose)     message("Can't include expert network covariates in a noise-only model\n")
@@ -580,6 +582,7 @@
 
   # Loop over range of G values and initialise allocations
     G.last        <- range.G[len.G]
+    MLRcon        <- TRUE
     for(g in range.G) {
       if(isTRUE(verbose))   {     message(paste0("\n", g, " cluster model", ifelse(multi, "s", ""), " -\n"))
         last.G    <- g == G.last
@@ -596,7 +599,7 @@
       z           <- matrix(0L, n, gN)
       stopGx      <- g > 1 && stopaX
       noiseG      <- !noise.null || g == 0
-      noise.gate  <- ifelse(noiseG, gate.noise[h], TRUE)
+      noise.gate  <- !noiseG     || gate.noise[h]
       Xinv        <- if(noiseG) Linv
 
     # Initialise Expert Network & Allocations
@@ -703,7 +706,7 @@
               }
               res              <- 
               res.G[[k]]       <- xN   - pred
-              mahala[[k]]      <- MoE_mahala(exp, res, squared=TRUE, identity=Identity)
+              mahala[[k]]      <- MoE_mahala(exp, res, squared=sq_maha, identity=Identity)
             }
           }
           if(!init.exp)  {
@@ -808,20 +811,21 @@
           g.init  <- multinom(gating, trace=FALSE, data=gate.covs[!noise,, drop=FALSE], maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
           tau     <- .tau_noise(stats::predict(g.init, type="probs", newdata=gate.covs), z[,gN])
         }
-        gate.pen  <- length(stats::coef(g.init)) + ifelse(noise.null, 0L, 1L) + ifelse(noise.gate, 0L, 1L)
-       #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="grouped")
+        gate.pen  <- length(stats::coef(g.init)) + as.integer(!noise.null) + as.integer(!noise.gate)
+       #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="ungrouped")
        #tau       <- stats::predict(g.init, type="response", newx=model.matrix(gating, data=gate.covs)[,-1L], s="lambda.1se")[,,1]
-       #gate.pen  <- g.init$glmnet.fit$df[which(g.init$glmnet.fit$lambda == g.init$lambda.1se)] + ifelse(noise.null, 1, 2)
+       #gate.pen  <- g.init$glmnet.fit$df[which(g.init$glmnet.fit$lambda == g.init$lambda.1se)] + as.integer(!noise.null) + 1L
         ltau      <- log(tau)
+        MLRcon    <- MLRcon    && g.init$convergence == 0
       } else      {
-        if(equal.pro && noiseG && !n0pro) {
+        if(equal.pro && noiseG && !n0pro)  {
           t0      <- mean(z.init[,gN])
           tau     <- c(rep((1 - t0)/g, g), t0)
         } else    {
           tau     <- if(equal.pro) rep(1/gN, gN) else col.z/n
         }
         ltau      <- .mat_byrow(log(tau), nrow=n, ncol=gN)
-        gate.pen  <- ifelse(equal.pro && g > 1, noiseG - n0pro, gN - 1L) + ifelse(noiseG, 1L, 0L)
+        gate.pen  <- ifelse(equal.pro && g > 1, noiseG - n0pro, gN - 1L) + as.integer(noiseG)
       }
       ltau.init   <- ltau
       failedM     <- NULL
@@ -841,7 +845,7 @@
         x.df      <- ifelse(g   > 0, nVarParams(modelName=modtype, d=d, G=g), 0L) + gate.pen
         if(g > 0  && expinitG)  {
          Mstep    <- try(mstep(data=G.res, modelName=modtype, z=z.alloc, control=control), silent=TRUE)
-         init.exp <- ifelse(inherits(Mstep, "try-error"), FALSE, attr(Mstep, "returnCode") >= 0)
+         init.exp <- !inherits(Mstep, "try-error") && attr(Mstep, "returnCode")  >= 0
         }
         if(expold != init.exp  && !eNO) {
           failedM <- c(failedM, modtype)
@@ -936,11 +940,12 @@
              fitG <- multinom(gating, trace=FALSE, data=gate.covs, maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
              tau  <- .tau_noise(fitG$fitted.values, z[,gN])
             }
-           #fitG  <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="grouped")
+           #fitG  <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="ungrouped")
            #tau   <- stats::predict(fitG, type="response", newx=model.matrix(gating, data=gate.covs)[,-1L], s="lambda.1se")[,,1]
             ltau  <- log(tau)
+            MLRcon             <- MLRcon && fitG$convergence == 0
           } else  {
-            if(equal.pro && !noise.null && !n0pro)  {
+            if(equal.pro && !noise.null  && !n0pro) {
               t0  <- mean(z[,gN])
               tau <- c(rep((1 - t0)/g, g), t0)
             } else   if(!equal.pro)      {
@@ -1120,21 +1125,23 @@
 
     n0pro         <- equal.noise[best.G]
     equal.pro     <- equal.tau[best.G]
-    noise.gate    <- ifelse(!noise.null, gate.noise[best.G], TRUE)
+    noise.gate    <- noise.null || gate.noise[best.G]
     if(!(bG       <- gate.G[best.G]))  {
       if(GN > 1)           {
        x.fitG     <- multinom(gating, trace=FALSE, data=gate.covs, maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
-       if(equal.pro    && !noise.null &&   !n0pro) {
+       if(equal.pro    && !noise.null &&   !n0pro)    {
          t0       <- mean(z[,GN])
          x.tau    <- c(rep((1 - t0)/G, G), t0)
        } else      {
          x.tau    <- if(n0pro) rep(1/GN, GN) else if(equal.pro)           rep(1/G, G) else x.fitG$fitted.values[1L,]
        }
        x.tau      <- stats::setNames(x.tau, paste0("Cluster", if(noise.null)     Gseq else c(Gseq, 0L)))
+       MLRcon     <- MLRcon    && x.fitG$convergence == 0
       }  else      {
-       x.fitG     <- suppressWarnings(stats::glm(z ~ 1, family=stats::binomial()))
-       attr(x.fitG, "Formula") <- "~1"
+       x.fitG     <- suppressWarnings(stats::glm(z ~ 1, family=stats::binomial(), maxit=g.itmax))
+       MLRcon     <- MLRcon    && isTRUE(x.fitG$converged)
       }
+      attr(x.fitG, "Formula")  <- "~1"
       if(equal.pro)        {
        if(!noise.null          && 
           !equal.noise)    {
@@ -1144,6 +1151,7 @@
        x.fitG$residuals        <- zN - x.fitG$fitted.values
       }
     } 
+    if(isFALSE(MLRcon))                           warning(paste0("\tFor one or more models, in one or more ", algo, " iterations, the multinomial logistic regression\n\t\tin the gating network failed to converge in ", g.itmax, " iterations:\n\t\tmodify the 3rd element of the 'itmax' argument to MoE_control()\n"), call.=FALSE, immediate.=TRUE)
     if(is.matrix(x.tau))   {
       colnames(x.tau)          <- paste0("Cluster", if(!noise.null)       c(Gseq, 0L) else Gseq)  
     } else x.tau  <- stats::setNames(x.tau, paste0("Cluster", if(!noise.null) c(Gseq, 0L) else Gseq))
@@ -1694,10 +1702,12 @@
 #' @param z.list A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1.
 #' @param nstarts The number of random initialisations to use when \code{init.z="random"}. Defaults to \code{1}. Results will be based on the random start yielding the highest estimated log-likelihood. Note that all \code{nstarts} random initialisations are affected by \code{exp.init$mahalanobis}, if invoked in the presence of expert network covariates, which may remove some of the randomness.
 #' @param eps A scalar tolerance associated with deciding when to terminate computations due to computational singularity in covariances. Smaller values of \code{eps} allow computations to proceed nearer to singularity. The default is the relative machine precision \code{.Machine$double.eps}, which is approximately \emph{2e-16} on IEEE-compliant machines.
-#' @param tol A vector of length three giving relative convergence tolerances for 1) the log-likelihood of the EM/CEM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.
+#' @param tol A vector of length three giving \emph{relative} convergence tolerances for 1) the log-likelihood of the EM/CEM algorithm, 2) parameter convergence in the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) optimisation in the multinomial logistic regression in the gating network, respectively. The default is \code{c(1e-05, sqrt(.Machine$double.eps), 1e-08)}. If only one number is supplied, it is used as the tolerance for all three cases given.
 #' @param itmax A vector of length three giving integer limits on the number of iterations for 1) the EM/CEM algorithm, 2) the inner loop for models with iterative M-step (\code{"VEI", "VEE", "EVE", "VVE", "VEV"}), and 3) the multinomial logistic regression in the gating network, respectively.
 #'
-#' The default is \code{c(.Machine$integer.max, .Machine$integer.max, 100L)} allowing termination to be completely governed by \code{tol} for the inner and outer loops of the EM algorithm. If only one number is supplied, it is used as the iteration limit for the outer loop only.
+#' The default is \code{c(.Machine$integer.max, .Machine$integer.max, 1000L)}, allowing termination to be completely governed by \code{tol[1]} & \code{tol[2]} for the inner and outer loops of the EM/CEM algorithm. If only one number is supplied, it is used as the iteration limit for the outer loop only and the other elements of \code{itmax} retain their usual defaults.
+#' 
+#' If, for any model with gating covariates, the multinomial logistic regression in the gating network fails to converge in \code{itmax[3]} iterations at any stage of the EM/CEM algorithm, an appropriate warning will be printed, prompting the user to modify this argument.
 #' @param hc.args A list supplying select named parameters to control the initialisation of the cluster allocations when \code{init.z="hc"} (or when \code{init.z="mclust"}, which itself relies on \code{\link[mclust]{hc}}), unless \code{isTRUE(exp.init$clustMD)}, the \code{\link[clustMD]{clustMD}} library is loaded, and none of the \code{\link[clustMD]{clustMD}} model types fail (otherwise irrelevant):
 #' \describe{
 #' \item{\code{hcUse}}{A string specifying the type of input variables to be used. This defaults to \code{"VARS"} here, unlike \pkg{mclust} which defaults to \code{"SVD"}. Other allowable values are documented in \code{\link[mclust]{mclust.options}}. See \code{asMclust} above.}
@@ -1742,7 +1752,7 @@
 #'             nstarts = 1L,
 #'             eps = .Machine$double.eps,
 #'             tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08),
-#'             itmax = c(.Machine$integer.max, .Machine$integer.max, 100L),
+#'             itmax = c(.Machine$integer.max, .Machine$integer.max, 1000L),
 #'             hc.args = list(...),
 #'             km.args = list(...),
 #'             posidens = TRUE,
@@ -1776,15 +1786,15 @@
 #' ctrl2 <- MoE_control(exp.init=list(clustMD=TRUE), init.crit="icl", equalPro=TRUE)
 #' data(ais)
 #' library(clustMD)
-#' res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
+#' res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
 #'                    network.data=ais, control=ctrl2)
 #'
 #' # Include a noise component by specifying its prior mixing proportion
-#' res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert=~sex,
+#' res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
 #'                    network.data=ais, tau0=0.1)}
   MoE_control     <- function(init.z = c("hc", "quantile", "kmeans", "mclust", "random", "list"), noise.args = list(...), asMclust = FALSE, equalPro = FALSE, exp.init = list(...), algo = c("EM", "CEM", "cemEM"), 
                               criterion = c("bic", "icl", "aic"), stopping = c("aitken", "relative"), z.list = NULL, nstarts = 1L, eps = .Machine$double.eps, tol = c(1e-05, sqrt(.Machine$double.eps), 1e-08),
-                              itmax = c(.Machine$integer.max, .Machine$integer.max, 100L), hc.args = list(...), km.args = list(...), posidens = TRUE, init.crit = c("bic", "icl"), warn.it = 0L, MaxNWts = 1000L, verbose = interactive(), ...) {
+                              itmax = c(.Machine$integer.max, .Machine$integer.max, 1000L), hc.args = list(...), km.args = list(...), posidens = TRUE, init.crit = c("bic", "icl"), warn.it = 0L, MaxNWts = 1000L, verbose = interactive(), ...) {
     if(!missing(algo)       && length(algo) > 1 ||
        !is.character(algo))                       stop("'algo' must be a single character string",      call.=FALSE)
     algo          <- match.arg(algo)
@@ -1851,7 +1861,8 @@
        any(itmax  != floor(itmax)))               stop("'itmax' must be of integer type",    call.=FALSE)
     if(any(itmax  <= 0))                          stop("'itmax' is not strictly positive",   call.=FALSE)
     if((len.itmax <- length(itmax)) > 3)          stop("'itmax' can be of length at most 3", call.=FALSE)
-    if(len.itmax  == 1)      itmax <- c(itmax, .Machine$integer.max, 100L)
+    if(len.itmax  == 1)      itmax <- c(itmax, .Machine$integer.max, 1000L)
+    if(len.itmax  == 2)                           stop("'itmax' must be of length 1 or 3",   call.=FALSE)
     inf           <- is.infinite(itmax)
     if(any(inf))        itmax[inf] <- .Machine$integer.max
     if(length(MaxNWts)  > 1 ||
@@ -1909,7 +1920,8 @@
                             convexhull=          {
                               suppressMessages(requireNamespace("geometry", quietly=TRUE)) && .version_above("geometry", "0.4.0")
                             }, 
-                            ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
+                            ellipsoidhull=       {
+                              suppressMessages(requireNamespace("cluster",  quietly=TRUE)) && .version_above("cluster",  "1.4.0") })
       if(!has.lib)                                stop(paste0("Use of the ", noise.args$noise.meth, " option for 'noise.args$noise.meth' requires loading the ",
                                                               switch(EXPR=noise.args$noise.meth, hypvol="'mclust'", convexhull="'geometry'",
                                                               ellipsoidhull="'cluster'"), "library"),   call.=FALSE)
@@ -2341,7 +2353,7 @@
 #' @examples
 #' data(ais)
 #' # Fit a MoEClust model and predict the same data
-#' res     <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
+#' res     <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
 #'                      modelNames="EVE", network.data=ais)
 #' pred1   <- predict(res)
 #' 
@@ -2354,7 +2366,7 @@
 #' dat     <- ais[-ind,]
 #'
 #' # Fit another MoEClust model to the retained data
-#' res2    <- MoE_clust(dat[,3:7], G=3, gating=~BMI + sex,
+#' res2    <- MoE_clust(dat[,3:7], G=3, gating= ~ BMI + sex,
 #'                      modelNames="EEE", network.data=dat)
 #'
 #' # Predict held back data using the covariates & response variables
@@ -2625,7 +2637,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'         ...)
 #' @examples 
 #' data(CO2data)
-#' res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert=~ GNP, network.data=CO2data)
+#' res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert= ~ GNP, network.data=CO2data)
 #' predict(res$expert)
 #' 
 #' # Try with newdata and simplify=TRUE
@@ -2722,8 +2734,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'         ...)
 #' @examples 
 #' data(ais)
-#' mod    <- MoE_clust(ais[,3:7], G=2, modelNames="EEE", gating=~SSF + Ht,
-#'                  expert=~sex, network.data=ais, tau0=0.1, noise.gate=FALSE)
+#' mod    <- MoE_clust(ais[,3:7], G=2, modelNames="EEE", gating= ~ SSF + Ht,
+#'                  expert= ~ sex, network.data=ais, tau0=0.1, noise.gate=FALSE)
 #' (preds <- predict(mod$gating, newdata=ais[1:5,]))
 #' 
 #' all.equal(preds, predict(mod, newdata=ais[1:5,])$pro) #TRUE
@@ -2896,7 +2908,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' # Look for models with noise & only those where the noise component's mixing proportion is constant
 #' # Speed up the search with an initialModel, fix G, and restrict the covariates & model type
 #' # init   <- MoE_clust(ais[,3:7], G=2, modelNames="EEE", 
-#' #                     expert=~sex, network.data=ais, tau0=0.1)
+#' #                     expert= ~ sex, network.data=ais, tau0=0.1)
 #' # (mod3  <- MoE_stepwise(ais[,3:7], ais, noise=TRUE, expert="sex",
 #' #                        gating=c("SSF", "Ht"), noise.gate="no", 
 #' #                        initialModel=init, stepG=FALSE, modelNames="EEE"))
@@ -3431,7 +3443,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(attr(x, "Expert"))  {
       if(x$d      == 1)    {
         if(isTRUE(weighted))      {
-          predVar <- as.vector(covw(fitted.MoEClust(x), x$z[,seq_len(G)], normalize=TRUE)$S)
+          predVar <- drop(covw(fitted.MoEClust(x), x$z[,seq_len(G)], normalize=TRUE)$S)
           x.sig$sigmasq   <- x.sig$sigmasq + sqrt(predVar)
         } else     {
           n       <- x$n
@@ -3720,12 +3732,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       } else icov <- chol2inv(.chol(covar))
      }
      res          <- rowSums2(resids  %*% icov * resids)
+      return(drop(if(isTRUE(squared)) res else sqrt(res)))
     }   else       {
     #covar        <- as.numeric(crossprod(resids)/(nrow(resids) - fit$rank))
      covar        <- 1L
-     res          <- (resids  * resids)/covar
+      return(drop(if(isTRUE(squared)) (resids  * resids)/covar else abs(resids)/covar))
     }
-      return(as.vector(if(isTRUE(squared)) res else sqrt(res)))
   }
 
 #' Approximate Hypervolume Estimate
@@ -3764,7 +3776,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   noise_vol       <- function(data, method = c("hypvol", "convexhull", "ellipsoidhull"), reciprocal = FALSE) {
     data          <- as.matrix(data)
     method        <- match.arg(method)
-    has.lib       <- switch(EXPR=method, hypvol=TRUE, convexhull=suppressMessages(requireNamespace("geometry", quietly=TRUE)), ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)))
+    has.lib       <- switch(EXPR=method, hypvol=TRUE, 
+                            convexhull=suppressMessages(requireNamespace("geometry",   quietly=TRUE)) && .version_above("geometry", "0.4.0"), 
+                            ellipsoidhull=suppressMessages(requireNamespace("cluster", quietly=TRUE)) && .version_above("cluster",  "1.4.0"))
     if(diff(dim(data))     > 0)                   stop("The hypervolume can only be estimated when there are more observations than variables, otherwise it should be specified as an independent tuning parameter",                   call.=FALSE)
     if(!has.lib)                                  stop(paste0("Use of the ", method, " 'method' option requires loading the ", switch(EXPR=method, hypvol="'mclust'", convexhull="'geometry'", ellipsoidhull="'cluster'"), "library"), call.=FALSE)
     if(length(reciprocal) != 1 ||
@@ -4012,14 +4026,13 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   }
   
   .unique_list    <- function(x)  {
-    x             <- lapply(x, function(x) { attributes(x) <- NULL; x} )
-      sum(duplicated.default(x, nmax=1L)) == length(x) - 1L
+    x             <- lapply(x,  function(x) { attributes(x) <- NULL; x} )
+      sum(duplicated.default(x, nmax=1L))  == (length(x)     - 1L)
   }
   
-  .version_above  <- function(pkg, than)   {
+  .version_above  <- function(pkg, version) {
     pkg           <- as.character(utils::packageVersion(pkg))
-    test          <- ifelse(test  <- identical(pkg, than), test, as.logical(utils::compareVersion(pkg, than)))
-      return(test)
+      identical(pkg, version) || (utils::compareVersion(pkg, version) >= 0)
   }
   
   .vol_ellipsoid  <- function(x)  {
@@ -4284,6 +4297,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     noise         <- attr(x, "Noise")
     equalNoise    <- noise   && equalpro
     gateNoise     <- noise   && !equalpro && formula != "~1"
+    if(ifelse(inherits(x, "multinom"),
+              x$convergence  == 1,
+              isTRUE(x$converged)))               warning("Multinomial logistic regression failed to converge", call.=FALSE, immediate.=TRUE)
     class(x)      <- class(x)[class(x)    != "MoE_gating"]
     if(isTRUE(call)          &&
       !is.null(cl <- x$call)) {
@@ -4294,10 +4310,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     print(stats::coef(x), ...)
     cat(paste("\nFormula:", formula, "\n"))
     cat(paste("Noise:",     noise,   "\n"))
-    if(gateNoise)    cat(paste("Noise Component Gating:", attr(x, "NoiseGate"), "\n"))
-    cat(paste("EqualPro:", equalpro, ifelse(equalNoise, "\n", "")))
-    if(equalNoise)   cat(paste("Noise Proportion Estimated:", !attr(x, "EqualNoise")))
-    if(equalpro)     message("\n\nCoefficients set to zero as this is an equal mixing proportion model")
+    if(gateNoise)                                 cat(paste("Noise Component Gating:", attr(x, "NoiseGate"), "\n"))
+    cat(paste("EqualPro:",  equalpro, ifelse(equalNoise, "\n", "")))
+    if(equalNoise)                                cat(paste("Noise Proportion Estimated:", !attr(x, "EqualNoise")))
+    if(equalpro)                                  message("\n\nCoefficients set to zero as this is an equal mixing proportion model")
       invisible()
   }
 

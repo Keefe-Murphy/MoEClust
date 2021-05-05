@@ -34,8 +34,8 @@ The package also contains two data sets: \code{ais} and \code{CO2data}.
 \itemize{
 \item{Type: }{Package}
 \item{Package: }{MoEClust}
-\item{Version: }{1.3.3}
-\item{Date: }{2020-12-29 (this version), 2017-11-28 (original release)}
+\item{Version: }{1.4.0}
+\item{Date: }{2021-06-21 (this version), 2017-11-28 (original release)}
 \item{Licence: }{GPL (>=2)}
 }
 }
@@ -50,9 +50,9 @@ Further details and examples are given in the associated vignette document:\cr
 \donttest{data(ais)
 
 # Fit two sets of models
-res1  <- MoE_clust(ais[,3:7], G=2, gating=~BMI, expert=~sex,
+res1  <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
                    modelNames=c("VEE", "EVE", "VVE"), network.data=ais)
-res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert=~sex,
+res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert= ~ sex,
                    modelNames=c("VEE", "EVE", "VVE"), network.data=ais) 
         
 # Compare the best model from each set of results

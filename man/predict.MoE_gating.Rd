@@ -46,8 +46,8 @@ Note that the \code{keep.noise} argument does \strong{not} correspond in any way
 }
 \examples{
 data(ais)
-mod    <- MoE_clust(ais[,3:7], G=2, modelNames="EEE", gating=~SSF + Ht,
-                 expert=~sex, network.data=ais, tau0=0.1, noise.gate=FALSE)
+mod    <- MoE_clust(ais[,3:7], G=2, modelNames="EEE", gating= ~ SSF + Ht,
+                 expert= ~ sex, network.data=ais, tau0=0.1, noise.gate=FALSE)
 (preds <- predict(mod$gating, newdata=ais[1:5,]))
 
 all.equal(preds, predict(mod, newdata=ais[1:5,])$pro) #TRUE

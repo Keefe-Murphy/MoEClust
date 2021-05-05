@@ -161,7 +161,7 @@
 #' # Use barcode plots for the categorical/continuous pairs.
 #' # Magnify the size of scatter points assigned to the noise component.
 #' 
-#' resN  <- MoE_clust(ais[,3:7], G=2, gating=~SSF + Ht, expert=~sex,
+#' resN  <- MoE_clust(ais[,3:7], G=2, gating= ~ SSF + Ht, expert= ~ sex,
 #'                    network.data=ais, modelNames="EEE", tau0=0.1, noise.gate=FALSE)
 #'                    
 #' MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), 
@@ -195,7 +195,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   gate  <- setdiff(attr(net, "Gating"), both)
   expx  <- setdiff(attr(net, "Expert"), both)
   if(is.null(subset$show.map)) {
-    subset$show.map <- ifelse(length(unique(claSS))  == 1, FALSE, (G + !is.na(res$hypvol)) > 1)
+    subset$show.map <- (length(unique(claSS)) != 1) && ((G + !is.na(res$hypvol) > 1))
   } else {
     if(length(subset$show.map) > 1  ||
        !is.logical(subset$show.map))                  stop("'subset$show.map' should be a single logical indicator", call.=FALSE)
@@ -316,7 +316,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     } else                                            stop("'outer.margins' are not valid", call.=FALSE)
   }
   if(is.null(outer.labels)) {
-    lab1   <- switch(EXPR=names(x)[1L], MAP=1L, ifelse(res$d == 1, 1L, 2L))
+    lab1   <- switch(EXPR=names(x)[1L], MAP=1L, as.integer(res$d != 1) + 1L)
     lab2   <- switch(EXPR=names(x)[1L], MAP=2L, 1L)
     outer.labels$top    <- vector("logical", N)
     outer.labels$top[seq(lab1,  N, by=2)] <- TRUE
@@ -1529,7 +1529,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
       }
       width     <- box.width
       y.fix     <- y - origin
-      fix.y     <- ifelse(!identical(show.counts, FALSE), 80, 90)
+      fix.y     <- ifelse(!isFALSE(show.counts), 80, 90)
       y.fix     <- if(max(y.fix) > fix.y) (y.fix * fix.y)/max(y.fix) else y.fix
       if(reference) panel.abline(h=origin, col=reference.line$col, lty=reference.line$lty, lwd=reference.line$lwd, identifier=paste(identifier, "abline", sep="."))
       panel.rect(x=x, y=rep(origin, length(x)), col=col, border=border, lty=lty, lwd=lwd, width=rep(width, length(x)), height=y.fix, just=c("centre", "bottom"), identifier=identifier)

@@ -132,7 +132,7 @@ m4    <- MoE_clust(hema, G=2:3, gating= ~ BMI, expert= ~ sex)
 m5    <- MoE_clust(hema, G=2:3, expert= ~ sex + BMI, equalPro=TRUE)
 
 # Fit models with gating covariates & an additional noise component
-m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating=~BMI, network.data=ais)
+m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating= ~ BMI, network.data=ais)
 
 # Extract the model with highest BIC
 (comp <- MoE_compare(m1, m2, m3, m4, m5, m6, criterion="bic"))
