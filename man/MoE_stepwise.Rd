@@ -48,13 +48,13 @@ If \code{initialModel} is not specified, the search starts from a \code{G=0} noi
 
 \item{equalPro}{A character string indicating whether models with equal mixing proportions should be considered. \code{"both"} means models with both equal and unequal mixing proportions will be considered, \code{"yes"} means only models with equal mixing proportions will be considered, and \code{"no"} means only models with unequal mixing proportions will be considered. Notably, no setting for \code{equalPro} is enough to rule out models with \code{gating} covariates from consideration.
 
-The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible mixing proportion constraints will be tried for the \code{initialModel} (if any, provided it doesn't contain gating covariate(s)) or \code{initialG} \emph{before} adding a component or additional covariates; ordinarily, this \code{equalPro} argument only governs whether mixing proportion constraints are considered as components are added.
+The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible mixing proportion constraints will be tried for the \code{initialModel} (if any, provided it doesn't contain gating covariate(s)) or \code{initialG} \emph{before} adding a component or additional covariates; otherwise, this \code{equalPro} argument only governs whether mixing proportion constraints are considered as components are added.
 
 Considering \code{"all"} (or \code{"both"}) equal and unequal mixing proportion models increases the search space and the computational burden, but this argument becomes irrelevant after a model, if any, with gating network covariate(s) is considered optimal for a given step. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. See \code{\link{MoE_control}} for more details.}
 
 \item{noise.gate}{A character string indicating whether models where the gating network for the noise component depends on covariates are considered. \code{"yes"} means only models where this is the case will be considered, \code{"no"} means only models for which the noise component's mixing proportion is constant will be considered and \code{"both"} means both of these scenarios will be considered.
 
-The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible gating network noise settings will be tried for the \code{initialModel} (if any, provided it contains gating covariates and a noise component) \emph{before} adding a component or additional covariates; ordinarily, this \code{noise.gate} argument only governs the inclusion/exclusion of this constraint as components or covariates are added.
+The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible gating network noise settings will be tried for the \code{initialModel} (if any, provided it contains gating covariates and a noise component) \emph{before} adding a component or additional covariates; otherwise, this \code{noise.gate} argument only governs the inclusion/exclusion of this constraint as components or covariates are added.
 
 Considering \code{"all"} (or \code{"both"}) settings increases the search space and the computational burden, but this argument is only relevant when \code{noise=TRUE} and \code{gating} covariates are being considered. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. See \code{\link{MoE_control}} for more details.}
 
@@ -84,7 +84,7 @@ At present, only additions (of components and covariates) are considered. In fut
 
 The function will attempt to remove duplicate variables found in both \code{data} and \code{network.data}; in particular, they will be removed from \code{network.data}. Users are however advised to careful specify \code{data} and \code{network.data} such that there are no duplicates, especially if the desired variable(s) should belong to \code{network.data}.
 
-Finally, if the user intends to search for the best model according to the \code{"icl"} \code{criterion}, then specifying either \code{initialModel} or \code{initialG} is advisable. This is because the algorithm otherwise starts with a single component and thus there is no entropy term, meaning the stepwise search can quickly and easily get stuck at G=1. See the examples below.
+Finally, if the user intends to search for the best model according to the \code{"icl"} \code{criterion}, then specifying either \code{initialModel} or \code{initialG} is advisable. This is because the algorithm otherwise starts with a single component and thus there is no entropy term, meaning the stepwise search can quickly and easily get stuck at \code{G=1}. See the examples below.
 }
 \examples{
 \donttest{# data(CO2data)

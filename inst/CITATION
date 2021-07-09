@@ -1,6 +1,6 @@
 citHeader("To cite the 'MoEClust' package in publications, please use:")
 
-citEntry(entry  = "Article",
+citEntry(entry = "Article",
   author  = personList(person(given="Keefe", family="Murphy"),
                        person(given=c("Thomas", "Brendan"), family="Murphy")),
   title   = "Gaussian Parsimonious Clustering Models with Covariates and a Noise Component",
@@ -12,17 +12,17 @@ citEntry(entry  = "Article",
   pages   = "293--325",
   url     = "https://doi.org/10.1007/s11634-019-00373-8",
 
-  textVersion   =
+  textVersion  =
     paste0("Keefe Murphy and T. Brendan Murphy (2020). ",
            "Gaussian Parsimonious Clustering Models with Covariates and a Noise Component. ",
            "Advances in Data Analysis and Classification, 14(2): 293-325. ",
-           "URL: https://doi.org/10.1007/s11634-019-00373-8")
+           "URL: https://doi.org/10.1007/s11634-019-00373-8.")
 )
 
 year     <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
 vers     <- paste("package version", meta$Version)
 
-citEntry(entry  = "Manual",
+citEntry(entry = "Manual",
   author  = personList(person(given="Keefe", family="Murphy"),
                        person(given=c("Thomas", "Brendan"), family="Murphy")),
   title   = "\\texttt{\\textup{MoEClust}}: {G}aussian Parsimonious Clustering Models with Covariates and a Noise Component",
@@ -30,8 +30,9 @@ citEntry(entry  = "Manual",
   note    = paste0("\\textsf{R} ", vers),
   url     = "https://cran.r-project.org/package=MoEClust",
 
-  textVersion   =
+  textVersion  =
     paste0("Keefe Murphy and T. Brendan Murphy (", year, "). ",
-           "MoEClust: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component. ",
-           "URL: https://cran.r-project.org/package=MoEClust ", "R ", vers)
+           "MoEClust: Gaussian Parsimonious Clustering Models with Covariates and a Noise Component. ", 
+           "R ", vers, 
+           ". URL: https://cran.r-project.org/package=MoEClust.")
 )

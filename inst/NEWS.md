@@ -5,6 +5,9 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+* Small `MoE_stepwise` speed-up by searching `G=1` `equalPro` models w/ expert covariates only once.
+
 ## MoEClust v1.4.0 - (_12<sup>th</sup> release [minor update]: 2021-06-21_)
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
 * Various edits to `MoE_stepwise()` (thanks, in part, to requests from Dr. Konstantinos Perrakis):  
@@ -139,7 +142,7 @@ __and a Noise Component__
 * Slight speed-up to E-step/C-step for models with a noise component.
 * Initial allocation matrices now stored as attributes to `MoE_clust` output (see `?MoE_control`).
 * Anti-aliasing of vignette images.
-* Updated citation info after publication in _Advances in Data Analysis and Classification_.
+* Updated citation info after online publication in _Advances in Data Analysis and Classification_.
 
 ## MoEClust v1.2.3 - (_6<sup>th</sup> release [patch update]: 2019-07-29_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits

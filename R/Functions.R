@@ -312,9 +312,11 @@
     all.mod       <- if(all(multi, !uni, Gany)) mclust.options("emModelNames") else unique(c(if(anyg0) mf0, if(any(G == 1)) mf1, if(any(G > 1)) mfg))
     multi         <- length(all.mod)    > 1L
     if(!miss.list) {
-      if(length(z.list) != len.G)                 stop(paste0("'z.list' must be a list of length ", len.G),              call.=FALSE)  
-      if(!all(sapply(z.list, ncol)     == G))     stop("Each element of 'z.list' must have 'G' columns",                 call.=FALSE)
-      if(!all(sapply(z.list, nrow)     == n))     stop(paste0("Each element of 'z.list' must have N=", n, " rows"),      call.=FALSE) 
+      if(length(z.list)   != len.G)               stop(paste0("'z.list' must be a list of length ", len.G),              call.=FALSE)  
+      if(!all(pmax(G, 1L) ==
+              vapply(z.list, ncol, numeric(1L)))) stop("Each element of 'z.list' must have 'G' columns",                 call.=FALSE)
+      if(!all(n           == 
+              vapply(z.list, nrow, numeric(1L)))) stop(paste0("Each element of 'z.list' must have N=", n, " rows"),      call.=FALSE) 
       exp.init$clustMD         <- FALSE
     }
     if(all(miss.list, init.z   == "list"))        stop(paste0("'z.list' must be supplied if 'init.z' is set to 'list'"), call.=FALSE)
@@ -812,7 +814,7 @@
           tau     <- .tau_noise(stats::predict(g.init, type="probs", newdata=gate.covs), z[,gN])
         }
         gate.pen  <- length(stats::coef(g.init)) + as.integer(!noise.null) + as.integer(!noise.gate)
-       #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="ungrouped")
+       #g.init    <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L, drop=FALSE], family="multinomial", type.multinomial="ungrouped")
        #tau       <- stats::predict(g.init, type="response", newx=model.matrix(gating, data=gate.covs)[,-1L], s="lambda.1se")[,,1]
        #gate.pen  <- g.init$glmnet.fit$df[which(g.init$glmnet.fit$lambda == g.init$lambda.1se)] + as.integer(!noise.null) + 1L
         ltau      <- log(tau)
@@ -909,7 +911,7 @@
            e.fit  <- e.res     <- list()
            for(k in Gseq)  {
             fitE  <- stats::lm(expert, weights=z[,k], data=expx.covs)
-           #fitE  <- glmnet::cv.glmnet(y=X, x=model.matrix(expert, data=expx.covs)[,-1L], weights=z[,k], family="mgaussian")
+           #fitE  <- glmnet::cv.glmnet(y=X, x=model.matrix(expert, data=expx.covs)[,-1L, drop=FALSE], weights=z[,k], family="mgaussian")
             e.fit[[k]]        <- fitE
             e.res[[k]]        <- stats::residuals(fitE)
            #e.res[[k]]        <- X - stats::predict(fitE, weights=z[,k], type="response", newx=model.matrix(expert, data=expx.covs)[,-1L], s="lambda.1se")
@@ -940,7 +942,7 @@
              fitG <- multinom(gating, trace=FALSE, data=gate.covs, maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
              tau  <- .tau_noise(fitG$fitted.values, z[,gN])
             }
-           #fitG  <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L], family="multinomial", type.multinomial="ungrouped")
+           #fitG  <- glmnet::cv.glmnet(y=z, x=model.matrix(gating, data=gate.covs)[,-1L, drop=FALSE], family="multinomial", type.multinomial="ungrouped")
            #tau   <- stats::predict(fitG, type="response", newx=model.matrix(gating, data=gate.covs)[,-1L], s="lambda.1se")[,,1]
             ltau  <- log(tau)
             MLRcon             <- MLRcon && fitG$convergence == 0
@@ -2059,7 +2061,7 @@
 #' \item{\code{df}}{The numbers of estimated parameters.}
 #' \item{\code{iters}}{The numbers of EM/CEM iterations.}
 #' \item{\code{bic}}{BIC values, ranked according to \code{criterion}.}
-#' \item{\code{icl}}{TCL values, ranked according to \code{criterion}.}
+#' \item{\code{icl}}{ICL values, ranked according to \code{criterion}.}
 #' \item{\code{aic}}{AIC values, ranked according to \code{criterion}.}
 #' \item{\code{loglik}}{Maximal log-likelihood values, ranked according to \code{criterion}.}
 #' \item{\code{gating}}{The gating formulas.}
@@ -2848,12 +2850,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param criterion The model selection criterion used to determine the optimal action at each step. Defaults to \code{"bic"}.
 #' @param equalPro A character string indicating whether models with equal mixing proportions should be considered. \code{"both"} means models with both equal and unequal mixing proportions will be considered, \code{"yes"} means only models with equal mixing proportions will be considered, and \code{"no"} means only models with unequal mixing proportions will be considered. Notably, no setting for \code{equalPro} is enough to rule out models with \code{gating} covariates from consideration.
 #' 
-#' The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible mixing proportion constraints will be tried for the \code{initialModel} (if any, provided it doesn't contain gating covariate(s)) or \code{initialG} \emph{before} adding a component or additional covariates; ordinarily, this \code{equalPro} argument only governs whether mixing proportion constraints are considered as components are added.
+#' The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible mixing proportion constraints will be tried for the \code{initialModel} (if any, provided it doesn't contain gating covariate(s)) or \code{initialG} \emph{before} adding a component or additional covariates; otherwise, this \code{equalPro} argument only governs whether mixing proportion constraints are considered as components are added.
 #' 
 #' Considering \code{"all"} (or \code{"both"}) equal and unequal mixing proportion models increases the search space and the computational burden, but this argument becomes irrelevant after a model, if any, with gating network covariate(s) is considered optimal for a given step. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. See \code{\link{MoE_control}} for more details.
 #' @param noise.gate A character string indicating whether models where the gating network for the noise component depends on covariates are considered. \code{"yes"} means only models where this is the case will be considered, \code{"no"} means only models for which the noise component's mixing proportion is constant will be considered and \code{"both"} means both of these scenarios will be considered.
 #' 
-#' The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible gating network noise settings will be tried for the \code{initialModel} (if any, provided it contains gating covariates and a noise component) \emph{before} adding a component or additional covariates; ordinarily, this \code{noise.gate} argument only governs the inclusion/exclusion of this constraint as components or covariates are added.
+#' The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible gating network noise settings will be tried for the \code{initialModel} (if any, provided it contains gating covariates and a noise component) \emph{before} adding a component or additional covariates; otherwise, this \code{noise.gate} argument only governs the inclusion/exclusion of this constraint as components or covariates are added.
 #' 
 #' Considering \code{"all"} (or \code{"both"}) settings increases the search space and the computational burden, but this argument is only relevant when \code{noise=TRUE} and \code{gating} covariates are being considered. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. See \code{\link{MoE_control}} for more details.
 #' @param verbose Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.
@@ -2873,7 +2875,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' 
 #' The function will attempt to remove duplicate variables found in both \code{data} and \code{network.data}; in particular, they will be removed from \code{network.data}. Users are however advised to careful specify \code{data} and \code{network.data} such that there are no duplicates, especially if the desired variable(s) should belong to \code{network.data}.
 #' 
-#' Finally, if the user intends to search for the best model according to the \code{"icl"} \code{criterion}, then specifying either \code{initialModel} or \code{initialG} is advisable. This is because the algorithm otherwise starts with a single component and thus there is no entropy term, meaning the stepwise search can quickly and easily get stuck at G=1. See the examples below.
+#' Finally, if the user intends to search for the best model according to the \code{"icl"} \code{criterion}, then specifying either \code{initialModel} or \code{initialG} is advisable. This is because the algorithm otherwise starts with a single component and thus there is no entropy term, meaning the stepwise search can quickly and easily get stuck at \code{G=1}. See the examples below.
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
@@ -2954,11 +2956,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(any(grepl("\\$", colnames(network.data)))) stop("'network.data' column names cannot contain the '$' operator", call.=FALSE)
     if(!is.null(gating)               &&
       ((length(gating) != 1           || 
-       !is.na(gating)) && 
+       !all(is.na(gating)))           && 
        !is.character(gating)))                    stop("Invalid 'gating': must be NA or a vector of variable names",  call.=FALSE)
     if(!is.null(expert)               &&
       ((length(expert) != 1           ||
-       !is.na(expert)) && 
+       !all(is.na(expert)))           && 
        !is.character(expert)))                    stop("Invalid 'expert': must be NA or a vector of variable names",  call.=FALSE)
     if(length(noise)    > 1           ||
        !is.logical(noise))                        stop("'noise' must be a single logical indicator",       call.=FALSE)
@@ -2967,26 +2969,26 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       (!inherits(initialModel, "MoEClust")  &&
        !inherits(initialModel, "MoECompare")))    stop("'initialModel' must be an object of class 'MoEClust' or 'MoECompare'", call.=FALSE)
     initialModel  <- if(inherits(initialModel, "MoECompare")) initialModel$optimal else initialModel
-    if(!is.null(initialG)       &&
-      (length(initialG)         != 1  ||
-       !is.numeric(initialG)    ||
-       initialG   <= 0          ||
+    if(!is.null(initialG)        &&
+      (length(initialG)          != 1 ||
+       !is.numeric(initialG)     ||
+       initialG   <= 0           ||
        floor(initialG) != initialG))              stop("'initialG' must be a single non-negative integer", call.=FALSE)
     if(length(stepG)    > 1           ||
        !is.logical(stepG))                        stop("'stepG' must be a single logical indicator",       call.=FALSE)
     if(!missing(criterion)            && 
-       length(criterion)         > 1  ||
+       length(criterion)          > 1 ||
        !is.character(criterion))                  stop("'criterion' must be a single character string",    call.=FALSE)
     if(!missing(equalPro)             && 
-       length(equalPro)          > 1  ||
+       length(equalPro)           > 1 ||
        !is.character(equalPro))                   stop("'equalPro' must be a single character string",     call.=FALSE)
     if(!missing(noise.gate)           && 
-       length(noise.gate)        > 1  ||
+       length(noise.gate)         > 1 ||
        !is.character(noise.gate))                 stop("'noise.gate' must be a single character string",   call.=FALSE)
     if(length(verbose)  > 1           ||
        !is.logical(verbose))                      stop("'verbose' must be a single logical indicator",     call.=FALSE)
     num.X         <- vapply(data, is.numeric, logical(1L))
-    if(anyNA(data))    {
+    if(anyNA(data))     {
       if(isTRUE(verbose))                         message("Rows with missing values removed from data\n")
       data        <- data[stats::complete.cases(data),, drop=FALSE]
     }
@@ -2997,26 +2999,26 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(ncol(data) == 1) {
       colnames(data)   <- tmp.nam[length(tmp.nam)]
     }
-    if(isTRUE(has.init))         {
+    if(isTRUE(has.init))          {
      if(!identical(initialModel$data, data))      stop("The 'initialModel' model must have been fitted to the same data!", call.=FALSE)
       init.exp    <- stats::as.formula(attr(initialModel$expert, "Formula"))
-      o.exps      <- all.vars(init.exp)
-      expert      <- if(exps.x  || is.na(expert)) expert else unique(c(o.exps, expert)) 
       init.gate   <- stats::as.formula(attr(initialModel$gating, "Formula"))
+      o.exps      <- all.vars(init.exp)
       o.gate      <- all.vars(init.gate)
-      gating      <- if(gate.x  || is.na(gating)) gating else unique(c(o.gate, gating))
+      expert      <- if(exps.x   || all(is.na(expert))) expert else unique(c(o.exps, expert)) 
+      gating      <- if(gate.x   || all(is.na(gating))) gating else unique(c(o.gate, gating))
       o.nets      <- unique(c(o.exps, o.gate))
-      network.data              <- cbind(initialModel$net.covs[,o.nets, drop=FALSE], 
-                                         network.data[,setdiff(colnames(network.data), o.nets), drop=FALSE])
+      network.data               <- cbind(initialModel$net.covs[,o.nets, drop=FALSE], 
+                                          network.data[,setdiff(colnames(network.data), o.nets), drop=FALSE])
     }
-    if(!is.null(network.data))   {
+    if(!is.null(network.data))    {
      dup.ind      <- if(any(is.matrix(data), is.data.frame(data)) && !any(grepl("\\$", colnames(data)))) (colnames(network.data) %in% colnames(data)) else vapply(seq_len(ncol(network.data)), function(j) isTRUE(all.equal(network.data[,j], unname(unlist(data)))), logical(1L))
      if(any(dup.ind))                             warning("Removing covariates found in response data\n", call.=FALSE, immediate.=TRUE)  
      network.data <- network.data[,!dup.ind, drop=FALSE]  
     }
     network.data  <- as.data.frame(network.data)
     network.char  <- vapply(network.data, is.character, logical(1L))
-    network.data[network.char]  <- lapply(network.data[network.char], factor)
+    network.data[network.char]   <- lapply(network.data[network.char], factor)
     if(any(network.char))                         message("Character covariates coerced to factors\n")
     netnames      <- colnames(network.data)
     if(suppressWarnings(!all(is.na(
@@ -3024,29 +3026,29 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(has.init   && !is.null(initialG))          warning("'initialG' overruled by 'initialModel'\n", call.=FALSE, immediate.=TRUE)
     G             <- ifelse(has.init, initialModel$G, ifelse(is.null(initialG), 0L + isFALSE(noise), initialG))
     noise         <- ifelse(has.init, attr(initialModel, "Noise")    || G == 0, noise)
-    na.gate       <- !gate.x    && is.na(gating)
-    na.expx       <- !exps.x    && is.na(expert)
+    na.gate       <- !gate.x     && all(is.na(gating))
+    na.expx       <- !exps.x     && all(is.na(expert))
     if(!gate.x    && !na.gate         &&
       (!is.character(gating)          ||
        !all(gating   %in% netnames)))             stop("Invalid 'gating': must be a vector of variable names in 'network.data'", call.=FALSE)
     if(!exps.x    && !na.expx         &&
       (!is.character(expert)          ||
        !all(expert   %in% netnames)))             stop("Invalid 'expert': must be a vector of variable names in 'network.data'", call.=FALSE)
-    netnames      <- if(gate.x  || exps.x) colnames(network.data) else unique(c(gating[!na.gate], expert[!na.expx]))
+    netnames      <- if(gate.x   || exps.x) colnames(network.data) else unique(c(gating[!na.gate], expert[!na.expx]))
     network.data  <- network.data[,netnames, drop=FALSE]
     criterion     <- match.arg(criterion)
     equalPro      <- match.arg(equalPro)
-    allPro        <- equalPro   == "all"
+    allPro        <- equalPro    == "all"
     unequalPro    <- is.element(equalPro,   c("all", "both", "no"))
     equalPro      <- is.element(equalPro,   c("all", "both", "yes"))
     noise.gate    <- match.arg(noise.gate)
-    allNgate      <- noise.gate == "all"
+    allNgate      <- noise.gate  == "all"
     noNgate       <- is.element(noise.gate, c("all", "both", "no"))  && isTRUE(noise)
     doNgate       <- is.element(noise.gate, c("all", "both", "yes")) || isFALSE(noise)
     gcov          <- if(gate.x) paste0("~", netnames) else if(!na.gate) paste0("~", gating)
     ecov          <- if(exps.x) paste0("~", netnames) else if(!na.expx) paste0("~", expert)
-    if(isTRUE(has.init))         {
-      if(length(o.exps) == 0)    {
+    if(isTRUE(has.init))          {
+      if(length(o.exps)  == 0)    {
         init.exp  <- ~1
         o.exps    <- NULL
       } else       {
@@ -3055,7 +3057,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         ecov      <- paste0("~", paste(paste(o.exps, collapse=" + "), setdiff(all.vars(init.exp),  o.exps), sep=" + "), 
                             gsub(paste(o.exps, collapse=" \\+ "), '', gsub('\\~', '', ecov[!any.e])))
       }
-      if(length(o.gate) == 0)    {
+      if(length(o.gate)  == 0)    {
         init.gate <- ~1
         o.gate    <- NULL
       } else       {
@@ -3082,190 +3084,190 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     args$tau0     <- if(isTRUE(noise)) args$tau0
     if(isTRUE(verbose))                           message("\n\tStep ", 1, "...\n")
     res           <- if(isTRUE(has.init))    initialModel else suppressWarnings(do.call(MoE_clust, args))
-    args$z.list   <- INIT       <- list(if(isTRUE(has.init) && attr(res, "Expert")) attr(res, "Exp.init") else attr(res, "Z.init"))
+    args$z.list   <- INIT        <- list(if(isTRUE(has.init) && attr(res, "Expert")) attr(res, "Exp.init") else attr(res, "Z.init"))
     args$z.init   <- dots$init.z
     args$init.z   <- "list"
-    compare[[j    <- 1L]]       <- res
+    compare[[j    <- 1L]]        <- res
     if(isTRUE(verbose))            suppressWarnings(print(suppressWarnings(MoE_compare(res, optimal.only=TRUE, pick=1L, criterion=criterion)), details=FALSE))
     crit          <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
     crit.old      <- -Inf
-    if(isTRUE(has.init)         ||
-       !is.null(initialG))       {
-      addC        <- stepG      && (isTRUE(unequalPro) || (has.init   && attr(initialModel, "Gating")) || G == 0)
-      addE        <- G > 0      && !na.expx            && length(ecov) > 0
-      addQ        <- G > 0      && isTRUE(equalPro)    && stepG       && (!has.init || !attr(initialModel, "Gating"))
-      addG        <- !na.gate   && length(gcov) > 0    && G > !noise  && isTRUE(doNgate)
-      addGN       <- !na.gate   && length(gcov) > 0    && G > 1       && isTRUE(noNgate)
-      addNG       <- G > 1      && isTRUE(noNgate)     && stepG       && (has.init  &&  attr(initialModel, "Gating"))
-      if(isFALSE(has.init)      || 
+    if(isTRUE(has.init)          ||
+       !is.null(initialG))        {
+      addC        <- stepG       && (isTRUE(unequalPro) || (has.init   && attr(initialModel, "Gating")) || G == 0)
+      addE        <- G  > 0      && length(ecov) > 0    && !na.expx
+      addG        <- !na.gate    && length(gcov) > 0    && G > !noise  && isTRUE(doNgate)
+      addGN       <- !na.gate    && length(gcov) > 0    && G > 1       && isTRUE(noNgate)
+      addNG       <- G  > 1      && isTRUE(noNgate)     && stepG       && (has.init  &&  attr(initialModel, "Gating"))
+      addQ        <- G  > 0      && isTRUE(equalPro)    && stepG       && (!has.init || !attr(initialModel, "Gating"))
+      if(isFALSE(has.init)       || 
          !attr(initialModel, "Gating"))    {
-        if(isTRUE(allPro)       &&
-           isTRUE(has.init)     &&
+        if(isTRUE(allPro)        &&
+           isTRUE(has.init)      &&
            attr(initialModel, 
-                 "EqualPro"))    {
-          args$equalPro         <- FALSE
+                 "EqualPro"))     {
+          args$equalPro          <- FALSE
           temp    <- do.call(MoE_clust, args)
           comp    <- suppressWarnings(MoE_compare(res, temp, optimal.only=TRUE, pick=1L, criterion=criterion))
           if(comp$MoENames == "temp")      {
-            j     <- j + 1L
+            j     <- j  + 1L
             if(isTRUE(verbose))            {      message("\n\tStep ", j, "...\n")
               suppressWarnings(print(comp, details=FALSE))
             }
           }
-          compare[[j]]          <- res    <- comp$optimal
+          compare[[j]]           <- res   <- comp$optimal
           crit    <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
         } else if(isTRUE(allPro)          &&
                  (isFALSE(has.init)       ||
                   !attr(initialModel, 
                         "EqualPro")))      {
-          args$equalPro         <- TRUE
+          args$equalPro          <- TRUE
           temp    <- do.call(MoE_clust, args)
-          args$equalPro         <- FALSE
+          args$equalPro          <- FALSE
           comp    <- suppressWarnings(MoE_compare(res, temp, optimal.only=TRUE, pick=1L, criterion=criterion))
           if(comp$MoENames == "temp")      {
-            j     <- j + 1L  
+            j     <- j  + 1L  
             if(isTRUE(verbose))            {      message("\n\tStep ", j, "...\n")
               suppressWarnings(print(comp, details=FALSE))
             }
           }
-          compare[[j]]          <- res    <- comp$optimal
+          compare[[j]]           <- res   <- comp$optimal
           crit    <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
         }
       }
-      if(isTRUE(has.init)       &&
+      if(isTRUE(has.init)        &&
          attr(initialModel,   "Noise")    &&
          attr(initialModel,  "Gating"))    {
-        if(isTRUE(allNgate)     &&
+        if(isTRUE(allNgate)      &&
          !attr(initialModel, 
-               "NoiseGate"))     {
-          args$noise.gate       <- TRUE
+               "NoiseGate"))      {
+          args$noise.gate        <- TRUE
           temp    <- do.call(MoE_clust, args)
           comp    <- suppressWarnings(MoE_compare(res, temp, optimal.only=TRUE, pick=1L, criterion=criterion))
           if(comp$MoENames == "temp")      {
-            j     <- j + 1L
+            j     <- j  + 1L
             if(isTRUE(verbose))            {      message("\n\tStep ", j, "...\n")
               suppressWarnings(print(comp, details=FALSE))
             }
           }
-          compare[[j]]          <- res    <- comp$optimal
+          compare[[j]]           <- res   <- comp$optimal
           crit    <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
         } else if(isTRUE(allNgate))        {
-          args$noise.gate       <- FALSE
+          args$noise.gate        <- FALSE
           temp    <- do.call(MoE_clust, args)
-          args$noise.gate       <- TRUE
+          args$noise.gate        <- TRUE
           comp    <- suppressWarnings(MoE_compare(res, temp, optimal.only=TRUE, pick=1L, criterion=criterion))
           if(comp$MoENames == "temp")      {
-            j     <- j + 1L  
+            j     <- j  + 1L  
             if(isTRUE(verbose))            {      message("\n\tStep ", j, "...\n")
               suppressWarnings(print(comp, details=FALSE))
             }
           }
-          compare[[j]]          <- res    <- comp$optimal
+          compare[[j]]           <- res   <- comp$optimal
           crit    <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
         }
       }
     } else         {
       addC        <- stepG
-      addE        <- isFALSE(noise)   && !na.expx && length(ecov) > 0
+      addE        <- isFALSE(noise)   && !na.expx && length(ecov)     > 0
       addQ        <- isTRUE(equalPro) && stepG    && (isFALSE(noise) || (!is.null(args$equalNoise) && isTRUE(args$equalNoise)))
       addG        <- 
       addGN       <- 
       addNG       <- FALSE
     }
     
-    while(crit     > crit.old)   {
+    while(crit     > crit.old)    {
       crit.old    <- crit
       resold      <- res
-      j           <- j + 1L
+      j           <- j  + 1L
       if(isTRUE(verbose))                         message("\n\tStep ", j, "...\n")
-      if(addE)     {
-        args$init.z             <- args$z.init
-        args$z.list             <- NULL
-        exps      <- try(lapply(seq_along(ecov), function(x) { args$expert <- stats::as.formula(ecov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
-        if(inherits(exps,    "try-error")) {
-          exps    <- NULL
-        } else       exps       <- suppressWarnings(MoE_compare(stats::setNames(exps,  seq_along(exps)),  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
-        args$init.z             <- "list"
-        args$z.list             <- INIT
-      }   else       exps       <- NULL
-      if(addG)     {
-        gates     <- try(lapply(seq_along(gcov), function(x) { args$gating <- stats::as.formula(gcov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
-        if(inherits(gates,   "try-error")) {
-          gates   <- NULL
-        } else       gates      <- suppressWarnings(MoE_compare(stats::setNames(gates, seq_along(gates)), optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
-      }   else       gates      <- NULL
-      if(addGN)    {
-        args$noise.gate         <- FALSE
-        Ngate     <- try(lapply(seq_along(gcov), function(x) { args$gating <- stats::as.formula(gcov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
-        if(inherits(Ngate,   "try-error")) {
-          Ngate   <- NULL
-        } else       Ngate      <- suppressWarnings(MoE_compare(stats::setNames(Ngate, seq_along(Ngate)), optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
-        args$noise.gate         <- TRUE
-      }   else       Ngate      <- NULL
-      if(addC)     { 
-        args$init.z             <- args$z.init
-        args$z.list             <- NULL
-        args$G    <- G + 1L
-        clplus    <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
-        if(inherits(clplus,  "try-error")) {
-          clplus  <- NULL    
-        } else       clplus     <- suppressWarnings(MoE_compare(clplus, optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
-        if(addNG)  {
-          args$noise.gate       <- FALSE
-          Nplus   <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
-          if(inherits(Nplus, "try-error")) {
-            Nplus <- NULL    
-          } else     Nplus      <- suppressWarnings(MoE_compare(Nplus,  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
-          args$noise.gate       <- TRUE
-        }   else     Nplus      <- NULL
-        args$G    <- G
-        args$init.z             <- "list"
-        args$z.list             <- INIT
-      } else       {
-        clplus    <- 
-        Nplus     <- NULL
+        if(addE)   {
+          args$init.z            <- args$z.init
+          args$z.list            <- NULL
+          exps    <- try(lapply(seq_along(ecov), function(x) { args$expert <- stats::as.formula(ecov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
+          if(inherits(exps,    "try-error")) {
+            exps  <- NULL
+          } else     exps        <- suppressWarnings(MoE_compare(stats::setNames(exps,  seq_along(exps)),  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+          args$init.z            <- "list"
+          args$z.list            <- INIT
+        }   else     exps        <- NULL
+        if(addG)   {
+          gates   <- try(lapply(seq_along(gcov), function(x) { args$gating <- stats::as.formula(gcov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
+          if(inherits(gates,   "try-error")) {
+            gates <- NULL
+          } else     gates       <- suppressWarnings(MoE_compare(stats::setNames(gates, seq_along(gates)), optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+        }   else     gates       <- NULL
+        if(addGN)  {
+          args$noise.gate        <- FALSE
+          Ngate   <- try(lapply(seq_along(gcov), function(x) { args$gating <- stats::as.formula(gcov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
+          if(inherits(Ngate,   "try-error")) {
+            Ngate <- NULL
+          } else     Ngate       <- suppressWarnings(MoE_compare(stats::setNames(Ngate, seq_along(Ngate)), optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+          args$noise.gate        <- TRUE
+        }   else     Ngate       <- NULL
+        if(addC)   { 
+          args$init.z            <- args$z.init
+          args$z.list            <- NULL
+          args$G  <- G  + 1L
+          clplus  <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
+          if(inherits(clplus,  "try-error")) {
+           clplus <- NULL    
+          }   else   clplus      <- suppressWarnings(MoE_compare(clplus, optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+          if(addNG)  {
+            args$noise.gate      <- FALSE
+            Nplus <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
+            if(inherits(Nplus, "try-error")) {
+              Nplus              <- NULL    
+            } else   Nplus       <- suppressWarnings(MoE_compare(Nplus,  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+            args$noise.gate      <- TRUE
+          }   else   Nplus       <- NULL
+          args$G  <- G
+          args$init.z            <- "list"
+          args$z.list            <- INIT
+        } else     {
+          clplus  <- 
+          Nplus   <- NULL
       }
       if(addQ)     {
-        args$init.z             <- args$z.init
-        args$z.list             <- NULL
-        args$equalPro           <- TRUE
-        args$G    <- G + 1L
+        args$init.z              <- args$z.init
+        args$z.list              <- NULL
+        args$equalPro            <- TRUE
+        args$G    <- G  + 1L
         eqplus    <- try(suppressWarnings(do.call(MoE_clust, args)), silent=TRUE)
-        if(inherits(eqplus,  "try-error")) {
+        if(inherits(eqplus,    "try-error")) {
           eqplus  <- NULL
-        } else       eqplus     <- suppressWarnings(MoE_compare(eqplus, optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+        } else       eqplus      <- suppressWarnings(MoE_compare(eqplus, optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
         args$G    <- G
-        if(addE)   {
+        if(addE   && G != 1)      {
           expQ    <- try(lapply(seq_along(ecov), function(x) { args$expert <- stats::as.formula(ecov[x]); suppressWarnings(do.call(MoE_clust, args)) }), silent=TRUE)
-          if(inherits(expQ,  "try-error")) {
+          if(inherits(expQ,    "try-error")) {
             expQ  <- NULL
-          } else     expQ       <- suppressWarnings(MoE_compare(stats::setNames(expQ,  seq_along(expQ)),  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
-        }   else     expQ       <- NULL
-        args$equalPro           <- FALSE
-        args$init.z             <- "list"
-        args$z.list             <- INIT
+          } else     expQ        <- suppressWarnings(MoE_compare(stats::setNames(expQ,  seq_along(expQ)),  optimal.only=TRUE, pick=1L, criterion=criterion)$optimal)
+        }   else     expQ        <- NULL
+        args$equalPro            <- FALSE
+        args$init.z              <- "list"
+        args$z.list              <- INIT
       } else       {
         eqplus    <-
         expQ      <- NULL
       }
       models      <- c(list(exps), list(gates), list(clplus), list(eqplus), list(expQ), list(Ngate), list(Nplus), list(resold))
       models      <- models[!vapply(models, is.null, logical(1L))]
-      names(models)             <- seq_along(models)
+      names(models)              <- seq_along(models)
       comp        <- suppressWarnings(MoE_compare(models, optimal.only=TRUE, pick=1L, criterion=criterion))
-      if(isTRUE(verbose))          suppressWarnings(print(comp, details=FALSE))
-      compare[[j]]      <- res  <- comp$optimal
+      if(isTRUE(verbose))           suppressWarnings(print(comp, details=FALSE))
+      compare[[j]]     <- res    <- comp$optimal
       crit        <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
-      if(res$G    != args$G)     {
-        args$G    <- G  <- res$G 
-        args$init.z     <- "list" 
-        args$z.list     <- INIT <- list(attr(res, "Exp.init"))
+      if(res$G    != args$G)      {
+        args$G    <- G <- res$G 
+        args$init.z    <- "list" 
+        args$z.list    <- INIT   <- list(attr(res, "Exp.init"))
       }
-      args$expert       <- stats::as.formula(attr(res$expert, "Formula"))
-      args$gating       <- stats::as.formula(attr(res$gating, "Formula"))
-      if(length(ecov)    > 1    &&
-        (any(any.e      <- is.element(ecov, 
+      args$expert      <- stats::as.formula(attr(res$expert, "Formula"))
+      args$gating      <- stats::as.formula(attr(res$gating, "Formula"))
+      if(length(ecov)   > 1      &&
+        (any(any.e     <- is.element(ecov, 
         paste0("~", as.character(args$expert)[-1L]))))) {
-        if(is.null(o.exps))      {
+        if(is.null(o.exps))       {
           ecov    <- paste0("~", paste(all.vars(args$expert), gsub('\\~', '', ecov[!any.e]), sep=" + "))  
         } else     {
           ecov    <- paste0("~", paste(paste(o.exps, collapse=" + "), setdiff(all.vars(args$expert), o.exps), sep=" + "), 
@@ -3273,10 +3275,10 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         }
         o.exps    <- all.vars(args$expert)
       }
-      if(length(gcov)   > 1     &&
+      if(length(gcov)   > 1      &&
         (any(any.g     <- is.element(gcov, 
         paste0("~", as.character(args$gating)[-1L]))))) {
-        if(is.null(o.gate))      {
+        if(is.null(o.gate))       {
           gcov    <- paste0("~", paste(all.vars(args$gating), gsub('\\~', '', gcov[!any.g]), sep=" + "))
         } else     { 
           gcov    <- paste0("~", paste(paste(o.gate, collapse=" + "), setdiff(all.vars(args$gating), o.gate), sep=" + "), 
@@ -3284,20 +3286,20 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         }
         o.gate    <- all.vars(args$gating)
       }
-      addC        <- stepG      && (isTRUE(unequalPro)       || attr(res, "Gating"))
-      addE        <- G > 0      && length(ecov) > 0
-      addQ        <- G > 0      && isTRUE(equalPro) && stepG && !attr(res, "Gating")
-      addG        <- G > !noise && length(gcov) > 0 && isTRUE(doNgate)
-      addGN       <- G > 1      && length(gcov) > 0 && isTRUE(noNgate)
-      addNG       <- G > 1      && isTRUE(noNgate)  && stepG &&  attr(res, "Gating")
-      compare[[j]]$call         <- NULL
+      addC        <- stepG       && (isTRUE(unequalPro)       || attr(res, "Gating"))
+      addE        <- G  > 0      && length(ecov) > 0
+      addQ        <- G  > 0      && isTRUE(equalPro) && stepG && !attr(res, "Gating")
+      addG        <- G  > !noise && length(gcov) > 0 && isTRUE(doNgate)
+      addGN       <- G  > 1      && length(gcov) > 0 && isTRUE(noNgate)
+      addNG       <- G  > 1      && isTRUE(noNgate)  && stepG &&  attr(res, "Gating")
+      compare[[j]]$call          <- NULL
     }
     compare       <- compare[-j]
-    for(i in seq_along(compare)) {
-      compare[[i]]$call         <- call
-      names(compare[[i]]$data)  <- colnames(data)
+    for(i in seq_along(compare))  {
+      compare[[i]]$call          <- call
+      names(compare[[i]]$data)   <- colnames(data)
     }
-    names(compare)              <- paste0("Step_", seq_along(compare))
+    names(compare)               <- paste0("Step_", seq_along(compare))
     cat("\n")
     res           <- suppressWarnings(MoE_compare(compare, optimal.only=TRUE, criterion=criterion))
     if(any(res$posidens))                         warning("Potentially spurious solutions with positive log-densities were chosen at one or more steps\n", call.=FALSE)
