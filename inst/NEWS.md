@@ -6,6 +6,8 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+* `MoE_stepwise` gains the arg. `fullMoE` (defaulting to `FALSE`) to restrict the search to "full"  
+  MoE models where the same set of covariates appears in both the gating & expert networks.
 * Small `MoE_stepwise` speed-up by searching `G=1` `equalPro` models w/ expert covariates only once.
 
 ## MoEClust v1.4.0 - (_12<sup>th</sup> release [minor update]: 2021-06-21_)

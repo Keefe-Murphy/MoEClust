@@ -9,6 +9,7 @@ MoE_stepwise(data,
              gating = NULL,
              expert = NULL,
              modelNames = NULL,
+             fullMoE = FALSE,
              noise = FALSE,
              initialModel = NULL,
              initialG = NULL,
@@ -32,6 +33,12 @@ If \code{gating} is not supplied (or set to \code{NULL}), \emph{all} variables i
 
 If \code{expert} is not supplied (or set to \code{NULL}), \emph{all} variables in \code{network.data} will be considered for the expert network. \code{expert} can also be supplied as \code{NA}, in which case \emph{no} expert network covariates will ever be considered. Supplying \code{expert} and \code{gating} can be used to ensure different subsets of covariates enter different parts of the model.}
 
+\item{fullMoE}{A logical which, when \code{TRUE}, ensures that only models where the same covariates enter both parts of the model (the gating and expert networks) are considered. This restricts the search space to exclude models where covariates differ across networks. Thus, the search is likely to be faster, at the expense of potentially missing out on optimal models. Defaults to \code{FALSE}. 
+
+Furthermore, when \code{TRUE}, the set of candidate covariates is automatically taken to be the \strong{union} of the \emph{named} covariates in \code{gating} and \code{expert}, for convenience. In other words, \code{gating=NA} will only work if \code{expert=NA} also, and both should be set to \code{NULL} in order to consider all potential covariates. 
+
+In addition, caution is advised using this argument in conjunction with \code{initialModel}, which must satisfy the constraint that the same set of covariates be used in both parts of the model, for initial models where gating covariates are allowable. Finally, note that this argument does not preclude a model with only expert covariates included if the number of components is such that the inclusion of gating covariates is infeasible.}
+
 \item{modelNames}{A character string or valid model names, to be used to restrict the size of the search space, if desired. By default, \emph{all} valid model types are explored. Rather than considering the changing of the model type as an additional step, every step is evaluated over all entries in \code{modelNames}. See \code{\link{MoE_clust}} for more details.}
 
 \item{noise}{A logical indicating whether to assume all models contain an additional noise component (\code{TRUE}) or not (\code{FALSE}, the default). If \code{initialModel} or \code{initialG} is not specified, the search starts from a \code{G=0} noise-only model when \code{noise} is \code{TRUE}, otherwise the search starts from a \code{G=1} model with no covariates when \code{noise} is \code{FALSE}. See \code{\link{MoE_control}} for more details. Note, however, that if the model specified in \code{initialModel} contains a noise component, the value of the \code{noise} argument will be overridden to \code{TRUE}; similarly, if the \code{initialModel} model does not contain a noise component, \code{noise} will be overridden to \code{FALSE}.}
@@ -50,13 +57,13 @@ If \code{initialModel} is not specified, the search starts from a \code{G=0} noi
 
 The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible mixing proportion constraints will be tried for the \code{initialModel} (if any, provided it doesn't contain gating covariate(s)) or \code{initialG} \emph{before} adding a component or additional covariates; otherwise, this \code{equalPro} argument only governs whether mixing proportion constraints are considered as components are added.
 
-Considering \code{"all"} (or \code{"both"}) equal and unequal mixing proportion models increases the search space and the computational burden, but this argument becomes irrelevant after a model, if any, with gating network covariate(s) is considered optimal for a given step. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. See \code{\link{MoE_control}} for more details.}
+Considering \code{"all"} (or \code{"both"}) equal and unequal mixing proportion models increases the search space and the computational burden, but this argument becomes irrelevant after a model, if any, with gating network covariate(s) is considered optimal for a given step. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. However, this does not guarantee that an optimal model will not be skipped; if \code{equalPro} is restricted via \code{"yes"} or \code{"no"}, a suboptimal model at one step may ultimately lead to a better final model, in some edge cases. See \code{\link{MoE_control}} for more details.}
 
 \item{noise.gate}{A character string indicating whether models where the gating network for the noise component depends on covariates are considered. \code{"yes"} means only models where this is the case will be considered, \code{"no"} means only models for which the noise component's mixing proportion is constant will be considered and \code{"both"} means both of these scenarios will be considered.
 
 The default (\code{"all"}) is equivalent to \code{"both"} with the addition that all possible gating network noise settings will be tried for the \code{initialModel} (if any, provided it contains gating covariates and a noise component) \emph{before} adding a component or additional covariates; otherwise, this \code{noise.gate} argument only governs the inclusion/exclusion of this constraint as components or covariates are added.
 
-Considering \code{"all"} (or \code{"both"}) settings increases the search space and the computational burden, but this argument is only relevant when \code{noise=TRUE} and \code{gating} covariates are being considered. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. See \code{\link{MoE_control}} for more details.}
+Considering \code{"all"} (or \code{"both"}) settings increases the search space and the computational burden, but this argument is only relevant when \code{noise=TRUE} and \code{gating} covariates are being considered. The \code{"all"} default is \strong{strongly} recommended so that viable candidate models are not missed out on, particularly when \code{initialModel} or \code{initialG} are given. However, this does not guarantee that an optimal model will not be skipped; if \code{noise.gate} is restricted via \code{"yes"} or \code{"no"}, a suboptimal model at one step may ultimately lead to a better final model, in some edge cases. See \code{\link{MoE_control}} for more details.}
 
 \item{verbose}{Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.}
 
@@ -116,7 +123,14 @@ Finally, if the user intends to search for the best model according to the \code
 # mod5   <- MoE_stepwise(ais[,3:7], ais, criterion="icl", initialG=2)
 #
 # Check that specifying an initial G value enables a better model to be found
-# (comp2 <- MoE_compare(mod4, mod5, optimal.only=TRUE, criterion="icl"))}
+# (comp2 <- MoE_compare(mod4, mod5, optimal.only=TRUE, criterion="icl"))
+
+# Finally, restrict the search to full MoE models only
+# Notice that the candidate covariates are the union of gating and expert
+
+# Notice also that the algorithm initially traverses models with only
+# expert covariates when the inclusion of gating covariates is infeasible
+# mod6   <- MoE_stepwise(ais[,3:7], ais, fullMoE=TRUE, gating="BMI", expert="Bfat")}
 }
 \references{
 Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
