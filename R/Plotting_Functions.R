@@ -194,6 +194,15 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   both  <- attr(net, "Both")
   gate  <- setdiff(attr(net, "Gating"), both)
   expx  <- setdiff(attr(net, "Expert"), both)
+  subset            <- if(!is.null(subset)          && inherits(subset,         "list")) subset
+  scatter.pars      <- if(!is.null(scatter.pars)    && inherits(scatter.pars,   "list")) scatter.pars
+  density.pars      <- if(!is.null(density.pars)    && inherits(density.pars,   "list")) density.pars
+  stripplot.pars    <- if(!is.null(stripplot.pars)  && inherits(stripplot.pars, "list")) stripplot.pars
+  boxplot.pars      <- if(!is.null(boxplot.pars)    && inherits(boxplot.pars,   "list")) boxplot.pars
+  barcode.pars      <- if(!is.null(barcode.pars)    && inherits(barcode.pars,   "list")) barcode.pars
+  mosaic.pars       <- if(!is.null(mosaic.pars)     && inherits(mosaic.pars,    "list")) mosaic.pars
+  axis.pars         <- if(!is.null(axis.pars)       && inherits(axis.pars,      "list")) axis.pars
+  diag.pars         <- if(!is.null(diag.pars)       && inherits(diag.pars,      "list")) diag.pars
   if(is.null(subset$show.map)) {
     subset$show.map <- (length(unique(claSS)) != 1) && ((G + !is.na(res$hypvol) > 1))
   } else {

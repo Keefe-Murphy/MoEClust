@@ -234,13 +234,17 @@
     n             <- nrow(X)
     if((d         <- ncol(X))  == 0L)             stop("'data' is empty!", call.=FALSE)
     Nseq          <- seq_len(n)
+    anyg0         <- any(G == 0)
+    allg0         <- all(G == 0)
+    anyg1         <- any(G == 1)
+    anyg0or1      <- anyg0  + anyg1
     comp.x        <- if(isTRUE(comp.x)) Nseq else comp.x
-    noise.null    <- all(nnull <- is.null(noise), tnull   <- is.null(tau0))
+    noise.null    <- all(nnull <- is.null(noise), tnull   <- is.null(tau0), !anyg0)
     if(!is.null(noise.vol) && noise.null)         stop("Initial noise volume supplied without initial guess of noise allocations or initial guess of noise component proportion 'tau0'", call.=FALSE)
     equalNoise    <- !noise.null      && ctrl$equalNoise
     gate.noise    <- (!noise.null     && ctrl$noise.gate) || noise.null
     if(missing(G) && !noise.null) G   <- 0L:9L
-    if(any(G      != floor(G))        &&
+    if(any(G      != floor(G))        ||
        any(G       < as.integer(noise.null)))     stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")),   call.=FALSE)
     if(any(G      >= n))        {
       G           <- G[G <= n]
@@ -250,10 +254,6 @@
 
     mod.fam       <- mclust.options("emModelNames")
     range.G       <- sort(as.integer(unique(G)))
-    anyg0         <- any(G == 0)
-    allg0         <- all(G == 0)
-    anyg1         <- any(G == 1)
-    anyg0or1      <- anyg0  + anyg1
     if(anyg0 || !noise.null)    {
       if(!is.null(noise.vol))   {
         if(inherits(noise.vol, "NoiseVol"))   {
@@ -1823,6 +1823,10 @@
       } else                                      warning("'nstarts' is supplied but 'init.z' is not set to \"random\"\n", call.=FALSE, immediate.=TRUE)
     }
     
+    exp.init      <- if(!is.null(exp.init)      && inherits(exp.init,   "list")) exp.init
+    hc.args       <- if(!is.null(hc.args)       && inherits(hc.args,    "list")) hc.args
+    km.args       <- if(!is.null(km.args)       && inherits(km.args,    "list")) km.args
+    noise.args    <- if(!is.null(noise.args)    && inherits(noise.args, "list")) noise.args
     if(is.null(exp.init$joint))     {
       exp.init$joint        <- TRUE
     } else if(length(exp.init$joint)        > 1 ||
@@ -1912,6 +1916,8 @@
         noise.args$equalNoise      <- FALSE
       } else if(length(noise.args$equalNoise)    > 1   ||
         !is.logical(noise.args$equalNoise))       stop("noise.args$equalNoise' must be a single logical indicator",     call.=FALSE)
+      if(noise.args$equalNoise     && !equalPro &&
+         isTRUE(verbose))                         message("'equalNoise' forced to FALSE as 'equalPro' is FALSE\n")
       noise.args$equalNoise        <- equalPro  && noise.args$equalNoise
       if(is.null(noise.args$discard.noise))      {
         noise.args$discard.noise   <- FALSE
@@ -2284,7 +2290,7 @@
                           df = as.integer(unname(dfxs[max.names])), iters = as.integer(unname(itxs[max.names])), bic = unname(bics[max.names]), 
                           icl = unname(icls[max.names]), aic = unname(aics[max.names]), loglik = unname(llxs[max.names]), posidens = as.logical(unname(pdxs[max.names])), 
                           gating = gating, expert = expert, algo = unname(algo[crit.names]), equalPro = equalPro, hypvol = unname(hypvol), noise = unname(noise.meth), 
-                          noise.gate = unname(replace(noise.gate, gating == "None" | G <= 1, NA)), equalNoise = unname(replace(equalNoise, !equalPro | is.na(equalPro), NA)))
+                          noise.gate = unname(replace(noise.gate, gating == "None" | G <= 1L - !is.na(hypvol), NA)), equalNoise = unname(replace(equalNoise, !equalPro | is.na(equalPro), NA)))
     if(any(comp$posidens))                        warning("Potentially spurious solutions with positive log-densities are included in the comparison\n", call.=FALSE)
     class(comp)   <- c("MoECompare", "MoEClust")
     bic.tmp       <- sapply(BICs, as.vector)
