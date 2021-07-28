@@ -2840,13 +2840,15 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' Conducts a greedy forward stepwise search to identify the optimal \code{MoEClust} model according to some \code{criterion}. Components and/or \code{gating} covariates and/or \code{expert} covariates are added to new \code{\link{MoE_clust}} fits at each step, while each step is evaluated for all valid \code{modelNames}.
 #' @param data A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed. If a matrix or data frame, rows correspond to observations and columns correspond to variables.
 #' @param network.data An optional matrix or data frame in which to look for the covariates specified in the \code{gating} &/or \code{expert} networks, if any. Must include column names. Columns in \code{network.data} corresponding to columns in \code{data} will be automatically removed. While a single covariate can be supplied as a vector (provided the '\code{$}' operator or '\code{[]}' subset operator are not used), it is safer to supply a named 1-column matrix or data frame in this instance.
-#' @param gating A vector giving the names of columns in \code{network.data} used to define the scope of the gating network. By default, the initial model will contain no covariates (unless \code{initialModel} is supplied with gating covariates), thereafter all variables in \code{gating} will be considered for inclusion where appropriate.
+#' @param gating A vector giving the names of columns in \code{network.data} used to define the scope of the gating network. By default, the initial model will contain no covariates (unless \code{initialModel} is supplied with gating covariates), thereafter all variables in \code{gating} (save for those in \code{initialModel}, if any) will be considered for inclusion where appropriate.
 #' 
-#' If \code{gating} is not supplied (or set to \code{NULL}), \emph{all} variables in \code{network.data} will be considered for the gating network. \code{gating} can also be supplied as \code{NA}, in which case \emph{no} gating network covariates will ever be considered. Supplying \code{gating} and \code{expert} can be used to ensure different subsets of covariates enter different parts of the model.
-#' @param expert A vector giving the names of columns in \code{network.data} used to define the scope of the expert network. By default, the initial model will contain no covariates (unless \code{initialModel} is supplied with expert covariates), thereafter all variables in \code{expert} will be considered for inclusion where appropriate.
+#' If \code{gating} is not supplied (or set to \code{NULL}), \emph{all} variables in \code{network.data} will be considered for the gating network. \code{gating} can also be supplied as \code{NA}, in which case \emph{no} gating network covariates will ever be considered (save for those in \code{initialModel}, if any). Supplying \code{gating} and \code{expert} can be used to ensure different subsets of covariates enter different parts of the model.
+#' @param expert A vector giving the names of columns in \code{network.data} used to define the scope of the expert network. By default, the initial model will contain no covariates (unless \code{initialModel} is supplied with expert covariates), thereafter all variables in \code{expert} (save for those in \code{initialModel}, if any) will be considered for inclusion where appropriate.
 #' 
-#' If \code{expert} is not supplied (or set to \code{NULL}), \emph{all} variables in \code{network.data} will be considered for the expert network. \code{expert} can also be supplied as \code{NA}, in which case \emph{no} expert network covariates will ever be considered. Supplying \code{expert} and \code{gating} can be used to ensure different subsets of covariates enter different parts of the model.
-#' @param modelNames A character string or valid model names, to be used to restrict the size of the search space, if desired. By default, \emph{all} valid model types are explored. Rather than considering the changing of the model type as an additional step, every step is evaluated over all entries in \code{modelNames}. See \code{\link{MoE_clust}} for more details. 
+#' If \code{expert} is not supplied (or set to \code{NULL}), \emph{all} variables in \code{network.data} will be considered for the expert network. \code{expert} can also be supplied as \code{NA}, in which case \emph{no} expert network covariates will ever be considered (save for those in \code{initialModel}, if any). Supplying \code{expert} and \code{gating} can be used to ensure different subsets of covariates enter different parts of the model.
+#' @param modelNames A character string of valid model names, to be used to restrict the size of the search space, if desired. By default, \emph{all} valid model types are explored. Rather than considering the changing of the model type as an additional step, every step is evaluated over all entries in \code{modelNames}. See \code{\link{MoE_clust}} for more details. 
+#' 
+#' Note that if \code{initialModel} is supplied (see below), \code{modelNames} will be augmented with \code{initialModel$modelName} if needs be. 
 #' @param fullMoE A logical which, when \code{TRUE}, ensures that only models where the same covariates enter both parts of the model (the gating and expert networks) are considered. This restricts the search space to exclude models where covariates differ across networks. Thus, the search is likely to be faster, at the expense of potentially missing out on optimal models. Defaults to \code{FALSE}. 
 #' 
 #' Furthermore, when \code{TRUE}, the set of candidate covariates is automatically taken to be the \strong{union} of the \emph{named} covariates in \code{gating} and \code{expert}, for convenience. In other words, \code{gating=NA} will only work if \code{expert=NA} also, and both should be set to \code{NULL} in order to consider all potential covariates. 
@@ -2856,7 +2858,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param initialModel An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. This gives the initial model to use at the first step of the selection algorithm, to which components and/or covariates etc. can be added. Especially useful if the model is expected to have more than one component \emph{a priori} (see \code{initialG} below as an alternative). The \code{initialModel} model must have been fitted to the same data in \code{data}. 
 #' 
 #' If \code{initialModel} is not specified, the search starts from a \code{G=0} noise-only model when \code{noise} is \code{TRUE}, otherwise the search starts from a \code{G=1} model with no covariates when \code{noise} is \code{FALSE}. If \code{initialModel} \emph{is} supplied and it contains a noise component, only models with a noise component will be considered thereafter (i.e. the \code{noise} argument can be overridden by the \code{initialModel} argument). If \code{initialModel} contains gating &/or expert covariates, these covariates will be included in all subsequent searches, with covariates in \code{expert} and \code{gating} still considered as candidates for additional inclusion, as normal.
-#' @param initialG A single integer giving the number of mixture components (clusters) to initialise the stepwise search algorithm with. This is a simpler alternative to the \code{initialModel} argument, to be used when the only prior knowledge relates to the number of components, and not other features of the model (e.g. the covariates which should be included). Consequently, \code{initialG} is only relevant when \code{initialModel} is not supplied. When neither \code{initialG} nor \code{initialModel} is specified, the search starts from a \code{G=0} noise-only model when \code{noise} is \code{TRUE}, otherwise the search starts from a \code{G=1} model with no covariates when \code{noise} is \code{FALSE}. See \code{stepG} below for fixing the number of components at this \code{initialG} value.
+#' 
+#' However, while \code{initialModel} \emph{can} include covariates not specified in \code{gating} &/or \code{expert}, the \code{initialModel$modelName} \strong{should} be included in the specified \code{modelNames}; if it is not, \code{modelNames} will be forcibly augmented with \code{initialModel$modelName} (as stated above). Furthermore, it is assumed that \code{initialModel} is already optimal with respect to the model type. If it is not, the algorithm may be liable to converge to a sub-optimal model, and so a warning will be printed if the function suspects that this \emph{might} be the case.
+#' @param initialG A single (positive) integer giving the number of mixture components (clusters) to initialise the stepwise search algorithm with. This is a simpler alternative to the \code{initialModel} argument, to be used when the only prior knowledge relates to the number of components, and not other features of the model (e.g. the covariates which should be included). Consequently, \code{initialG} is only relevant when \code{initialModel} is not supplied. When neither \code{initialG} nor \code{initialModel} is specified, the search starts from a \code{G=0} noise-only model when \code{noise} is \code{TRUE}, otherwise the search starts from a \code{G=1} model with no covariates when \code{noise} is \code{FALSE}. See \code{stepG} below for fixing the number of components at this \code{initialG} value.
 #' @param stepG A logical indicating whether the algorithm should consider incrementing the number of components at each step. Defaults to \code{TRUE}; use \code{FALSE} when searching only over configurations with the same number of components is of interest. Setting \code{stepG} to \code{FALSE} is possible with or without specifying \code{initialModel} or \code{initialG}, but is primarily intended for use when one of these arguments is supplied, otherwise the algorithm will be stuck forever with only one component.
 #' @param criterion The model selection criterion used to determine the optimal action at each step. Defaults to \code{"bic"}.
 #' @param equalPro A character string indicating whether models with equal mixing proportions should be considered. \code{"both"} means models with both equal and unequal mixing proportions will be considered, \code{"yes"} means only models with equal mixing proportions will be considered, and \code{"no"} means only models with unequal mixing proportions will be considered. Notably, no setting for \code{equalPro} is enough to rule out models with \code{gating} covariates from consideration.
@@ -2875,7 +2879,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @return An object of class \code{"MoECompare"} containing information on all visited models and the optimal model (accessible via \code{x$optimal}).
 #' @details The arguments \code{modelNames}, \code{equalPro}, and \code{noise.gate} are provided for computational convenience. They can be used to reduce the number of models under consideration at each stage. 
 #' 
-#' The same is true of the arguments \code{gating} and \code{expert}, which can each separately be made to consider all variables in \code{network.data}, or a subset, or none at all. 
+#' The same is true of the arguments \code{gating} and \code{expert}, which can each separately (or jointly, if \code{fullMoE} is \code{TRUE}) be made to consider all variables in \code{network.data}, or a subset, or none at all. 
 #' 
 #' Finally, \code{initialModel} or \code{initialG} can be used to kick-start the search algorithm by incorporating prior information in a more direct way; in the latter case, only in the form of the number of components; in the former case, a full model with a given number of components, certain included gating and expert network covariates, and a certain model type can give the model an even more informed head start. In either case, the \code{stepG} argument can be used to fix the number of components and only search over different configurations of covariates.
 #' 
@@ -2942,12 +2946,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' 
 #' # Finally, restrict the search to full MoE models only
 #' # Notice that the candidate covariates are the union of gating and expert
-#' 
 #' # Notice also that the algorithm initially traverses models with only
-#' # expert covariates when the inclusion of gating covariates is infeasible
+#' #   expert covariates when the inclusion of gating covariates is infeasible
 #' # mod6   <- MoE_stepwise(ais[,3:7], ais, fullMoE=TRUE, gating="BMI", expert="Bfat")}
-  MoE_stepwise    <- function(data, network.data = NULL, gating = NULL, expert = NULL, fullMoE = FALSE, 
-                              modelNames = NULL, noise = FALSE, initialModel = NULL, initialG = NULL, stepG = TRUE, 
+  MoE_stepwise    <- function(data, network.data = NULL, gating = NULL, expert = NULL, modelNames = NULL, 
+                              fullMoE = FALSE, noise = FALSE, initialModel = NULL, initialG = NULL, stepG = TRUE, 
                               criterion = c("bic", "icl", "aic"), equalPro = c("all", "both", "yes", "no"), 
                               noise.gate = c("all", "both", "yes", "no"), verbose = interactive(), ...) {
     
@@ -2997,7 +3000,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       gating      <- 
       expert      <- b.nets
     }
-    has.init      <- !is.null(initialModel)
+    if((has.init  <- 
+        !is.null(initialModel))  &&
+        !is.null(initialG))                       stop("Only one of 'initialModel' and 'initialG' can be supplied",            call.=FALSE)
     if(has.init   &&
       (!inherits(initialModel, "MoEClust")  &&
        !inherits(initialModel, "MoECompare")))    stop("'initialModel' must be an object of class 'MoEClust' or 'MoECompare'", call.=FALSE)
@@ -3006,7 +3011,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       (length(initialG)          != 1 ||
        !is.numeric(initialG)     ||
        initialG   <= 0           ||
-       floor(initialG) != initialG))              stop("'initialG' must be a single non-negative integer", call.=FALSE)
+       floor(initialG) != initialG))              stop("'initialG' must be a single positive integer",     call.=FALSE)
     if(length(stepG)    > 1           ||
        !is.logical(stepG))                        stop("'stepG' must be a single logical indicator",       call.=FALSE)
     if(!missing(criterion)            && 
@@ -3033,7 +3038,13 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       colnames(data)   <- tmp.nam[length(tmp.nam)]
     }
     if(isTRUE(has.init))          {
-     if(!identical(initialModel$data, data))      stop("The 'initialModel' model must have been fitted to the same data!", call.=FALSE)
+     if(!identical(initialModel$data, data))      stop("The 'initialModel' model must have been fitted to the same data!",                       call.=FALSE)
+      if(!is.null(initialModel$call$modelName))   warning("Are you sure that initialModel$modelName is optimal for the given model?\n",          call.=FALSE, immediate.=TRUE)
+      if(!is.null(modelNames)    &&
+         !(initialModel$modelName         %in% 
+           modelNames))           {               warning("Set of candidate 'modelNames' expanded with initialModel$modelName\n",                call.=FALSE, immediate.=TRUE)
+       modelNames <- unique(c(initialModel$modelName, modelNames))
+      }
       init.exp    <- stats::as.formula(attr(initialModel$expert, "Formula"))
       init.gate   <- stats::as.formula(attr(initialModel$gating, "Formula"))
       if(fullMoE  && 
@@ -3140,14 +3151,14 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
        length(dots[names(dots)       %in%
               names(MoE_control())])   > 0)       stop("Arguments cannot be supplied via the '...' construct when the named argument 'control' is supplied", call.=FALSE) 
     dots          <- dots[names(dots) != "z.list"]
-    args          <- c(list(data=data, G=G, gating=init.gate, expert=init.exp, network.data=network.data, modelNames=modelNames, equalPro=FALSE, 
-                       noise.gate=TRUE, verbose=FALSE, tau0=if(any(names(dots) == "tau0")) dots$tau0      else 0.1), criterion=criterion)
+    args          <- c(list(data=data, G=G, gating=init.gate, expert=init.exp, network.data=network.data, modelNames=modelNames, equalPro=equalPro == "yes", 
+                       noise.gate=noise.gate != "no", verbose=FALSE, tau0=if(any(names(dots) == "tau0")) dots$tau0 else 0.1), criterion=criterion)
     args          <- if(length(dots)  >= 1) c(args, dots) else args
     args          <- args[unique(names(args))]
     args$tau0     <- if(isTRUE(noise)) args$tau0
     if(isTRUE(verbose))                           message("\n\tStep ", 1, "...\n")
     res           <- if(isTRUE(has.init))    initialModel else suppressWarnings(do.call(MoE_clust, args))
-    args$z.list   <- INIT        <- list(if(isTRUE(has.init) && attr(res, "Expert")) attr(res, "Exp.init") else attr(res, "Z.init"))
+    args$z.list   <- INIT        <- list(if(isTRUE(has.init) && attr(res, "Expert")) attr(res, "Exp.init")         else attr(res, "Z.init"))
     args$z.init   <- dots$init.z
     args$init.z   <- "list"
     compare[[j    <- 1L]]        <- res
@@ -3156,17 +3167,19 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     crit.old      <- -Inf
     if(isTRUE(has.init)          ||
        !is.null(initialG))        {
-      addE        <- G  > 0      && length(ecov) > 0    && !na.expx
-      addG        <- !na.gate    && length(gcov) > 0    && G > !noise  && isTRUE(doNgate)
-      addGN       <- !na.gate    && length(gcov) > 0    && G > 1       && isTRUE(noNgate)
       addC        <- stepG       && (isTRUE(unequalPro) || (has.init   && attr(initialModel, "Gating"))  ||  G == 0)
+      addE        <- G  > 0      && length(ecov) > 0    && !na.expx    && (is.null(o.exps) || !identical(expert,                     if(fullMoE) o.nets else o.exps))
+      addG        <- !na.gate    && length(gcov) > 0    && G > !noise  && isTRUE(doNgate)  && (is.null(o.gate) || !identical(gating, if(fullMoE) o.nets else o.gate))
+      addGN       <- !na.gate    && length(gcov) > 0    && G > 1       && isTRUE(noNgate)  && (is.null(o.gate) || !identical(gating, if(fullMoE) o.nets else o.gate))
       addNG       <- G  > 1      && isTRUE(noNgate)     && stepG       && (has.init        &&  attr(initialModel, "Gating"))
       addQ        <- G  > 0      && isTRUE(equalPro)    && stepG       && (!has.init       || !attr(initialModel, "Gating"))
-      addB        <- fullMoE     && length(bcov) > 0    && G > 0       && !na.both
-      if(isFALSE(has.init)       || 
-         !attr(initialModel, "Gating"))    {
-        if(isTRUE(allPro)        &&
-           isTRUE(has.init)      &&
+      addB        <- fullMoE     && length(bcov) > 0    && G > 0       && !na.both         && (is.null(o.nets) || !identical(b.nets, o.nets))
+      if(isTRUE(allPro)          &&
+        (isFALSE(has.init)       || 
+         !attr(initialModel, 
+               "Gating"))        &&
+         G         > 1)           {
+        if(isTRUE(has.init)      &&
            attr(initialModel, 
                  "EqualPro"))     {
           args$equalPro          <- FALSE
@@ -3180,8 +3193,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
           }
           compare[[j]]           <- res   <- comp$optimal
           crit    <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
-        } else if(isTRUE(allPro)          &&
-                 (isFALSE(has.init)       ||
+        } else if((isFALSE(has.init)      ||
                   !attr(initialModel, 
                         "EqualPro")))      {
           args$equalPro          <- TRUE
@@ -3198,11 +3210,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
           crit    <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
         }
       }
-      if(isTRUE(has.init)        &&
+      if(isTRUE(allNgate)        &&
+         isTRUE(has.init)        &&
          attr(initialModel,   "Noise")    &&
          attr(initialModel,  "Gating"))    {
-        if(isTRUE(allNgate)      &&
-           !attr(initialModel, 
+        if(!attr(initialModel, 
                  "NoiseGate"))    {
           args$noise.gate        <- TRUE
           temp    <- do.call(MoE_clust, args)
@@ -3215,7 +3227,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
           }
           compare[[j]]           <- res   <- comp$optimal
           crit    <- switch(EXPR=criterion, bic=res$bic, icl=res$icl, aic=res$aic)
-        } else if(isTRUE(allNgate))        {
+        } else if(G     > 1)      { 
           args$noise.gate        <- FALSE
           temp    <- do.call(MoE_clust, args)
           args$noise.gate        <- TRUE

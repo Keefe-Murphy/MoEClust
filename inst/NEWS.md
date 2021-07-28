@@ -6,9 +6,16 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
-* `MoE_stepwise` gains the arg. `fullMoE` (defaulting to `FALSE`) to restrict the search to "full"  
-  MoE models where the same set of covariates appears in both the gating & expert networks.
-* Small `MoE_stepwise` speed-up by searching `G=1` `equalPro` models w/ expert covariates only once.
+* Various further fixes to `MoE_stepwise`:  
+  * Added the arg. `fullMoE` (defaulting to `FALSE`) which allows restricting the search to "full"  
+    MoE models where the same set of covariates appears in both the gating & expert networks.
+  * When `initialModel`/`initialG` is given, the `"all"` option for `noise.gate` & `equalPro`    
+  now reverts to `"both"` whenever `"all"` would unnecessarily duplicate candidate models.
+  * Small speed-up if `gating` &/or `expert` have covariates that are already in `initialModel`.
+  * Small speed-up by searching `G=1` `equalPro` models w/ expert covariates only once.
+  * Two fixes to handled how `initialModel` and `modelNames` interact:  
+    * It's now assumed (else warned) that `initialModel` should be optimal w.r.t. model type.
+    * The supplied `modelNames` are augmented with `initialModel$modelName` if needs be.
 * Handled name mismatches for optional args. w/ `list(...)` defaults in `MoE_control`/`MoE_gpairs`.
 * Fixed printing of `noise.gate` in `MoE_compare` for `G=1` models w/ noise & gating covariates.
 * Improved checks on `G` in `MoE_clust`.
