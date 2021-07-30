@@ -5,6 +5,7 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.4.1 - (_13<sup>th</sup> release [patch update]: 2021-10-12_)
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
 * Various further fixes to `MoE_stepwise`:  
   * Added the arg. `fullMoE` (defaulting to `FALSE`) which allows restricting the search to "full"  
@@ -13,9 +14,14 @@ __and a Noise Component__
   now reverts to `"both"` whenever `"all"` would unnecessarily duplicate candidate models.
   * Small speed-up if `gating` &/or `expert` have covariates that are already in `initialModel`.
   * Small speed-up by searching `G=1` `equalPro` models w/ expert covariates only once.
-  * Two fixes to handled how `initialModel` and `modelNames` interact:  
+  * Two fixes to handle how `initialModel` and `modelNames` interact:  
     * It's now assumed (else warned) that `initialModel` should be optimal w.r.t. model type.
     * The supplied `modelNames` are augmented with `initialModel$modelName` if needs be.
+* `MoE_control` gains the arg. `exp.init$estart` so the paper's Algorithm 1 can work as intended:  
+  `exp.init$estart` toggles the behaviour of `init.z="random"` in the presence of expert covariates  
+  when `exp.init$mahalanobis=TRUE` & `nstarts > 1`:  when `FALSE` (the default/old behaviour), all  
+  random starts are put through the initial reallocation routine and then subjected to full runs of the EM;  
+  when `TRUE`, only the single best random start obtained from this routine is subjected to the full EM.
 * Handled name mismatches for optional args. w/ `list(...)` defaults in `MoE_control`/`MoE_gpairs`.
 * Fixed printing of `noise.gate` in `MoE_compare` for `G=1` models w/ noise & gating covariates.
 * Improved checks on `G` in `MoE_clust`.
