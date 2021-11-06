@@ -71,7 +71,7 @@ Considering \code{"all"} (or \code{"both"}) settings increases the search space 
 
 \item{verbose}{Logical indicating whether to print messages pertaining to progress to the screen during fitting. By default is \code{TRUE} if the session is interactive, and \code{FALSE} otherwise. If \code{FALSE}, warnings and error messages will still be printed to the screen, but everything else will be suppressed.}
 
-\item{...}{Additional arguments to \code{\link{MoE_control}}. Note that these arguments will be supplied to \emph{all} candidate models for every step.}
+\item{...}{Additional arguments to \code{\link{MoE_control}}, \emph{except for those arguments of the same name which are already listed here}, e.g. \code{equalPro} and \code{noise.gate}. Note that these arguments will be supplied to \emph{all} candidate models for every step. For arguments specific to \code{\link{MoE_control}} (e.g. \code{stopping}, \code{algo}, etc.), it is recommended to run \code{MoE_stepwise} multiple times while toggling these arguments, if desired.}
 }
 \value{
 An object of class \code{"MoECompare"} containing information on all visited models and the optimal model (accessible via \code{x$optimal}).
@@ -91,7 +91,7 @@ Without any prior information, it is best to accept the defaults at the expense 
 \note{
 It is advised to run this function once with \code{noise=FALSE} and once with \code{noise=TRUE} and then choose the optimal model across both sets of results.
 
-At present, only additions (of components and covariates) are considered. In future updates, it will be possible to allow both additions and removals.
+At present, only additions (of components and covariates) are considered. In future updates, it may be possible to allow both additions and removals.
 
 The function will attempt to remove duplicate variables found in both \code{data} and \code{network.data}; in particular, they will be removed from \code{network.data}. Users are however advised to careful specify \code{data} and \code{network.data} such that there are no duplicates, especially if the desired variable(s) should belong to \code{network.data}.
 

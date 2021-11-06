@@ -48,7 +48,7 @@
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(grid.size=c(100, 100), dcol="grey50",
 #'      nlevels=11, show.labels=TRUE, label.style="mixed"),}
-#' where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively, and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.
+#' where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.
 #' @param stripplot.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"stripplot"}.
 #'
 #' \code{NULL} is equivalent to:
@@ -157,7 +157,7 @@
 #'            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
 #'            
 #' # Produce a generalised pairs plot for a model with a noise component.
-#' # Reorder the covariates and omit the variabes "Hc" and "Hg".
+#' # Reorder the covariates and omit the variables "Hc" and "Hg".
 #' # Use barcode plots for the categorical/continuous pairs.
 #' # Magnify the size of scatter points assigned to the noise component.
 #' 
@@ -351,7 +351,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   claSS                 <- as.integer(levels(claSS))[claSS]
   if(any(C <- claSS == 0))       {
     claSS0              <- factor(claSS, levels=c(sort(levels(factor(claSS)))[-1L], 0L))
-    claSS[which(C)]     <- G  + 1
+    claSS[which(C)]     <- G  + 1L
   } else claSS0         <- factor(claSS)
   x[,1L]                <- if(names(x)[1L]  == "MAP") claSS0 else x[,1L]
   if(length(gap)        != 1    || (!is.numeric(gap)    ||
@@ -402,12 +402,15 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     res$parameters$lpro <- log(if(isTRUE(attr(res, "Gating"))) colMeans2(res$parameters$pro) else res$parameters$pro)
   }
   if(is.null(density.pars$grid.size)) {
-    density.pars$grid.size   <- c(100, 100)
-  } else if(length(density.pars$grid.size)  != 2 || !all(is.numeric(density.pars$grid.size)) ||
+    density.pars$grid.size   <- c(100L, 100L)
+  } else if(length(density.pars$grid.size)  == 1) {
+    density.pars$grid.size   <- rep(density.pars$grid.size, 2L)
+  }
+  if(length(density.pars$grid.size)  != 2 || !all(is.numeric(density.pars$grid.size)) ||
             any(density.pars$grid.size       < 10))   stop("Invalid 'density.pars$grid.size'", call.=FALSE)
-  if(is.null(density.pars$nlevels))  {
+  if(is.null(density.pars$nlevels))   {
     density.pars$nlevels <- 11
-  } else if(length(density.pars$nlevels) > 1     ||
+  } else if(length(density.pars$nlevels)   > 1   ||
             !is.numeric(density.pars$nlevels)    ||
             density.pars$nlevels            <= 1)     stop("Invalid 'density.pars$nlevels'", call.=FALSE)
   if(is.null(density.pars$dcol))     {
@@ -462,7 +465,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     diag.pars$show.counts  <- TRUE
   } else if(length(diag.pars$show.counts) > 1 ||
             !is.logical(diag.pars$show.counts))       stop("'diag.pars$show.counts' must be a single logical indicator", call.=FALSE)
-  if(is.null(stripplot.pars$strip.pch)) {
+  if(is.null(stripplot.pars$strip.pch))  {
     stripplot.pars$pch            <- if(response.type == "uncertainty" && uncert.cov) scatter.pars$uncert.pch else symbols[claSS]
   } else stripplot.pars$pch       <- if(response.type == "uncertainty" && uncert.cov) scatter.pars$uncert.pch else stripplot.pars$strip.pch
   if(length(uncert.cov)  > 1                  ||
@@ -486,7 +489,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     }
     stripplot.pars$size <- replace(rep(stripplot.pars$size, nrow(dat)), clust == 0, stripplot.pars$size.noise)
   }
-  if(is.null(stripplot.pars$strip.col))  {
+  if(is.null(stripplot.pars$strip.col))   {
     stripplot.pars$col  <- if(response.type  == "uncertainty" && uncert.cov)           uncertainty$col else if(isFALSE(scat.null)) scatter.pars$col else colors[claSS]
   } else stripplot.pars$col       <- if(response.type  == "uncertainty" && uncert.cov) uncertainty$col else stripplot.pars$strip.col
   if(is.null(stripplot.pars$jitter)) {
@@ -1245,11 +1248,13 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   ltau         <- .mat_byrow(pars$lpro, nrow=xyn, ncol=GN)
   mu           <- if(isTRUE(expx)) pars$fits[,dimens,,drop=FALSE] else pars$mean[dimens,, drop=FALSE]
   if(expx)        {
-    den        <- Reduce("+", lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma, Vinv=Vinv)))/n + ltau
+    if(noise)     {
+      den      <- cbind(Reduce("+", lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma)))/n, log(Vinv)) + ltau
+    } else den <- Reduce("+",       lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma, Vinv=Vinv)))/n  + ltau
   } else if(gate) {
     den        <- MoE_dens(data=xy, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
-  } else den   <- MoE_dens(data=xy, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
-  zz           <- matrix(exp(rowLogSumExps(den)), nrow=lx, ncol=ly)
+  }   else den <- MoE_dens(data=xy, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
+  zz           <- matrix(exp(rowLogSumExps(den)), nrow=lx, ncol=ly, byrow=FALSE)
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim))
   .draw_axis(x=x, y=y, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=NULL, horiz=NULL, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
   grid::popViewport(1)

@@ -5,6 +5,13 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+* Fixed `MoE_clust` bug when `tau0` is specified but `G` is not (introduced in last update).
+* Minor speed-up to `MoE_gpairs(response.type="density")` w/ expert covariates & noise component.
+* `MoE_gpairs` arg. `density.pars$grid.size` now recycled as vector of length 2 if supplied as scalar.
+* `aitken` now returns `ldiff`, the difference in log-likelihood estimates used for the stopping criterion.
+* `sapply` replaced with `vapply`, with other negligible speed-ups.
+
 ## MoEClust v1.4.1 - (_13<sup>th</sup> release [patch update]: 2021-10-12_)
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
 * Various further fixes to `MoE_stepwise`:  

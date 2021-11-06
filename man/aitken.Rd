@@ -11,31 +11,33 @@ aitken(loglik)
 }
 \value{
 A list with the following named components:
-\item{\code{ll}}{The most current estimate for the log-likelihood.}
+\item{\code{ll}}{The most current estimate of the log-likelihood, i.e. \code{loglik[3]}.}
 \item{\code{linf}}{The most current estimate of the final converged maximised log-likelihood.}
 \item{\code{a}}{The Aitken acceleration value where typically \code{0 <= a <= 1}. When \code{a < 0}, a numerical issue or bug has occurred; when \code{a > 1}, the algorithm is accelerating and should not be stopped.}
+\item{\code{ldiff}}{The difference between \code{linf} and the \emph{previous} estimate of the log-likelihood, i.e. \code{loglik[2]}, in accordance with McNicholas et al. (2010).}
 When the \code{"aitken"} method is employed within \code{\link{MoE_clust}} (via \code{\link{MoE_control}}), \code{ll} at convergence gives the log-likelihood achieved by the estimated parameters, while \code{linf} at convergence estimates the log-likelihood that would be achieved after an infinite number of EM/CEM iterations.
 }
 \description{
 Calculates the Aitken acceleration estimate of the final converged maximised log-likelihood under the EM/CEM framework.
 }
 \details{
-The final converged maximised log-likelihood can be used to determine convergence of the EM/CEM algorithm within \code{\link{MoE_clust}}, i.e. by checking whether the absolute difference between the current log-likelihood estimate and the final converged maximised log-likelihood estimate is less than some tolerance.
+The final converged maximised log-likelihood can be used to determine convergence of the EM/CEM algorithm within \code{\link{MoE_clust}}, i.e. by checking whether the absolute difference between the previous log-likelihood estimate and the final converged maximised log-likelihood estimate is less than some tolerance.
 }
 \note{
 Within \code{\link{MoE_clust}}, as specified by the \code{stopping} argument of \code{\link{MoE_control}}, \code{"aitken"} is the default method used to assess convergence. The other option monitors the \code{"relative"} change in log-likelihood against some tolerance. See \code{\link{MoE_control}}.
 }
 \examples{
 (a1 <- aitken(-c(449.61534, 442.84221, 436.58999)))
-a2  <- aitken(-c(442.84221, 436.58999, 436.58998))
-abs(a2$linf - a1$linf) < 1e-05 #FALSE
-a3  <- aitken(-c(436.58998, 436.58997, 436.58997))
-abs(a3$linf - a2$linf) < 1e-05 #TRUE
-(ll <- a3$linf)
-(a  <- a3$a)
+a1$ldiff < 1e-05 # FALSE
+(a2 <- aitken(-c(442.84221, 436.58999, 436.58998)))
+a2$ldiff < 1e-05 # FALSE
+(a3 <- aitken(-c(436.58999, 436.58998, 436.58998)))
+a3$ldiff < 1e-05 # TRUE
 }
 \references{
 Boehning, D., Dietz, E., Schaub, R., Schlattmann, P. and Lindsay, B. G. (1994). The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family. \emph{Annals of the Institute of Statistical Mathematics}, 46(2): 373-388.
+
+McNicholas, P. D., Murphy, T. B., McDaid, A. F. and Frost, D. (2010). Serial and parallel implementations of model-based clustering via parsimonious Gaussian mixture models. \emph{Computational Statistics & Data Analysis}, 54(3): 711-723.
 }
 \seealso{
 \code{\link{MoE_control}}

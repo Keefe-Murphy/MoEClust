@@ -96,7 +96,7 @@ Note also that \code{scat.size} will be modified on an observation-by-observatio
 \code{NULL} is equivalent to:
 \preformatted{list(grid.size=c(100, 100), dcol="grey50",
      nlevels=11, show.labels=TRUE, label.style="mixed"),}
-where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively, and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.}
+where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.}
 
 \item{stripplot.pars}{A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"stripplot"}.
 
@@ -179,7 +179,7 @@ MoE_gpairs(res, response.type="density", show.labels=FALSE,
            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
            
 # Produce a generalised pairs plot for a model with a noise component.
-# Reorder the covariates and omit the variabes "Hc" and "Hg".
+# Reorder the covariates and omit the variables "Hc" and "Hg".
 # Use barcode plots for the categorical/continuous pairs.
 # Magnify the size of scatter points assigned to the noise component.
 

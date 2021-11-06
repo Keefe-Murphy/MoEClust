@@ -49,7 +49,8 @@ identical(max.col(Estep$z), as.integer(unname(model$classification))) #TRUE
 identical(Estep$z, model$z)                                           #TRUE
 
 # The same can be done for models with expert covariates &/or a noise component
-# Note for models with expert covariates that the mean has to be supplied as 0
+# Note for models with expert covariates that the mean has to be supplied as 0,
+# and the data has to be supplied as "resid.data"
 m2    <- MoE_clust(hema, G=2, expert= ~ sex, modelNames="EVE", network.data=ais, tau0=0.1)
 Dens2 <- MoE_dens(data=m2$resid.data, sigs=m2$parameters$variance, mus=0, 
                   log.tau=log(m2$parameters$pro), Vinv=m2$parameters$Vinv)
