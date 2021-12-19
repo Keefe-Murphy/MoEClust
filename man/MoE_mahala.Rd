@@ -7,7 +7,7 @@
 MoE_mahala(fit,
            resids,
            squared = FALSE,
-           identity = FALSE)
+           identity = NULL)
 }
 \arguments{
 \item{fit}{A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.}
@@ -16,7 +16,7 @@ MoE_mahala(fit,
 
 \item{squared}{A logical. By default (\code{FALSE}), the generalized interpoint distance is computed. Set this flag to \code{TRUE} for the squared value.}
 
-\item{identity}{A logical indicating whether the identity matrix is used in in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE}; \code{TRUE} corresponds to the use of the Euclidean distance. Only relevant for multivariate response data.}
+\item{identity}{A logical indicating whether the identity matrix is used in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE} for multivariate response data but defaults to \code{TRUE} for univariate response data, where \code{TRUE} corresponds to the use of the Euclidean distance. Setting \code{identity=FALSE} with multivariate data may be advisable when the dimensions of the data are such that the covariance matrix cannot be inverted (otherwise, the pseudo-inverse is used when \code{TRUE}).}
 }
 \value{
 A vector giving the Mahalanobis distance (or squared Mahalanobis distance) between response(s) and fitted values for each observation.

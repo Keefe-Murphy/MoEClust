@@ -297,6 +297,7 @@
     }
     sq_maha       <- !uni
     low.dim       <- !uni  && low.dim
+    Identity      <- ifelse(is.null(Identity), isTRUE(uni), Identity)
     x.names       <- colnames(X)
     if(!multi)    {
       mNs         <- toupper(modelNames)
@@ -1729,7 +1730,7 @@
 #'
 #' Unless \code{init.z="list"}, supplying this argument as \code{TRUE} when the \code{\link[clustMD]{clustMD}} library is loaded has the effect of superseding the \code{init.z} argument: this argument now governs instead how the call to \code{\link[clustMD]{clustMD}} is initialised (unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components, in which case \code{init.z} is invoked \emph{instead} to initialise for \code{G} values for which all \code{\link[clustMD]{clustMD}} model types failed). Similarly, the arguments \code{hc.args} and \code{km.args} will be ignored (again, unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components).}
 #' \item{\code{max.init}}{The maximum number of iterations for the Mahalanobis distance-based reallocation procedure when \code{exp.init$mahalanobis} is \code{TRUE}. Defaults to \code{.Machine$integer.max}.}
-#' \item{\code{identity}}{A logical indicating whether the identity matrix (corresponding to the use of the Euclidean distance) is used in place of the covariance matrix of the residuals (corresponding to the use of the Mahalanobis distance). Defaults to \code{FALSE}; only relevant for multivariate response data.}
+#' \item{\code{identity}}{A logical indicating whether the identity matrix (corresponding to the use of the Euclidean distance) is used in place of the covariance matrix of the residuals (corresponding to the use of the Mahalanobis distance). Defaults to \code{FALSE} for multivariate response data but defaults to \code{TRUE} for univariate response data. Setting \code{identity=FALSE} with multivariate data may be advisable when the dimensions of the data are such that the covariance matrix cannot be inverted (otherwise, the pseudo-inverse is used when \code{TRUE}).}
 #' \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given component's expert regression (particularly for categorical covariates). It may also occur, due to this partitioning, that "unseen" data, when calculating the residuals, will have new factor levels. When \code{isTRUE(exp.init$drop.break)}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios.
 #'
 #' Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{exp.init$drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{exp.init$drop.break}.}
@@ -1896,10 +1897,9 @@
       exp.init$estart       <- FALSE
     } else if(length(exp.init$estart)       > 1 ||
               !is.logical(exp.init$estart))       stop("'exp.init$estart' must be a single logical indicator",          call.=FALSE)
-    if(is.null(exp.init$identity))          {
-      exp.init$identity     <- FALSE
-    } else if(length(exp.init$identity)     > 1 ||
-              !is.logical(exp.init$identity))     stop("'exp.init$identity' must be a single logical indicator",        call.=FALSE)
+    if(!is.null(exp.init$identity)              &&
+      (length(exp.init$identity)            > 1 ||
+              !is.logical(exp.init$identity)))    stop("'exp.init$identity' must be a single logical indicator",        call.=FALSE)
     if(is.null(exp.init$max.init))          {
       exp.init$max.init     <- .Machine$integer.max
     } else if(isTRUE(exp.init$mahalanobis)      &&
@@ -3878,7 +3878,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param fit A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.
 #' @param resids The residuals. Can be residuals for observations included in the model, or residuals arising from predictions on unseen data. Must be coercible to a matrix with the number of columns being the number of response variables. Missing values are not allowed.
 #' @param squared A logical. By default (\code{FALSE}), the generalized interpoint distance is computed. Set this flag to \code{TRUE} for the squared value.
-#' @param identity A logical indicating whether the identity matrix is used in in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE}; \code{TRUE} corresponds to the use of the Euclidean distance. Only relevant for multivariate response data.
+#' @param identity A logical indicating whether the identity matrix is used in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE} for multivariate response data but defaults to \code{TRUE} for univariate response data, where \code{TRUE} corresponds to the use of the Euclidean distance. Setting \code{identity=FALSE} with multivariate data may be advisable when the dimensions of the data are such that the covariance matrix cannot be inverted (otherwise, the pseudo-inverse is used when \code{TRUE}).
 #'
 #' @return A vector giving the Mahalanobis distance (or squared Mahalanobis distance) between response(s) and fitted values for each observation.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
@@ -3889,7 +3889,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' MoE_mahala(fit,
 #'            resids,
 #'            squared = FALSE,
-#'            identity = FALSE)
+#'            identity = NULL)
 #' @examples
 #' \dontshow{library(matrixStats)}
 #' data(ais)
@@ -3940,7 +3940,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'        labels=replace(as.character(CO2data$country), which(min.M <= 1), ""))
 #' }
 #' crit}
-  MoE_mahala      <- function(fit, resids, squared = FALSE, identity = FALSE) {
+  MoE_mahala      <- function(fit, resids, squared = FALSE, identity = NULL) {
     if(!inherits(fit, "mlm") &&
        !inherits(fit, "lm"))                      stop("'fit' must inherit the class \"mlm\" or \"lm\"",  call.=FALSE)
     resids        <- tryCatch(data.matrix(as.data.frame(resids)), error=function(e) {
@@ -3949,6 +3949,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
        anyNA(resids))                             stop("Invalid 'resids': must be numeric and contain no missing values", call.=FALSE)
     if(length(squared) > 1   ||
        !is.logical(squared))                      stop("'squared' must be a single logical indicator",    call.=FALSE)
+    identity      <- ifelse(is.null(identity), isFALSE(inherits(fit, "mlm")), identity)
     if(length(identity) > 1  ||
        !is.logical(identity))                     stop("'identity' must be a single logical indicator",   call.=FALSE)
     
@@ -3965,12 +3966,15 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         covsvd$v[,posi, drop=FALSE]   %*% (t(covsvd$u[,posi, drop=FALSE])/covsvd$d[posi]) else array(0L, dim(covar)[2L:1L])
       } else icov <- chol2inv(.chol(covar))
      }
-     res          <- rowSums2(resids  %*% icov *    resids)
-      return(drop(if(isTRUE(squared)) res      else sqrt(res)))
+     res          <- rowSums2(resids  %*% icov *  resids)
+      return(drop(if(isTRUE(squared))   res            else sqrt(res)))
     }   else       {
-    #covar        <- as.numeric(crossprod(resids)/(nrow(resids) - fit$rank))
-    # return(drop(if(isTRUE(squared)) (resids/covar)^2 else abs(resids)/covar))
-      return(drop(if(isTRUE(squared)) resids^2 else abs(resids)))
+      if(isTRUE(identity))    {
+        return(drop(if(isTRUE(squared)) resids^2       else abs(resids)))
+      } else       {
+        covar     <- as.numeric(crossprod(resids)/(nrow(resids) - fit$rank))
+        return(drop(if(isTRUE(squared)) resids^2/covar else abs(resids)/sqrt(covar)))
+      }
     }
   }
 

@@ -24,8 +24,8 @@
 #' \itemize{
 #' \item{Type: }{Package}
 #' \item{Package: }{MoEClust}
-#' \item{Version: }{1.4.1}
-#' \item{Date: }{2021-10-12 (this version), 2017-11-28 (original release)}
+#' \item{Version: }{1.4.2}
+#' \item{Date: }{2021-12-19 (this version), 2017-11-28 (original release)}
 #' \item{Licence: }{GPL (>=2)}
 #' }
 #'
