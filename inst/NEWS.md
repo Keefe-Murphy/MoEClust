@@ -5,10 +5,15 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+* Added `summary` (and related `print`) methods for `MoECriterion` objects.
+* Minor speed-up to E-step for `"EEE"` & `"VVV"` models.
+* Fixed check on validity of `hc.meth` arg. in `MoE_control`.
+
 ## MoEClust v1.4.2 - (_14<sup>th</sup> release [patch update]: 2021-12-19_)
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
 * `MoE_mahala` arg. `identity` (& related `MoE_control` `exp.init$identity` option) is now also  
-  relevant for univariate data: old bevahiour is retained via respective defaults of `FALSE` & `TRUE` for  
+  relevant for univariate data: old behaviour is retained via respective defaults of `FALSE` & `TRUE` for  
   multivariate & univariate data (i.e. only ability to set `identity=FALSE` for univariate data is new).
 * Fixed `MoE_clust` bug when `tau0` is specified but `G` is not (introduced in last update).
 * Minor speed-up to `MoE_gpairs(response.type="density")` w/ expert covariates & noise component.

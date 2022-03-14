@@ -35,15 +35,15 @@
 #' \item{\code{n}}{The number of observations in the \code{data}.}
 #' \item{\code{d}}{The dimension of the \code{data}.}
 #' \item{\code{G}}{The optimal number of mixture components according to \code{criterion}.}
-#' \item{\code{BIC}}{A matrix of \emph{all} BIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustBIC"}, for which dedicated printing and plotting functions exist, respectively.}
-#' \item{\code{ICL}}{A matrix of \emph{all} ICL values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustICL"}, for which dedicated printing and plotting functions exist, respectively.}
-#' \item{\code{AIC}}{A matrix of \emph{all} AIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustAIC"}, for which dedicated printing and plotting functions exist, respectively.}
+#' \item{\code{BIC}}{A matrix of \emph{all} BIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustBIC"}, for which dedicated \code{print}, \code{summary}, and \code{plot} methods exist, respectively.}
+#' \item{\code{ICL}}{A matrix of \emph{all} ICL values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustICL"}, for which dedicated \code{print}, \code{summary}, and \code{plot} methods exist, respectively.}
+#' \item{\code{AIC}}{A matrix of \emph{all} AIC values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustAIC"}, for which dedicated \code{print}, \code{summary}, and \code{plot} methods exist, respectively.}
 #' \item{\code{bic}}{The BIC value corresponding to the optimal model. May not necessarily be the optimal BIC.}
 #' \item{\code{icl}}{The ICL value corresponding to the optimal model. May not necessarily be the optimal ICL.}
 #' \item{\code{aic}}{The AIC value corresponding to the optimal model. May not necessarily be the optimal AIC.}
 #' \item{\code{gating}}{An object of class \code{"MoE_gating"} (for which dedicated \code{print}, \code{summary}, and \code{\link[=predict.MoE_gating]{predict}} methods exist) and either \code{"multinom"} or \code{"glm"} (only for single-component models or noise-only models) giving the \code{\link[nnet]{multinom}} regression coefficients of the \code{gating} network. If \code{gating} covariates were \emph{NOT} supplied (or the best model has just one component), this corresponds to a RHS of \code{~1}, otherwise the supplied \code{gating} formula. As such, a fitted \code{gating} network is always returned even in the absence of supplied covariates or clusters. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{length(coef(gating))}, and the \code{gating} formula used is stored here as an attribute. If there is a noise component (and the option \code{noise.gate=TRUE} is invoked), its coefficients are those for the \emph{last} component. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the gating network}.}
 #' \item{\code{expert}}{An object of class \code{"MoE_expert"} (for which dedicated \code{print}, \code{summary}, and \code{\link[=predict.MoE_expert]{predict}} methods exist) and \code{"lm"} giving the (multivariate) WLS regression coefficients of the \code{expert} network. If \code{expert} covariates were NOT supplied, this corresponds to a RHS of \code{~1}, otherwise the supplied \code{expert} formula. As such, a fitted \code{expert} network is always returned even in the absence of supplied covariates. The number of parameters to penalise by for \code{\link{MoE_crit}} is given by \code{G * length(coef(expert[[1]]))}, and the \code{expert} formula used is stored here is an attribute. \strong{Users are cautioned against making inferences about statistical significance from summaries of the coefficients in the expert network}.}
-#' \item{\code{LOGLIK}}{A matrix of \emph{all} maximal log-likelihood values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustLoglik"}, for which dedicated printing and plotting functions exist, respectively.}
+#' \item{\code{LOGLIK}}{A matrix of \emph{all} maximal log-likelihood values with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which a log-likelihood could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustLoglik"}, for which dedicated \code{print}, \code{summary}, and \code{plot} methods exist, respectively.}
 #' \item{\code{loglik}}{The vector of increasing log-likelihood values for every EM/CEM iteration under the optimal model. The last element of this vector is the maximum log-likelihood achieved by the parameters returned at convergence.}
 #' \item{\code{linf}}{An asymptotic estimate of the final converged maximised log-likelihood. Returned when \code{stopping="aitken"} and \code{G > 1} (see \code{\link{MoE_control}} and \code{\link{aitken}}), otherwise the last element of \code{loglik} is returned instead.}
 #' \item{\code{df}}{The number of estimated parameters in the optimal model (i.e. the number of 'used' degrees of freedom). Subtract this number from \code{n} to get the degrees of freedom. The number of parameters due to the gating network, expert network, and covariance matrices are also stored here as attributes of \code{df}.}
@@ -63,15 +63,15 @@
 #' \item{\code{uncertainty}}{The uncertainty associated with the \code{classification}.}
 #' \item{\code{net.covs}}{A data frame gathering the unique set of covariates used in the \code{gating} and \code{expert} networks, if any. Will contain zero columns in the absence of gating or expert network covariates. Supplied gating covariates will be excluded if the optimal model has only one component. May have fewer columns than covariates supplied via the \code{network.data} argument also, as only the included covariates are gathered here.}
 #' \item{\code{resid.data}}{In the presence of expert network covariates, this is the augmented data actually used in the clustering at convergence, as a list of \code{G} matrices of WLS residuals of dimension \code{n * d}. Will contain zero columns in the absence of expert network covariates.}
-#' \item{\code{DF}}{A matrix giving the numbers of estimated parameters (i.e. the number of 'used' degrees of freedom) for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. Subtract these numbers from \code{n} to get the degrees of freedom. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustDF"}, for which dedicated printing and plotting functions exist, respectively.}
-#' \item{\code{ITERS}}{A matrix giving the total number of EM/CEM iterations for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged. Inherits the classes \code{"MoECriterion"} and \code{"mclustITERS"}, for which dedicated printing and plotting functions exist, respectively.}
+#' \item{\code{DF}}{A matrix giving the numbers of estimated parameters (i.e. the number of 'used' degrees of freedom) for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. Subtract these numbers from \code{n} to get the degrees of freedom. May include missing entries: \code{NA} represents models which were not visited, \code{-Inf} represents models which were terminated due to error, for which parameters could not be estimated. Inherits the classes \code{"MoECriterion"} and \code{"mclustDF"}, for which dedicated \code{print}, \code{summary}, and \code{plot} methods exist, respectively.}
+#' \item{\code{ITERS}}{A matrix giving the total number of EM/CEM iterations for \emph{all} visited models, with \code{length{G}} rows and \code{length(modelNames)} columns. May include missing entries: \code{NA} represents models which were not visited, \code{Inf} represents models which were terminated due to singularity/error and thus would never have converged. Inherits the classes \code{"MoECriterion"} and \code{"mclustITERS"}, for which dedicated \code{print}, \code{summary}, and \code{plot} methods exist, respectively.}
 #' Dedicated \code{\link[=plot.MoEClust]{plot}}, \code{\link[=predict.MoEClust]{predict}}, \code{print}, and \code{summary} functions exist for objects of class \code{"MoEClust"}. The results can be coerced to the \code{"Mclust"} class to access other functions from the \pkg{mclust} package via \code{\link[=as.Mclust.MoEClust]{as.Mclust}}.
 #' @details The function effectively allows 6 different types of Gaussian Mixture of Experts model (as well as the different models in the GPCM/\pkg{mclust} family, for each): i) the standard finite Gaussian mixture with no covariates, ii) fixed covariates only in the gating network, iii) fixed covariates only in the expert network, iv) the full Mixture of Experts model with fixed covariates entering both the mixing proportions and component densities. By constraining the mixing proportions to be equal (see \code{equalPro} in \code{\link{MoE_control}}) two extra special cases are facilitated when gating covariates are excluded. 
 #' 
 #' Note that having the same covariates in both networks is allowed. So too are interactions, transformations, and higher order terms (see \code{\link[stats]{formula}}): the latter \strong{must} be specified explicitly using the \code{AsIs} operator (\code{\link{I}}). Covariates can be continuous, categorical, logical, or ordinal, but the response must always be continuous.
 #'
 #' While model selection in terms of choosing the optimal number of components and the GPCM/\pkg{mclust} model type is performed within \code{\link{MoE_clust}}, using one of the \code{criterion} options within \code{\link{MoE_control}}, choosing between multiple fits with different combinations of covariates or different initialisation settings can be done by supplying objects of class \code{"MoEClust"} to \code{\link{MoE_compare}}.
-#' @note Where \code{BIC}, \code{ICL}, \code{AIC}, \code{LOGLIK}, \code{DF} and \code{ITERS} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL}, \code{AIC}, \code{LOGLIK}, \code{DF} and \code{ITERS} all inherit the classes \code{"MoECriterion"} and \code{"mclustBIC", "mclustICL", etc.}, for which dedicated printing and plotting functions exist, respectively.
+#' @note Where \code{BIC}, \code{ICL}, \code{AIC}, \code{LOGLIK}, \code{DF} and \code{ITERS} contain \code{NA} entries, this corresponds to a model which was not run; for instance a VVV model is never run for single-component models as it is equivalent to EEE. As such, one can consider the value as not really missing, but equivalent to the EEE value. \code{BIC}, \code{ICL}, \code{AIC}, \code{LOGLIK}, \code{DF} and \code{ITERS} all inherit the classes \code{"MoECriterion"} and \code{"mclustBIC", "mclustICL", etc.}, for which dedicated \code{print}, \code{summary}, and \code{plot} methods exist, respectively.
 #'
 #' @seealso See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
 #' 
@@ -1859,6 +1859,7 @@
     criterion     <- match.arg(criterion)
     if(!missing(stopping)   && (length(stopping)  > 1  ||
        !is.character(stopping)))                  stop("'stopping' must be a single character string",  call.=FALSE)
+    stop.miss     <- missing(stopping)
     stopping      <- match.arg(stopping)
     miss.init     <- missing(init.z)
     miss.list     <- missing(z.list)
@@ -1943,9 +1944,11 @@
        !is.logical(posidens))                     stop("'posidens' must be a single logical indicator", call.=FALSE)
 
     if(isTRUE(asMclust))     {
-      if(stopping != "relative"    &&
-         isTRUE(verbose))                         message("'stopping' forced to \"relative\" as a result of 'asMclust=TRUE'\n")
-      stopping    <- "relative"
+      if(stopping != "relative")    {
+        if(!stop.miss       &&
+           isTRUE(verbose))                       message("'stopping' forced to \"relative\" as a result of 'asMclust=TRUE'\n")
+        stopping    <- "relative"
+      }                         
       if(!is.null(hc.args$hcUse)   &&
          isTRUE(verbose)    &&
          hc.args$hcUse      != "SVD")             message("'hcUse' forced to \"SVD\" as a result of 'asMclust=TRUE'\n")
@@ -2001,7 +2004,7 @@
     if(!(miss.hc  <- is.null(hc.args$hc.meth)))  {
       if(init.z   == "hc"   &&
          !is.element(hc.args$hc.meth, c("E", "V",
-         mclust.options("hcModelNames"))))        stop("Invalid 'hc.args$hc.meth' selected for initialisation by agglomerative hierarchical clustering",     call.=FALSE)
+         "EII", "VII", "EEE", "VVV")))            stop("Invalid 'hc.args$hc.meth' selected for initialisation by agglomerative hierarchical clustering",     call.=FALSE)
     }
     if(is.null(hc.args$hcUse))      {
       hc.args$hcUse         <- "VARS"
@@ -3720,11 +3723,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' all.equal(a, b)                    #TRUE
 #' all.equal(crossprod(a), sig$Sigma) #TRUE
 #' all.equal(crossprod(b), sig$Sigma) #TRUE
-  force_posiDiag  <- function(x) {
+  force_posiDiag  <- function(x)   {
     if(!is.matrix(x) ||
-       any(x[row(x)   > col(x)] != 0) &&
-       any(x[col(x)   > row(x)] != 0))            stop("'x' must be an upper or lower triangular matrix")
-      provideDimnames(diag(sign(diag(x))) %*% x, base=list(rownames(x), colnames(x)))
+      (!all(x[row(x)  > col(x)]   == 0)   &&
+       !all(x[col(x)  > row(x)]   == 0)))         stop("'x' must be an upper or lower triangular matrix")
+    x[]           <- sign(diag(x)) * x
+      return(x)
   }
 
 #' Quantile-Based Clustering for Univariate Data
@@ -3758,8 +3762,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     q[1L]         <- min(x)  - eps
     q[length(q)]  <- max(x)  + eps
     cl            <- vector("integer", length(x))
-    for(i in seq_len(G)) {
-      cl[x >= q[i] & x < q[i + 1L]] <- i
+    for(g in seq_len(G)) {
+      cl[x >= q[g] & x < q[g + 1L]] <- g
     }
       cl
   }
@@ -4082,7 +4086,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     eigs          <- eigen(x, symmetric = TRUE)
     eval          <- eigs$values
     evec          <- eigs$vectors
-     return(chol(x + evec %*% tcrossprod(diag(pmax.int(0L, 2 * max(abs(eval)) * d * .Machine$double.eps - eval), d), evec)))
+     return(chol(x + evec %*% tcrossprod(diag(pmax.int(.Machine$double.eps, 2 * max(abs(eval)) * d * .Machine$double.eps - eval), d), evec)))
     }
   )
 
@@ -4524,6 +4528,46 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     print(unclass(x))
     cat(paste0("\nTop ", ifelse(pick > 1, paste0(pick, " models"), "model"), " based on the ", crit, " criterion:\n"))
     print(choice$crits)
+      invisible()
+  }
+  
+#' @method summary MoECriterion
+#' @export
+  summary.MoECriterion <- function(object, G, modelNames, ...) {
+    attribs            <- attributes(object) 
+    if(!missing(G))     {
+      object           <- object[rownames(object)  %in% G,,         drop=FALSE]
+      attr(object, "dim")        <- dim(object)
+      attr(object, "dimnames")   <- list(as.character(G), attribs$dimnames[[2L]])
+      attr(object, "G")          <- G
+    }
+    if(!missing(modelNames))      {
+      object           <- object[,colnames(object) %in% modelNames, drop=FALSE]
+      attr(object, "dim")        <- dim(object)
+      attr(object, "dimnames")   <- list(attribs$dimnames[[1L]], modelNames)
+      attr(object, "modelNames") <- modelNames
+    }
+    attr(object, "class")        <- "MoECriterion"
+    attr(object, "criterion")    <- attribs$criterion
+    object             <- .pick_MoECrit(object, ...)
+    attr(object, "class")        <- "MoECriterion"
+    attr(object, "criterion")    <- attribs$criterion
+    class(object)      <- "summary.MoECriterion"
+      return(object)
+  }
+  
+#' @method print summary.MoECriterion
+#' @export
+  print.summary.MoECriterion <- function(x, digits = 3L, ...) {
+    if(length(digits) > 1    ||
+       !is.numeric(digits)   ||
+       digits   <= 0)                             stop("Invalid 'digits'", call.=FALSE)
+    crit        <- attr(x, "criterion")
+    cat(paste0("Best ", crit, " values:\n"))
+    x           <- drop(as.matrix(x$crits))
+    x           <- rbind(x, x - switch(EXPR=crit, DF=, ITERS=min(x), max(x)))
+    rownames(x) <- list(crit, paste0(crit, " diff"))
+    print(x, digits = digits)
       invisible()
   }
 
