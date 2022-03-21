@@ -24,7 +24,7 @@
 #' @param ... An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.
 #' @param x,object,digits,classification,parameters,networks Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 3). \code{classification}, \code{parameters}, and \code{networks} are logicals which govern whether a table of the MAP classification of observations, the mixture component parameters, and the gating/expert network coefficients are printed, respectively.
 
-#' @importFrom matrixStats "colMeans2" "colSums2" "rowLogSumExps" "rowMaxs" "rowMins" "rowSums2"
+#' @importFrom matrixStats "colMaxs" "colMeans2" "colSums2" "rowLogSumExps" "rowMaxs" "rowMins" "rowSums2"
 #' @importFrom mclust "emControl" "hc" "hclass" "hcE" "hcEEE" "hcEII" "hcV" "hcVII" "hcVVV" "Mclust" "mclust.options" "mclustBIC" "mclustICL" "mclustModelNames" "mclustVariance" "mstep" "mstepE" "mstepEEE" "mstepEEI" "mstepEEV" "mstepEII" "mstepEVE" "mstepEVI" "mstepEVV" "mstepV" "mstepVEE" "mstepVEI" "mstepVEV" "mstepVII" "mstepVVE" "mstepVVI" "mstepVVV" "nVarParams" "unmap"
 #' @importFrom mvnfast "dmvn"
 #' @importFrom nnet "multinom"
@@ -244,7 +244,7 @@
     allg0         <- all(G == 0)
     anyg1         <- any(G == 1)
     comp.x        <- if(isTRUE(comp.x)) Nseq else comp.x
-    noise.null    <- all(nnull <- is.null(noise), tnull   <- is.null(tau0), !anyg0)
+    noise.null    <- all(nnull <- is.null(noise), tnull   <- is.null(tau0))
     if(!is.null(noise.vol) && noise.null)         stop("Initial noise volume supplied without initial guess of noise allocations or initial guess of noise component proportion 'tau0'", call.=FALSE)
     equalNoise    <- !noise.null      && ctrl$equalNoise
     gate.noise    <- (!noise.null     && ctrl$noise.gate) || noise.null
@@ -254,7 +254,8 @@
     }
     anyg0or1      <- anyg0  + anyg1
     if(any(G      != floor(G))        ||
-       any(G       < as.integer(noise.null)))     stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")),   call.=FALSE)
+       any(G       < as.integer(noise.null -
+                                anyg0)))          stop(paste0("'G' must be ", ifelse(noise.null, "strictly positive", "strictly non-negative when modelling with a noise-component")),   call.=FALSE)
     if(any(G      >= n))        {
       G           <- G[G <= n]
       if(length(G) > 1)         {                 warning("Removing G values >= the number of observations\n",  call.=FALSE, immediate.=TRUE)
@@ -691,7 +692,7 @@
         expold    <- init.exp
         if(init.exp)      {
           tmp.z   <- matrix(NA, nrow=ifelse(noisen == 0, n, noisen), ncol=g)
-          mahala  <- e.res     <- e.fit <- list()
+          mahala  <- res.G     <- e.fit <- list()
           xN      <- X[!noise,, drop=FALSE]
           exnoise <- expx.covs[!noise,, drop=FALSE]
           expN    <- stats::update.formula(expert, xN ~ .)
@@ -733,7 +734,7 @@
                  }
                }
                res             <- 
-               e.res[[k]]      <- xN     - pred
+               res.G[[k]]      <- xN     - pred
                mahala[[k]]     <- MoE_mahala(exp, res, squared=sq_maha, identity=Identity)
              }
             }
@@ -770,7 +771,7 @@
          nX       <- X[noise,, drop=FALSE]
          noisexp  <- expx.covs[noise,, drop=FALSE]
          for(k in Gseq)   {
-           nRG[[k]][!noise,]   <- e.res[[k]]
+           nRG[[k]][!noise,]   <- res.G[[k]]
            exp    <- e.fit[[k]]
            pred   <- tryCatch(stats::predict(exp, newdata=noisexp),                   error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(exp, newdata=drop_levels(exp, noisexp)),                  silent=TRUE))
            if(inherits(pred,        "try-error")) {
@@ -795,9 +796,9 @@
              nRG[[k]][noise,]  <- nX     - pred
            }
          }
-         e.res    <- nRG
+         res.G    <- nRG
         }
-        res.x     <- if(uni) as.matrix(do.call(base::c, e.res)) else do.call(rbind, e.res)
+        G.res     <- if(uni) as.matrix(do.call(base::c, res.G)) else do.call(rbind, res.G)
       }
       if(eNO      <- expold    != init.exp)       warning(paste0("\tExtra initialisation step with expert covariates failed where G=", g, ifelse(drop.exp, ": try setting 'drop.exp' to FALSE\n", ", even with 'drop_constants' and 'drop_levels' invoked:\n\t\tTry suppressing the initialisation step via 'exp.init$mahalanobis' or using other covariates\n")), call.=FALSE, immediate.=TRUE)
 
@@ -821,20 +822,22 @@
         z[,-gN]   <- replace(z[,-gN], z[,-gN] > 0, 1L)
         z.init    <- z
       }
+      col.z       <- colSums2(z.init)
+      if(any(col.z[Gseq]  < 2)) {               
+       if(any(col.z[Gseq] < 1)) {                 warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were empty after initialisation\n"),          call.=FALSE, immediate.=TRUE)
+       } else                                     warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were initialised with only 1 observation\n"), call.=FALSE, immediate.=TRUE)
+       z          <- 
+       z.init     <- .small_z(z.init)
+      }
+      if(init.exp) {
+        for(k in Gseq) z.alloc[(k - 1L) * n + Nseq,k] <- z.init[,k]
+      }
       if(noise.gate)      {
         zN        <- z
       } else   {
         zN        <- z[,-gN,     drop=FALSE]
         zN        <- zN[!noise,, drop=FALSE]
       }
-      if(init.exp) {
-        for(k in Gseq) z.alloc[(k - 1L) * n + Nseq,k] <- z.init[,k]
-      }
-      col.z       <- colSums2(z.init)
-      emptyinit   <- FALSE
-      if(any(col.z[Gseq]  < 1))   {               warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were empty after initialisation\n"),          call.=FALSE, immediate.=TRUE)
-        emptyinit <- TRUE
-      } else if(any(col.z[Gseq]   < 2))           warning(paste0("\tFor the ", g, " component models, ", ifelse(gN > 1, "one or more", ""), " components were initialised with only 1 observation\n"), call.=FALSE, immediate.=TRUE)
 
     # Initialise gating network
       if(gate.g)  {
@@ -881,7 +884,7 @@
         }
         x.df      <- ifelse(g   > 0, nVarParams(modelName=modtype, d=d, G=g), 0L)
         if(g > 0  && expinitG)  {
-         Mstep    <- try(mstep(data=res.x, modelName=modtype, z=z.alloc, control=control), silent=TRUE)
+         Mstep    <- try(mstep(data=G.res, modelName=modtype, z=z.alloc, control=control), silent=TRUE)
          init.exp <- !inherits(Mstep, "try-error") && attr(Mstep, "returnCode")  >= 0
         }
         if(expold != init.exp  && !eNO) {
@@ -900,7 +903,7 @@
         }
         alG       <- ifelse(gN  > 1, algo, "EM")
 
-        medens    <- try(MoE_dens(data=if(init.exp) e.res else x.dat, mus=mus, sigs=vari, log.tau=ltau.init, Vinv=Xinv), silent=TRUE)
+        medens    <- try(MoE_dens(data=if(init.exp) res.G else x.dat, mus=mus, sigs=vari, log.tau=ltau.init, Vinv=Xinv), silent=TRUE)
         ERR       <- 
         ERR2      <- ERR || ((g > 0    && attr(Mstep, "returnCode") < 0) || inherits(medens, "try-error"))
         if(denswarn      &&
@@ -959,9 +962,20 @@
           Mstep   <- try(if(exp.g) mstep(data=res.x, modelName=modtype, z=z.mat, control=control) else mstep(data=X, modelName=modtype, z=if(noise.null) z else z[,-gN, drop=FALSE], control=control), silent=TRUE)
           ERR     <- (inherits(Mstep, "try-error") || attr(Mstep, "returnCode")  < 0)
           if(isTRUE(ERR))  {
-            z.err <- if(exp.g) z.mat     else if(noise.null)  z  else z[,-gN, drop=FALSE]
-            if(any(colSums2(z.err) == 0))         warning(paste0("\tThere were empty components: ", modtype, " (G=", g, ")\n"), call.=FALSE)
-          } else   {
+            z.err <- if(noise.null)  z   else z[,-gN, drop=FALSE]
+            if(any(colMaxs(z.err)     == 0))      warning(paste0("\tThere were empty components: ", modtype, " (G=", g, ")\n"), call.=FALSE)
+            if(exp.g)      {
+              z   <- .small_z(z)
+              for(k in Gseq) {
+                z.mat[(k - 1L) * n + Nseq,k]  <- z[,k]
+              }
+            } else {
+              z   <- .small_z(z)
+            }
+            Mstep <- try(if(exp.g) mstep(data=res.x, modelName=modtype, z=z.mat, control=control) else mstep(data=X, modelName=modtype, z=if(noise.null) z else z[,-gN, drop=FALSE], control=control), silent=TRUE)
+            ERR   <- (inherits(Mstep, "try-error") || attr(Mstep, "returnCode")  < 0)
+          }
+          if(isFALSE(ERR)) {
             mus   <- if(exp.g) muX       else Mstep$parameters$mean
             vari  <- Mstep$parameters$variance
           }
@@ -1693,7 +1707,7 @@
 #' Set control values for use with MoEClust
 #'
 #' Supplies a list of arguments (with defaults) for use with \code{\link{MoE_clust}}.
-#' @param init.z The method used to initialise the cluster labels. Defaults to \code{"hc"}, i.e. model-based agglomerative hierarchical clustering tree as per \code{\link[mclust]{hc}}, for multivariate data (see \code{hc.args}), or \code{"quantile"}-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are expert network covariates incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, in which case the default is again \code{"hc"}). The \code{"quantile"} option is thus only available for univariate data when expert network covariates are not incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, or when expert network covariates are not supplied.
+#' @param init.z The method used to initialise the cluster labels for the \emph{non-noise} components. Defaults to \code{"hc"}, i.e. model-based agglomerative hierarchical clustering tree as per \code{\link[mclust]{hc}}, for multivariate data (see \code{hc.args}), or \code{"quantile"}-based clustering as per \code{\link{quant_clust}} for univariate data (unless there are expert network covariates incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, in which case the default is again \code{"hc"}). The \code{"quantile"} option is thus only available for univariate data when expert network covariates are not incorporated via \code{exp.init$joint} &/or \code{exp.init$clustMD}, or when expert network covariates are not supplied.
 #'
 #' Other options include \code{"kmeans"} (see \code{km.args}), \code{"random"} initialisation (see \code{nstarts} below), a user-supplied \code{"list"}, and a full run of \code{\link[mclust]{Mclust}} (itself initialised via a model-based agglomerative hierarchical clustering tree, again see \code{hc.args}), although this last option \code{"mclust"} will be coerced to \code{"hc"} if there are no \code{gating} &/or \code{expert} covariates within \code{\link{MoE_clust}} (in order to better reproduce \code{\link[mclust]{Mclust}} output).
 #'
@@ -1740,7 +1754,7 @@
 #' @param stopping The criterion used to assess convergence of the EM/CEM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). The \code{"relative"} option corresponds to the stopping criterion used by \code{\link[mclust]{Mclust}}: see \code{asMclust} above. 
 #' 
 #' Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the asymptotic estimate of the final converged maximised log-likelihood is also returned as \code{linf} for models with 2 or more components, though the largest element of the returned vector \code{loglik} still gives the log-likelihood value achieved by the parameters returned at convergence, under both \code{stopping} methods (see \code{\link{MoE_clust}}).
-#' @param z.list A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1.
+#' @param z.list A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. In particular, \code{z.list} must only include columns corresponding to \emph{non-noise} components when using this method to initialise in the presence of a noise component. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1. See \code{noise.init} and \code{tau0} above for details on initialisation in the presence of a noise component.
 #' @param nstarts The number of random initialisations to use when \code{init.z="random"}. Defaults to \code{1}. When there are no expert covariates (or when \code{exp.init$mahalanobis=FALSE} or \code{exp.init$estart=FALSE}), the results will be based on the random start yielding the highest estimated log-likelihood after each initial partition is subjected to a full run of the EM algorithm. Note, in this case, that all \code{nstarts} random initialisations are affected by \code{exp.init$mahalanobis}, if invoked in the presence of expert network covariates, which may remove some of the randomness. 
 #' 
 #' Conversely, if \code{exp.init$mahalanobis=TRUE} and \code{exp.init$estart=TRUE}, all \code{nstarts} random starts are put through the initial iterative reallocation routine and only the single best initial partition uncovered is put through the full run of the EM algorithm. See \code{init.z} and \code{exp.init$estart} above for more details, though note that \code{exp.init$mahalanobis=TRUE} and \code{exp.init$estart=FALSE}, by default. 
@@ -4183,7 +4197,14 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   
   #' @importFrom matrixStats "colRanges" "rowDiffs"
   .SLDC           <- function(x) sum(log(abs(rowDiffs(colRanges(x)))))
-
+  
+  #' @importFrom matrixStats "rowSums2"
+  .small_z        <- function(z) {
+    small         <- sqrt(.Machine$double.neg.eps)
+    z[z < small]  <- small
+      .renorm_z(z)  
+  }
+  
   .sq_mat         <- function(x) diag(sqrt(diag(x)))
   
   .summ_exp       <- function(x, digits = max(3L, getOption("digits") - 3L), 

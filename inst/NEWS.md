@@ -6,9 +6,16 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+* Checks/fixes for empty components extended to components w/ `<=1` observations (or equivalent):  
+__important__ --- some rare cases which previously would not converge will now converge!
+* Fixed two bugs introduced in v1.4.1:  
+  * Fixed _significant_ bug related to `exp.init$malanabis=TRUE` (the default),  
+  to restore correct behaviour whenever multiple `modelNames` are being fitted.
+  * Allowed `G=0:X` in `MoE_clust` without adding noise for `G>0`, unless specifying models w/ noise.
 * Added `summary` (and related `print`) methods for `MoECriterion` objects.
 * Minor speed-up to E-step for `"EEE"` & `"VVV"` models.
 * Fixed check on validity of `hc.meth` arg. in `MoE_control`.
+* Minor documentation clarifications re: `z.list` in `MoE_control`.
 
 ## MoEClust v1.4.2 - (_14<sup>th</sup> release [patch update]: 2021-12-19_)
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
