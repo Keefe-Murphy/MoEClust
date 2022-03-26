@@ -301,26 +301,26 @@
     Identity      <- ifelse(is.null(Identity), isTRUE(uni), Identity)
     x.names       <- colnames(X)
     if(!multi)    {
-      mNs         <- toupper(modelNames)
-      if(any(sX   <- grepl("X",     mNs)))      {
-       mNs        <- gsub("X", "E", mNs)
+      MS          <- toupper(modelNames)
+      if(any(sX   <- grepl("X",     MS)))       {
+       MS         <- gsub("X", "E", MS)
        if(verbose &&
-          all(is.element(mNs,             mfg)))  message(paste0("'modelNames' which contain 'X' coerced to ", paste(shQuote(mNs[sX]), collapse=" + "), "\n"))
+          all(is.element(MS,             mfg)))   message(paste0("'modelNames' which contain 'X' coerced to ", paste(shQuote(MS[sX]), collapse=" + "), "\n"))
       }
-      if(Gany     && any(!is.element(mNs, mfg)))  stop(paste0("Invalid 'modelNames'", ifelse(uni, " for univariate data", ifelse(low.dim, "", " for high-dimensional data")), "!"), call.=FALSE)
-      mfg         <- mNs
-      if(!Gall)   {
-        if(any(sZ <- !is.element(mNs,     mf1))){
-          mf1     <- tryCatch(unname(vapply(mNs,  function(x)  switch(EXPR=x, E=, V="E", EII=, VII="EII", EEI=, VEI=, EVI=, VVI="EEI", EEE=, EVE=, VEE=, VVE=, EEV=, VEV=, EVV=, VVV="EEE"), character(1L))),
+      if(Gany     && any(!is.element(MS, mfg)))   stop(paste0("Invalid 'modelNames'", ifelse(uni, " for univariate data", ifelse(low.dim, "", " for high-dimensional data")), "!"), call.=FALSE)
+      mfg         <- MS
+      if(anyg1)   {
+       if(any(sZ  <- !is.element(MS,     mf1))) {
+         mf1      <- tryCatch(unname(vapply(MS,   function(x)  switch(EXPR=x, E=, V="E", EII=, VII="EII", EEI=, VEI=, EVI=, VVI="EEI", EEE=, EVE=, VEE=, VVE=, EEV=, VEV=, EVV=, VVV="EEE"), character(1L))),
                               error=function(e) { e$message <- paste0("Invalid 'modelNames' for single component models", ifelse(uni, " for univariate data", ifelse(low.dim, "", " for high-dimensional data")), "!")
                                                   stop(e, call.=FALSE) } )
-          if(isTRUE(verbose))                     message(paste0("'modelNames'", ifelse(any(sX), " further", ""), " coerced from ", paste(shQuote(mNs[sZ]), collapse=" + "), " to ", paste(shQuote(mf1[sZ]), collapse=" + "), " where G=1\n"))
-        }
-      } else mf1  <- mfg
+         if(isTRUE(verbose))                      message(paste0("'modelNames'", ifelse(any(sX), " further", ""), " coerced from ", paste(shQuote(MS[sZ]), collapse=" + "), " to ", paste(shQuote(mf1[sZ]), collapse=" + "), " where G=1\n"))
+       } else mf1 <- mfg 
+      } 
     }
     mf1           <- unique(mf1)
     mfg           <- unique(mfg)
-    all.mod       <- if(all(multi, !uni, Gany)) mclust.options("emModelNames") else unique(c(if(anyg0) mf0, if(anyg1) mf1, if(any(G > 1)) mfg))
+    all.mod       <- if(all(multi, !uni, Gany)) mclust.options("emModelNames") else unique(c(if(anyg0) mf0, if(anyg1) mf1, if(Gany) mfg))
     multi         <- length(all.mod)    > 1L
     if(!miss.list) {
       if(length(z.list)    != len.G)              stop(paste0("'z.list' must be a list of length ", len.G),              call.=FALSE)  
@@ -895,7 +895,7 @@
           ERR     <- inherits(Mstep, "try-error")           ||   attr(Mstep, "returnCode")  < 0
         }
         if(g > 0  && !ERR)      {
-          mus     <- if(exp.g) muX        else Mstep$parameters$mean
+          mus     <- if(init.exp) muX     else Mstep$parameters$mean
           vari    <- Mstep$parameters$variance
         } else     {
           mus     <- matrix(NA, nrow=n, ncol=0L)
@@ -1653,7 +1653,7 @@
 #'
 #' If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
 #'
-#' Models with a noise component are facilitated here too provided the extra number of parameters are accounted for by the user.
+#' Models with a noise component are facilitated here too, provided the extra number of parameters are accounted for by the user.
 #' @importFrom matrixStats "rowMaxs"
 #' @importFrom mclust "mclustModelNames" "nVarParams"
 #' @return A simplified array containing the BIC, AIC, number of estimated parameters (\code{df}) and, if \code{z} is supplied, also the ICL, for each of the given input arguments.
@@ -1695,7 +1695,7 @@
 #'
 #' # Make the same comparison with the known number of estimated parameters
 #' (bic3 <- MoE_crit(loglik=ll, n=n, df=model$df, z=z)["bic",])
-#' identical(bic3, bic2)              #TRUE
+#' identical(unname(bic3), bic2)      #TRUE
   MoE_crit        <- Vectorize(function(modelName, loglik, n, d, G, gating.pen = G - 1L, expert.pen = G * d, z = NULL, df = NULL) {
     df            <- ifelse(!missing(df), df, nVarParams(modelName=modelName, d=d, G=G) + expert.pen + gating.pen)
     double.ll     <- 2 * loglik
@@ -3655,7 +3655,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param ... Catches unused arguments.
 #' 
 #' @details This function is used internally by \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}(x, what="gpairs")}, and \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, for visualisation purposes.
-#' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular scale, shape, &/or orientation may no longer be constrained across clusters. Usually, the \code{modelName} of the transformed \code{variance} object will be \code{"VVV"}.
+#' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular \code{scale}, \code{shape}, &/or \code{orientation} may no longer be constrained across clusters, and \code{cholsigma}, if it was in the input, will be discarded from the output. Usually, the \code{modelName} of the transformed \code{variance} object will be \code{"VVV"}. Furthermore, the output will drop certain row and column names from the output.
 #' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
@@ -3965,7 +3965,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
                                                   stop("Invalid 'resids': must be coercible to a matrix", call.=FALSE) })
     if(!is.numeric(resids)   ||
        anyNA(resids))                             stop("Invalid 'resids': must be numeric and contain no missing values", call.=FALSE)
-    if(length(squared) > 1   ||
+    if(length(squared)  > 1  ||
        !is.logical(squared))                      stop("'squared' must be a single logical indicator",    call.=FALSE)
     identity      <- ifelse(is.null(identity), isFALSE(inherits(fit, "mlm")), identity)
     if(length(identity) > 1  ||
@@ -3994,6 +3994,44 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
         return(drop(if(isTRUE(squared)) resids^2/covar else abs(resids)/sqrt(covar)))
       }
     }
+  }
+  
+#' Entropy of a fitted MoEClust model
+#'
+#' Calculates the normalised entropy of a fitted MoEClust model.
+#' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}}, or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Models with gating and/or expert covariates and/or a noise component are facilitated here too.
+#'
+#' @details This function calculates the normalised entropy via \deqn{H=-\frac{1}{n\log(G)}\sum_{i=1}^n\sum_{g=1}^G\hat{z}_{ig}\log(\hat{z}_{ig}),}
+#' where \eqn{n} and \eqn{G} are the sample size and number of components, respectively, and \eqn{\hat{z}_{ig}} is the estimated posterior probability at convergence that observation \eqn{i} belongs to component \eqn{g}.
+#' @return A single number, given by \eqn{1-H}, in the range [0,1], such that \emph{larger} values indicate clearer separation of the clusters.
+#' @note This function will always return a normalised entropy of \code{1} for models fitted using the \code{"CEM"} algorithm (see \code{\link{MoE_control}}), or models with only one component.
+#' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}
+#' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
+#' @keywords utility
+#' @usage
+#' MoE_entropy(x)
+#' @export
+#'
+#' @examples
+#' data(ais)
+#' res <- MoE_clust(ais[,3:7], G=3, gating= ~ BMI + sex, 
+#'                  modelNames="EEE", network.data=ais)
+#'
+#' # Calculate the normalised entropy
+#' MoE_entropy(res)
+  MoE_entropy     <- function(x) {
+      UseMethod("MoE_entropy")
+  }
+  
+#' @method MoE_entropy MoEClust
+#' @export
+  MoE_entropy.MoEClust <- function(x) {
+    x    <- if(inherits(x, "MoECompare")) x$optimal else x
+    z    <- x$z
+    G    <- ncol(z)
+    n    <- nrow(z)
+      ifelse(attr(x, "Algo") == "CEM"  || G == 1, 1L, pmax(0L, 1 - .entropy(z)/(n * log(G))))
   }
 
 #' Approximate Hypervolume Estimate
@@ -4106,6 +4144,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 
   .crits_names    <- function(x) {
       unlist(lapply(seq_along(x), function(i) stats::setNames(x[[i]], paste0(names(x[i]), "|", names(x[[i]])))))
+  }
+  
+  .entropy        <- function(p) {
+    p             <- p[p > 0]
+      sum(-p * log(p))
   }
   
   .listof_exp     <- function(x, ...) {

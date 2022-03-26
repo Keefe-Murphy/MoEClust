@@ -40,7 +40,7 @@ The function is vectorised with respect to the arguments \code{modelName} and \c
 
 If \code{model} is an object of class \code{"MoEClust"} with \code{G} components, the number of parameters for the \code{gating.pen} and \code{expert.pen} are \code{length(coef(model$gating))} and \code{G * length(coef(model$expert[[1]]))}, respectively.
 
-Models with a noise component are facilitated here too provided the extra number of parameters are accounted for by the user.
+Models with a noise component are facilitated here too, provided the extra number of parameters are accounted for by the user.
 }
 \note{
 In order to speed up repeated calls to the function inside \code{\link{MoE_clust}}, no checks take place.
@@ -65,7 +65,7 @@ identical(unname(bic2), model$bic) #TRUE
 
 # Make the same comparison with the known number of estimated parameters
 (bic3 <- MoE_crit(loglik=ll, n=n, df=model$df, z=z)["bic",])
-identical(bic3, bic2)              #TRUE
+identical(unname(bic3), bic2)      #TRUE
 }
 \references{
 Biernacki, C., Celeux, G. and Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
