@@ -5,6 +5,9 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+* New function `MoE_AvePP` added.
+
 ## MoEClust v1.5.0 - (_15<sup>th</sup> release [minor update]: 2022-03-28_)
 ### Significant User-Visible Changes
 * Checks/fixes for empty components extended to components w/ `<=1` observations (or equivalent):  

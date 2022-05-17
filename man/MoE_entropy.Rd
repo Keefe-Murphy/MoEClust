@@ -17,7 +17,7 @@ Calculates the normalised entropy of a fitted MoEClust model.
 }
 \details{
 This function calculates the normalised entropy via \deqn{H=-\frac{1}{n\log(G)}\sum_{i=1}^n\sum_{g=1}^G\hat{z}_{ig}\log(\hat{z}_{ig}),}
-where \eqn{n} and \eqn{G} are the sample size and number of components, respectively, and \eqn{\hat{z}_{ig}} is the estimated posterior probability at convergence that observation \eqn{i} belongs to component \eqn{g}.
+where \eqn{n} and \eqn{G} are the sample size and number of components, respectively, and \eqn{\hat{z}_{ig}} is the estimated posterior probability at convergence that observation \eqn{i} belongs to component \eqn{g}. Note that \code{G=x$G} for models without a noise component and \code{G=x$G + 1} for models with a noise component.
 }
 \note{
 This function will always return a normalised entropy of \code{1} for models fitted using the \code{"CEM"} algorithm (see \code{\link{MoE_control}}), or models with only one component.
@@ -34,7 +34,7 @@ MoE_entropy(res)
 Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{MoE_control}}
+\code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{MoE_AvePP}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
