@@ -11,7 +11,7 @@ noise_vol(data,
 \arguments{
 \item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed, and covariates should not be included. If a matrix or data frame, rows correspond to observations and columns correspond to variables. There \strong{must} be more observations than variables.}
 
-\item{method}{The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The \code{"convexhull"} and \code{"ellipsoidhull"} options require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used.}
+\item{method}{The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The \code{"convexhull"} and \code{"ellipsoidhull"} options require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used. Note that the \code{"convexhull"} \code{method} is liable to be slow when \code{data} has many columns.}
 
 \item{reciprocal}{A logical variable indicating whether or not the reciprocal hypervolume is desired rather than the hypervolume itself. The default is to return the hypervolume.}
 }
@@ -29,7 +29,7 @@ This can help in predicting the fitted values of models fitted with noise compon
 Computes simple approximations to the hypervolume of univariate and multivariate data sets. Also returns the location of the centre of mass.
 }
 \note{
-This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
+This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically using its arguments \code{noise.meth} or \code{tau0}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying the \code{noise.vol} argument of \code{\link{MoE_control}} directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
 
 Note that supplying the volume manually to \code{\link{MoE_clust}} can affect the summary of the means in \code{parameters$mean} and by extension the location of the MVN ellipses in \code{\link{MoE_gpairs}} plots for models with \emph{both} expert network covariates and a noise component. The location cannot be estimated when the volume is supplied manually; in this case, prediction is made on the basis of renormalising the \code{z} matrix after discarding the column corresponding to the noise component. Otherwise, the mean of the noise component is accounted for. The renormalisation approach can be forced by specifying \code{noise.args$discard.noise=TRUE}, even when the mean of the noise component is available.
 }

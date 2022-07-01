@@ -25,7 +25,7 @@ In the presence of expert network covariates, this helper function modifies the 
 This function is used internally by \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}(x, what="gpairs")}, and \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, for visualisation purposes.
 }
 \note{
-The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular \code{scale}, \code{shape}, &/or \code{orientation} may no longer be constrained across clusters, and \code{cholsigma}, if it was in the input, will be discarded from the output. Usually, the \code{modelName} of the transformed \code{variance} object will be \code{"VVV"}. Furthermore, the output will drop certain row and column names from the output.
+The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular \code{scale}, \code{shape}, &/or \code{orientation} may no longer be constrained across clusters, and \code{cholsigma}, if it was in the input, will be discarded from the output. Usually, the \code{modelName} of the transformed \code{variance} object will be \code{"VVV"} for multivariate data and \code{"V"} for univariate data, but not always. Furthermore, the output will drop certain row and column names from the output.
 }
 \examples{
 data(ais)

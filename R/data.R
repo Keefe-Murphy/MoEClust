@@ -18,7 +18,7 @@
 #' \item{[,13] \code{Wt}}{ - weight, kg (numeric)}
 #' }
 #' @details The data have been made publicly available in connection with the book by Cook and Weisberg (1994).
-#' @references Cook, R. D. and Weisberg, S. (1994), \emph{An Introduction to Regression Graphics}. John Wiley & Sons, New York.
+#' @references Cook, R. D. and Weisberg, S. (1994), \emph{An Introduction to Regression Graphics}. John Wiley & Sons, New York, NY, USA.
 #' @examples
 #' data(ais, package="MoEClust")
 #' pairs(ais[,c(3:7)], col=as.numeric(ais$sex), main = "AIS data")

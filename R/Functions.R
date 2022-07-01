@@ -1662,7 +1662,7 @@
 #' @export
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #'
-#' @references Biernacki, C., Celeux, G. and Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Trans. Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
+#' @references Biernacki, C., Celeux, G. and Govaert, G. (2000). Assessing a mixture model for clustering with the integrated completed likelihood. \emph{IEEE Transactions on Pattern Analysis and Machine Intelligence}, 22(7): 719-725.
 #'
 #' @seealso \code{\link{MoE_clust}}, \code{\link[mclust]{nVarParams}}, \code{\link[mclust]{mclustModelNames}}
 #' @usage
@@ -3655,7 +3655,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param ... Catches unused arguments.
 #' 
 #' @details This function is used internally by \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}(x, what="gpairs")}, and \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, for visualisation purposes.
-#' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular \code{scale}, \code{shape}, &/or \code{orientation} may no longer be constrained across clusters, and \code{cholsigma}, if it was in the input, will be discarded from the output. Usually, the \code{modelName} of the transformed \code{variance} object will be \code{"VVV"}. Furthermore, the output will drop certain row and column names from the output.
+#' @note The \code{modelName} of the resulting \code{variance} object may not correspond to the model name of the \code{"MoEClust"} object, in particular \code{scale}, \code{shape}, &/or \code{orientation} may no longer be constrained across clusters, and \code{cholsigma}, if it was in the input, will be discarded from the output. Usually, the \code{modelName} of the transformed \code{variance} object will be \code{"VVV"} for multivariate data and \code{"V"} for univariate data, but not always. Furthermore, the output will drop certain row and column names from the output.
 #' @return The \code{variance} component only from the \code{parameters} list from the output of a call to \code{\link{MoE_clust}}, modified accordingly.
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 #' @references Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
@@ -4078,12 +4078,12 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'
 #' Computes simple approximations to the hypervolume of univariate and multivariate data sets. Also returns the location of the centre of mass.
 #' @param data A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed, and covariates should not be included. If a matrix or data frame, rows correspond to observations and columns correspond to variables. There \strong{must} be more observations than variables.
-#' @param method The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The \code{"convexhull"} and \code{"ellipsoidhull"} options require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used.
+#' @param method The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The \code{"convexhull"} and \code{"ellipsoidhull"} options require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used. Note that the \code{"convexhull"} \code{method} is liable to be slow when \code{data} has many columns.
 #' @param reciprocal A logical variable indicating whether or not the reciprocal hypervolume is desired rather than the hypervolume itself. The default is to return the hypervolume.
 #'
 #' @importFrom matrixStats "colMeans2" "colRanges" "rowDiffs" "rowMeans2"
 #' @importFrom mclust "hypvol"
-#' @note This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically it's argument \code{noise.meth}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying its \code{noise.vol} argument directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
+#' @note This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically using its arguments \code{noise.meth} or \code{tau0}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying the \code{noise.vol} argument of \code{\link{MoE_control}} directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
 #' 
 #' Note that supplying the volume manually to \code{\link{MoE_clust}} can affect the summary of the means in \code{parameters$mean} and by extension the location of the MVN ellipses in \code{\link{MoE_gpairs}} plots for models with \emph{both} expert network covariates and a noise component. The location cannot be estimated when the volume is supplied manually; in this case, prediction is made on the basis of renormalising the \code{z} matrix after discarding the column corresponding to the noise component. Otherwise, the mean of the noise component is accounted for. The renormalisation approach can be forced by specifying \code{noise.args$discard.noise=TRUE}, even when the mean of the noise component is available.
 #' @return A list with the following two elements:

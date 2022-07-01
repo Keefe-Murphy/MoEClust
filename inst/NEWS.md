@@ -6,6 +6,7 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+* New function `MoE_Similarity` added and integrated into `plot.MoEClust`.
 * New function `MoE_AvePP` added.
 
 ## MoEClust v1.5.0 - (_15<sup>th</sup> release [minor update]: 2022-03-28_)
