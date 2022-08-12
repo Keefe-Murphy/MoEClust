@@ -5,7 +5,10 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
-### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
+* New `MoE_gpairs` arg. `diag.pars$show.dens=FALSE` added to toggle whether  
+  parametric density estimates are drawn over diagonal panels for each response  
+  variable (with or without the underlying histograms; see documentation).
 * New function `MoE_Similarity` added and integrated into `plot.MoEClust`.
 * New function `MoE_AvePP` added.
 
@@ -21,7 +24,7 @@ __important__ --- restored correct behaviour, especially when multiple `modelNam
 * Added `summary` (and related `print`) methods for `MoECriterion` objects.
 * Minor speed-up to E-step for `"EEE"` & `"VVV"` models.
 
-### Big Fixes & Miscellaneous Edits
+### Bug Fixes & Miscellaneous Edits
 * Allowed `G=0:X` in `MoE_clust` without adding noise for `G>0`, unless  
 specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * Fixed minor bug when supplying `modelNames` when `G=1` only.
@@ -29,7 +32,7 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * Minor documentation clarifications re: `z.list` in `MoE_control`.
 
 ## MoEClust v1.4.2 - (_14<sup>th</sup> release [patch update]: 2021-12-19_)
-### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * `MoE_mahala` arg. `identity` (& related `MoE_control` `exp.init$identity` option) is now also  
   relevant for univariate data: old behaviour is retained via respective defaults of `FALSE` & `TRUE` for  
   multivariate & univariate data (i.e. only ability to set `identity=FALSE` for univariate data is new).
@@ -40,7 +43,7 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * `sapply` replaced with `vapply`, with other negligible speed-ups.
 
 ## MoEClust v1.4.1 - (_13<sup>th</sup> release [patch update]: 2021-10-12_)
-### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * Various further fixes to `MoE_stepwise`:  
   * Added the arg. `fullMoE` (defaulting to `FALSE`) which allows restricting the search to "full"  
     MoE models where the same set of covariates appears in both the gating & expert networks.
@@ -61,7 +64,7 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * Improved checks on `G` in `MoE_clust`.
 
 ## MoEClust v1.4.0 - (_12<sup>th</sup> release [minor update]: 2021-06-21_)
-### New Features, Improvements, Big Fixes, & Miscellaneous Edits
+### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * Various edits to `MoE_stepwise()` (thanks, in part, to requests from Dr. Konstantinos Perrakis):  
   * Added `initialModel` arg. for specifying an initial model from which to begin the search,  
   which may already be a mixture and may already include covariates, etc.

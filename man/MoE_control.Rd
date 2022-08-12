@@ -110,7 +110,7 @@ If, for any model with gating covariates, the multinomial logistic regression in
 \item{\code{kiters}}{The maximum number of K-Means iterations allowed. Defaults to 10.}
 }}
 
-\item{posidens}{A logical governing whether to continue running the algorithm even in the presence of positive log-densities. Defaults to \code{TRUE}, but setting \code{posidens=FALSE} can help to safeguard against spurious solutions, which will be instantly terminated if positive log-densities are encountered. Note that versions of this package prior to and including version 1.3.1 always implicitly assumed \code{posidens=FALSE}.}
+\item{posidens}{A logical governing whether to continue running the algorithm even in the presence of positive log-densities. Defaults to \code{TRUE}, but setting \code{posidens=FALSE} can help to safeguard against spurious solutions, which will be instantly terminated if positive log-densities are encountered. Note that versions of this package prior to and including version \code{1.3.1} always implicitly assumed \code{posidens=FALSE}.}
 
 \item{init.crit}{The criterion to be used to determine the optimal model type to initialise with, when \code{init.z="mclust"} or when \code{isTRUE(exp.init$clustMD)} and the \code{\link[clustMD]{clustMD}} library is loaded (one of \code{"bic"} or \code{"icl"}). Defaults to \code{"icl"} when \code{criterion="icl"}, otherwise defaults to \code{"bic"}. The \code{criterion} argument remains unaffected.}
 

@@ -21,7 +21,7 @@
 #' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data. The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$eci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. The \code{"yes"} or \code{"no"} options merely govern whether the ellipses are drawn, i.e. \code{"yes"} draws ellipses without any colouring. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
 #'
 #' Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
-#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} and only relevant for models with expert network covariates.
+#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} when \code{addEllipses} is invoked accordingly, and/or \code{diag.pars$show.dens=TRUE} (see below), and only relevant for models with expert network covariates.
 #' @param border.col A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 #'
 #' Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.
@@ -48,7 +48,7 @@
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(grid.size=c(100, 100), dcol="grey50",
 #'      nlevels=11, show.labels=TRUE, label.style="mixed"),}
-#' where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.
+#' where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}. Note that \code{density.pars$grid.size[1]} is also relevant when \code{diag.pars$show.dens=TRUE} (see below).
 #' @param stripplot.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"stripplot"}.
 #'
 #' \code{NULL} is equivalent to:
@@ -81,14 +81,16 @@
 #' @param diag.pars A list supplying select parameters for panels along the diagonal.
 #'
 #' \code{NULL} is equivalent to:
-#' \preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
-#'      hist.color=hist.color, show.counts=TRUE),}
-#' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. \code{show.counts} is only relevant for categorical variables.
+#' \preformatted{list(diag.fontsize=9, show.hist=TRUE, show.dens=FALSE,
+#'      diagonal=TRUE, hist.color=hist.color, show.counts=TRUE),}
+#' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
 #'
-#' When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
+#' The argument \code{show.dens} toggles whether parametric density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}, though density curves will appear bigger when \code{show.hist=FALSE}. Note that \code{show.dens=TRUE} is also affected by the \code{expert.covar} argument above. Finally, the grid size when \code{show.dens=TRUE} is given by \code{max(res$n, density.pars$grid.size[1])}.
+#' 
+#' When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
 #' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, \code{axis.pars}, and \code{diag.pars}.
 #'
-#' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
+#' @importFrom lattice "current.panel.limits" "llines" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "colMeans2" "rowLogSumExps"
 #' @importFrom mclust "mclust.options" "sigma2decomp"
 #' @importFrom vcd "strucplot"
@@ -141,7 +143,7 @@
 #' MoE_gpairs(res)
 #'
 #' # Produce the same plot, but with a violin plot in the lower triangle.
-#' # Colour the outline of the mosaic tiles rather than the interior.
+#' # Colour the outline of the mosaic tiles rather than the interior using mfill.
 #' # Size points in the response vs. response panels by their clustering uncertainty.
 #' 
 #' MoE_gpairs(res, conditional=c("stripplot", "violin"),
@@ -155,6 +157,12 @@
 #' MoE_gpairs(res, response.type="density", show.labels=FALSE,
 #'            hist.color=c("black", "cyan", "hotpink", "chartreuse"),
 #'            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
+#'            
+#' # Examine the effect of the expert.covar argument in conjunction with show.dens
+#' MoE_gpairs(res, cov.ind=0, expert.covar=TRUE, 
+#'            show.dens=TRUE, show.hist=FALSE, grid.size=1000)
+#' MoE_gpairs(res, cov.ind=0, expert.covar=FALSE, 
+#'            show.dens=TRUE, show.hist=FALSE, grid.size=1000)
 #'            
 #' # Produce a generalised pairs plot for a model with a noise component.
 #' # Reorder the covariates and omit the variables "Hc" and "Hg".
@@ -308,11 +316,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   addEllipses  <- ifelse(G == 0,   "no",    addEllipses)
   drawEllipses <- addEllipses   != "no"
   colEllipses  <- addEllipses   != "yes" && drawEllipses
-  if(res$d  > 1) {
-    res$parameters$varianceX    <- if(isTRUE(drawEllipses) && 
-                                      isTRUE(expert.covar) &&
-                                      attr(res, "Expert")) suppressMessages(expert_covar(res, ...)) else res$parameters$variance
-  }
+  
   upr.gate <- grepl("2", scatter.type[1L])
   low.gate <- grepl("2", scatter.type[2L])
   upr.exp  <- ifelse(upr.gate, substr(scatter.type[1L], 1L, nchar(scatter.type[1L]) - 1L), scatter.type[1L])
@@ -397,10 +401,6 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     uncertainty$cex     <- bubbleX$cex
     uncertainty$col     <- if(grDevices::dev.capabilities()$semiTransparency) unname(mapply(grDevices::adjustcolor, col=scatter.pars$col, alpha.f=bubbleX$alpha)) else scatter.pars$col
   }
-  if(response.type == "density")      {
-    res$parameters$fits <- array(unlist(lapply(res$expert, "[[", "fitted.values")), dim=c(res$n, res$d, G))
-    res$parameters$lpro <- log(if(isTRUE(attr(res, "Gating"))) colMeans2(res$parameters$pro) else res$parameters$pro)
-  }
   if(is.null(density.pars$grid.size)) {
     density.pars$grid.size   <- c(100L, 100L)
   } else if(length(density.pars$grid.size)  == 1) {
@@ -450,6 +450,22 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(diag.pars$show.hist))   {
     diag.pars$show.hist <- TRUE
   }
+  if(is.null(diag.pars$show.dens))   {
+    show.D <- FALSE
+  } else {
+    show.D <- diag.pars$show.dens
+  }
+  if(response.type == "density"   || show.D) {
+    res$parameters$fits <- array(unlist(lapply(res$expert, "[[", "fitted.values")), dim=c(res$n, res$d, G))
+    res$parameters$lpro <- log(if(isTRUE(attr(res, "Gating"))) colMeans2(res$parameters$pro) else res$parameters$pro)
+  }
+  if(isTRUE(show.D)) {
+    diag.pars$grid.size <- density.pars$grid.size[1L]
+  }
+  res$parameters$varianceX        <- if(isTRUE(expert.covar)  &&
+                                        attr(res, "Expert")   &&
+                                        (isTRUE(drawEllipses) || 
+                                        isTRUE(show.D))) suppressMessages(expert_covar(res, ...)) else res$parameters$variance
   if(is.null(diag.pars$hist.color))  {
    diag.pars$hist.color <- c("black", "dimgrey", "dimgrey", "dimgrey")
   } else {
@@ -593,7 +609,8 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
         ypos <- !ypos
       }
       if(i == j) {
-        .diag_panel(x=x[,i], varname=names(x)[i], diag.pars=diag.pars, hist.col=if(i == 1 && names(x)[i] == "MAP") list(noise.cols) else diag.pars$hist.color, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, index=i, outer.rot=outer.rot)
+        diag.pars$show.dens <- show.D && i <= dcol && !MAPpan
+        .diag_panel(x=x[,i], varname=names(x)[i], diag.pars=diag.pars, hist.col=if(i == 1 && names(x)[i] == "MAP") list(noise.cols) else diag.pars$hist.color, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, index=i, i=i - isTRUE(subset$show.map), res=res, col=noise.cols, outer.rot=outer.rot)
       } else  {
         if(xor(is.factor(x[,i]), is.factor(x[,j]))) {
           if(i < j & upr.cond != "barcode") .boxplot_panel(x=x[,j], y=x[,i], type=upr.cond, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, stripplot.pars=stripplot.pars, boxplot.pars=boxplot.pars, outer.rot=outer.rot, bg=bg, box.fill=if(isTRUE(MAPpan)) boxplot.pars$box.fill else if(i > dcol && j > dcol) diag.pars$hist.color[j] else "white", border=border)
@@ -1031,7 +1048,7 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #' @param ... Optional arguments to be passed to \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Similarity}}, \code{\link{MoE_Uncertainty}}, \code{\link[graphics]{matplot}}, \code{\link[mclust]{plot.mclustBIC}} and \code{\link{plot}}. In particular, the argument \code{legendArgs} to \code{\link[mclust]{plot.mclustBIC}} can be passed to \code{\link{MoE_plotCrit}}.
 #'
 #' @details For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Similarity}}, and \code{\link{MoE_Uncertainty}} directly.
-#' @importFrom lattice "current.panel.limits" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
+#' @importFrom lattice "current.panel.limits" "llines" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "rowLogSumExps"
 #' @importFrom mclust "mclust.options" "plot.mclustBIC" "plot.mclustICL" "sigma2decomp"
 #' @importFrom vcd "strucplot"
@@ -1333,8 +1350,8 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   grid::popViewport(1)
 }
 
-#' @importFrom lattice "panel.histogram"
-.diag_panel <- function(x, varname, diag.pars, hist.col, axis.pars, xpos, ypos, buffer, index, outer.rot) {
+#' @importFrom lattice "llines" "panel.histogram"
+.diag_panel <- function(x, varname, diag.pars, hist.col, axis.pars, xpos, ypos, buffer, index, i, res, col, outer.rot) {
   x         <- x[!is.na(x)]
   drange    <- range(as.numeric(x), na.rm=TRUE)
   xlim      <- drange + c(-buffer * (diff(drange)), buffer * (diff(drange)))
@@ -1344,7 +1361,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   .draw_axis(x=what, y=what, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=NULL, horiz=NULL, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
   grid::popViewport(1)
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim, clip=TRUE))
-  if(!diag.pars$show.hist) {
+  if(!any(diag.pars$show.hist, diag.pars$show.dens && !is.factor(x))) {
     grid::grid.rect()
     grid::grid.text(varname, 0.5, 0.5, gp=grid::gpar(fontsize=diag.pars$fontsize, fontface=2))
   }
@@ -1352,13 +1369,76 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   if(diag.pars$show.hist)  {
     if(!is.factor(x)) {
       grid::pushViewport(grid::viewport(xscale=xlim, yscale=c(0, 100), clip=TRUE))
-      panel.histogram(as.numeric(x), breaks=NULL, type="percent", col=if(index == 1) hist.col[[index]] else hist.col[index])
+      panel.histogram(as.numeric(x), breaks=NULL, type="percent", col=if(diag.pars$show.dens) "white" else if(index == 1)  hist.col[[index]] else hist.col[index])
     } else {
-      grid::pushViewport(grid::viewport(xscale=c(min(as.numeric(x), na.rm=TRUE) - 1, max(as.numeric(x), na.rm=TRUE) + 1), yscale=c(0, 100), clip=TRUE))
+      grid::pushViewport(grid::viewport(xscale=c(min(as.numeric(x), na.rm=TRUE) - 1, max(as.numeric(x), na.rm=TRUE)  + 1), yscale=c(0, 100), clip=TRUE))
       tabx <- table(x)
       show.counts    <- if(isTRUE(diag.pars$show.counts)) as.numeric(tabx) else FALSE
       .barchart_panel(seq_along(tabx), 100 * tabx/sum(tabx), horizontal=FALSE, col=if(index == 1) hist.col[[index]] else hist.col[index], show.counts=show.counts, fontsize=diag.pars$fontsize)
     }
+  }
+  if(diag.pars$show.dens) {
+    if(!is.factor(x)) {
+      if(!diag.pars$show.hist) grid::pushViewport(grid::viewport(xscale=xlim, yscale=c(0, 1), clip=TRUE))
+      pars         <- res$parameters
+      modelName    <- pars$varianceX$modelName
+      G            <- res$G
+      n            <- res$n
+      sigma        <- list(modelName=modelName, d=1, G=G)
+      if(is.element(modelName, c("EEI", "EII", "EEE", "VII", "E", "V"))) {
+        switch(EXPR=modelName, E=, V=, EII=, VII=      {
+          sigma    <- c(sigma, list(sigmasq=pars$varianceX$sigmasq))
+        }, EEI=, EEE=     {
+          sigma    <- c(sigma, list(sigmasq=pars$varianceX$Sigma[i,i]))
+        } )
+        sigma$modelName  <- switch(EXPR=modelName, V=, VII="V", "E")
+      } else         {
+        sigma      <- c(sigma, list(sigmasq=array(dim=c(1, 1, G))))
+        for(k in seq_len(G)) sigma$sigmasq[,,k] <- pars$varianceX$sigma[i,i,k]
+        sigma$modelName  <- "V"
+      }
+      if((lx       <- diag.pars$grid.size) > n) {
+        rx         <- range(x, na.rm=TRUE)
+        xlim       <- rx + c(-buffer * (diff(rx)), buffer * (diff(rx)))
+        xd         <- .grid_1(n=lx, range=xlim, edge=TRUE)
+        xn         <- length(xd)  
+      } else {
+        xd         <- x
+        xn         <- n
+      }
+      Vinv         <- pars$Vinv
+      noise        <- !is.null(Vinv)
+      GN           <- G + noise
+      gate         <- attr(res, "Gating")
+      expx         <- attr(res, "Expert")
+      ltau         <- .mat_byrow(pars$lpro, nrow=xn, ncol=GN)
+      mu           <- if(isTRUE(expx)) pars$fits[,i,,drop=FALSE] else if(res$d == 1) pars$mean else pars$mean[i,, drop=FALSE]
+      if(expx)        {
+        if(noise)     {
+          den      <- cbind(Reduce("+", lapply(seq_len(n), function(i) MoE_dens(data=xd, mus=mu[i,,], sigs=sigma)))/n, log(Vinv)) + ltau
+        } else den <- Reduce("+",       lapply(seq_len(n), function(i) MoE_dens(data=xd, mus=mu[i,,], sigs=sigma, Vinv=Vinv)))/n  + ltau
+      } else if(gate) {
+        den        <- MoE_dens(data=xd, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
+      }   else den <- MoE_dens(data=xd, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
+      zz           <- matrix(exp(rowLogSumExps(den)), nrow=xn, ncol=1L)
+      den          <- exp(den)
+      oo           <- order(xd)
+      if(diag.pars$show.hist) {
+        endpoints    <- range(x, finite=TRUE)
+        nint         <- round(log2(length(x)) + 1)
+        counts       <- graphics::hist(x, breaks=endpoints[1L] + diff(endpoints) * (0L:nint)/nint, plot=FALSE)$counts
+        cmax         <- 100 * max(counts)/n
+      } else {
+        cmax         <- 0.9 - buffer
+      }
+      dmax           <- max(den, zz)
+      for(g in seq_len(GN)) {
+        llines(xd[oo], den[oo,g] * cmax/dmax, col=col[g])
+      }
+      llines(xd[oo], zz[oo] * cmax/dmax, col=hist.col[1L], lwd=2)
+    }
+  }
+  if(any(diag.pars$show.hist, diag.pars$show.dens && !is.factor(x))) {
     grid::grid.text(varname, 0.5, 0.9, gp=grid::gpar(fontsize=diag.pars$fontsize))
     grid::popViewport(1)
   }

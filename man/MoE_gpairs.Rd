@@ -59,7 +59,7 @@ All \code{conditional} panel types can be customised further; see \code{stripplo
 
 Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.}
 
-\item{expert.covar}{Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates when \code{addEllipses} is invoked accordingly. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} and only relevant for models with expert network covariates.}
+\item{expert.covar}{Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} when \code{addEllipses} is invoked accordingly, and/or \code{diag.pars$show.dens=TRUE} (see below), and only relevant for models with expert network covariates.}
 
 \item{border.col}{A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 
@@ -96,7 +96,7 @@ Note also that \code{scat.size} will be modified on an observation-by-observatio
 \code{NULL} is equivalent to:
 \preformatted{list(grid.size=c(100, 100), dcol="grey50",
      nlevels=11, show.labels=TRUE, label.style="mixed"),}
-where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.}
+where \code{grid.size} is a vector of length two giving the number of points in the x & y direction of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours (although note that \code{dcol}, when \emph{not} specified, will be adjusted for transparency). Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}. Note that \code{density.pars$grid.size[1]} is also relevant when \code{diag.pars$show.dens=TRUE} (see below).}
 
 \item{stripplot.pars}{A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"stripplot"}.
 
@@ -135,11 +135,13 @@ The argument \code{n.ticks} will be overwritten for categorical variables with f
 \item{diag.pars}{A list supplying select parameters for panels along the diagonal.
 
 \code{NULL} is equivalent to:
-\preformatted{list(diag.fontsize=9, show.hist=TRUE, diagonal=TRUE,
-     hist.color=hist.color, show.counts=TRUE),}
-where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). By default, response variables are \code{"black"} and covariates of any kind are \code{"dimgrey"}. However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. \code{show.counts} is only relevant for categorical variables.
+\preformatted{list(diag.fontsize=9, show.hist=TRUE, show.dens=FALSE,
+     diagonal=TRUE, hist.color=hist.color, show.counts=TRUE),}
+where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
 
-When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables. Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
+The argument \code{show.dens} toggles whether parametric density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}, though density curves will appear bigger when \code{show.hist=FALSE}. Note that \code{show.dens=TRUE} is also affected by the \code{expert.covar} argument above. Finally, the grid size when \code{show.dens=TRUE} is given by \code{max(res$n, density.pars$grid.size[1])}.
+
+When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
 
 \item{...}{Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, \code{axis.pars}, and \code{diag.pars}.}
 }
@@ -163,7 +165,7 @@ res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
 MoE_gpairs(res)
 
 # Produce the same plot, but with a violin plot in the lower triangle.
-# Colour the outline of the mosaic tiles rather than the interior.
+# Colour the outline of the mosaic tiles rather than the interior using mfill.
 # Size points in the response vs. response panels by their clustering uncertainty.
 
 MoE_gpairs(res, conditional=c("stripplot", "violin"),
@@ -177,6 +179,12 @@ MoE_gpairs(res, conditional=c("stripplot", "violin"),
 MoE_gpairs(res, response.type="density", show.labels=FALSE,
            hist.color=c("black", "cyan", "hotpink", "chartreuse"),
            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
+           
+# Examine the effect of the expert.covar argument in conjunction with show.dens
+MoE_gpairs(res, cov.ind=0, expert.covar=TRUE, 
+           show.dens=TRUE, show.hist=FALSE, grid.size=1000)
+MoE_gpairs(res, cov.ind=0, expert.covar=FALSE, 
+           show.dens=TRUE, show.hist=FALSE, grid.size=1000)
            
 # Produce a generalised pairs plot for a model with a noise component.
 # Reorder the covariates and omit the variables "Hc" and "Hg".
