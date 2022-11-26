@@ -331,9 +331,9 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   if(is.null(outer.labels)) {
     lab1   <- switch(EXPR=names(x)[1L], MAP=1L, as.integer(res$d != 1) + 1L)
     lab2   <- switch(EXPR=names(x)[1L], MAP=2L, 1L)
-    outer.labels$top    <- vector("logical", N)
+    outer.labels$top    <- logical(N)
     outer.labels$top[seq(lab1,  N, by=2)] <- TRUE
-    outer.labels$left   <- vector("logical", N)
+    outer.labels$left   <- logical(N)
     outer.labels$left[seq(lab2, N, by=2)] <- TRUE
     outer.labels$right  <- !outer.labels$left
     outer.labels$bottom <- !outer.labels$top
@@ -900,7 +900,7 @@ MoE_Similarity <- function(res, col = grDevices::heat.colors(30L, rev=TRUE), reo
 #' @method MoE_Similarity MoEClust
 #' @export
 MoE_Similarity.MoEClust       <- function(res, col = grDevices::heat.colors(30L, rev=TRUE), reorder = TRUE, legend = TRUE, ...) {
-  sim          <- tcrossprod(res$z)
+  sim          <- if(res$G > 1) tcrossprod(res$z) else matrix(1L, nrow=res$n, ncol=res$n)
   if(isTRUE(reorder)) {
     dots       <- list(...)
     args       <- c(list(sim=sim), dots[names(dots) %in% c("method", "members")])
@@ -1126,7 +1126,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 
 .grid_1   <- function(n, range = c(0, 1), edge = TRUE) {
   if(any(n < 0 | round(n) != n))                      stop("'n' must be nonpositive and integer", call.=FALSE)
-  G       <- vector("numeric", n)
+  G       <- numeric(n)
   if(edge) {
     G     <- seq(from=min(range), to=max(range), by=abs(diff(range))/(n - 1L))
   } else   {

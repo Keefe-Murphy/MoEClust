@@ -296,9 +296,9 @@
         mf1       <- c("EII", "EEI")
       }
     }
-    sq_maha       <- !uni
-    low.dim       <- !uni  && low.dim
     Identity      <- ifelse(is.null(Identity), isTRUE(uni), Identity)
+    sq_maha       <- !uni  || !Identity
+    low.dim       <- !uni  && low.dim
     x.names       <- colnames(X)
     if(!multi)    {
       MS          <- toupper(modelNames)
@@ -425,7 +425,7 @@
       }
       if(!tnull)    {
         tau0       <- tau0 * noise
-        noise      <- vector("logical", n)
+        noise      <- logical(n)
         nnoise     <- 0L
         noisen     <- n
       } else  {
@@ -433,8 +433,8 @@
         noisen     <- n   - nnoise
         if(any(G    > noisen)) range.G <- range.G[range.G <= noisen]
       }
-    } else   {
-      noise       <- vector("logical", n)
+    } else    {
+      noise       <- logical(n)
       nnoise      <- 0L
       noisen      <- n
     }
@@ -587,7 +587,7 @@
             if(any(mcerr))                        stop(paste0("Mclust initialisation failed for the G=", paste(g.range[mcerr], collapse="/"), " model", ifelse(sum(mcerr) > 1, "s", "")), call.=FALSE)
             class(mcl)         <- "mclustBIC"
           }
-          mcfail  <- rep(FALSE, len.G)
+          mcfail  <- logical(len.G)
         } else if(init.z == "hc")             {
           hc1     <- any(range.G == 1)
           hcZ     <- hclass(hcPairs=Zhc, G=g.range)
@@ -620,7 +620,7 @@
       Xinv        <- if(noiseG) Linv
       if(exp.g)    {
         z.mat     <- z.alloc   <- matrix(0L, nrow=n * g,  ncol=g)
-        muX       <- if(uni)      vector("numeric",   g)  else matrix(0L, nrow=d, ncol=g)
+        muX       <- if(uni)      numeric(g) else matrix(0L, nrow=d, ncol=g)
       } else       {
         exp.pen   <- g * d
       }
@@ -1168,7 +1168,7 @@
     icl.fin       <- ICLs[best.ind]
     aic.fin       <- AICs[best.ind]
     df.fin        <- DF.x[best.ind]
-    uncert        <- if(GN > 1) 1     - rowMaxs(z) else vector("integer", n)
+    uncert        <- if(GN > 1) 1     - rowMaxs(z) else integer(n)
     exp.x         <- exp.x & G  != 0
     x.ll          <- x.ll[if(GN == 1 && !exp.x) 2L else if(GN == 1 && exp.x)    2L:3L else switch(EXPR=algo, EM=, CEM=-seq_len(2L), -1L)]
     x.ll          <- x.ll[!is.na(x.ll)]
@@ -1744,7 +1744,7 @@
 #'
 #' Unless \code{init.z="list"}, supplying this argument as \code{TRUE} when the \code{\link[clustMD]{clustMD}} library is loaded has the effect of superseding the \code{init.z} argument: this argument now governs instead how the call to \code{\link[clustMD]{clustMD}} is initialised (unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components, in which case \code{init.z} is invoked \emph{instead} to initialise for \code{G} values for which all \code{\link[clustMD]{clustMD}} model types failed). Similarly, the arguments \code{hc.args} and \code{km.args} will be ignored (again, unless all \code{\link[clustMD]{clustMD}} model types fail for a given number of components).}
 #' \item{\code{max.init}}{The maximum number of iterations for the Mahalanobis distance-based reallocation procedure when \code{exp.init$mahalanobis} is \code{TRUE}. Defaults to \code{.Machine$integer.max}.}
-#' \item{\code{identity}}{A logical indicating whether the identity matrix (corresponding to the use of the Euclidean distance) is used in place of the covariance matrix of the residuals (corresponding to the use of the Mahalanobis distance). Defaults to \code{FALSE} for multivariate response data but defaults to \code{TRUE} for univariate response data. Setting \code{identity=FALSE} with multivariate data may be advisable when the dimensions of the data are such that the covariance matrix cannot be inverted (otherwise, the pseudo-inverse is used when \code{TRUE}).}
+#' \item{\code{identity}}{A logical indicating whether the identity matrix (corresponding to the use of the Euclidean distance) is used in place of the covariance matrix of the residuals (corresponding to the use of the Mahalanobis distance). Defaults to \code{FALSE} for multivariate response data but defaults to \code{TRUE} for univariate response data. Setting \code{identity=TRUE} with multivariate data may be advisable when the dimensions of the data are such that the covariance matrix cannot be inverted (otherwise, the pseudo-inverse is used under the \code{FALSE} default).}
 #' \item{\code{drop.break}}{When \code{isTRUE(exp.init$mahalanobis)} observations will be completely in or out of a component during the initialisation phase. As such, it may occur that constant columns will be present when building a given component's expert regression (particularly for categorical covariates). It may also occur, due to this partitioning, that "unseen" data, when calculating the residuals, will have new factor levels. When \code{isTRUE(exp.init$drop.break)}, the Mahalanobis distance based initialisation phase will explicitly fail in either of these scenarios.
 #'
 #' Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be invoked when \code{exp.init$drop.break} is \code{FALSE} (the default) to \emph{try} to remedy the situation. In any case, only a warning that the initialisation step failed will be printed, regardless of the value of \code{exp.init$drop.break}.}
@@ -2585,7 +2585,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   if(G == 0)   {
     if(all(is.na(noise.loc)))                     warning("Can't predict the response; mean of noise component unavailable\n", call.=FALSE, immediate.=TRUE)
     retval        <- list(ystar=matrix(noise.loc, nrow=nr, ncol=object$d, byrow=TRUE),
-                          classification=rep(0L, nr),
+                          classification=integer(nr),
                           pro=provideDimnames(matrix(1L,   nrow=1L, ncol=1L), base=list("pro", "Cluster0")),
                           zstar=provideDimnames(matrix(1L, nrow=nr, ncol=1L), base=list(as.character(nrseq), "Cluster0")))
     retval        <- c(retval, list(MAPy=retval$ystar))
@@ -3775,7 +3775,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     }
     q[1L]         <- min(x)  - eps
     q[length(q)]  <- max(x)  + eps
-    cl            <- vector("integer", length(x))
+    cl            <- integer(length(x))
     for(g in seq_len(G)) {
       cl[x >= q[g] & x < q[g + 1L]] <- g
     }
@@ -3896,7 +3896,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @param fit A fitted \code{\link[stats]{lm}} model, inheriting either the \code{"mlm"} or \code{"lm"} class.
 #' @param resids The residuals. Can be residuals for observations included in the model, or residuals arising from predictions on unseen data. Must be coercible to a matrix with the number of columns being the number of response variables. Missing values are not allowed.
 #' @param squared A logical. By default (\code{FALSE}), the generalized interpoint distance is computed. Set this flag to \code{TRUE} for the squared value.
-#' @param identity A logical indicating whether the identity matrix is used in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE} for multivariate response data but defaults to \code{TRUE} for univariate response data, where \code{TRUE} corresponds to the use of the Euclidean distance. Setting \code{identity=FALSE} with multivariate data may be advisable when the dimensions of the data are such that the covariance matrix cannot be inverted (otherwise, the pseudo-inverse is used when \code{TRUE}).
+#' @param identity A logical indicating whether the identity matrix is used in place of the precision matrix in the Mahalanobis distance calculation. Defaults to \code{FALSE} for multivariate response data but defaults to \code{TRUE} for univariate response data, where \code{TRUE} corresponds to the use of the Euclidean distance. Setting \code{identity=TRUE} with multivariate data may be advisable when the dimensions of the data are such that the covariance matrix cannot be inverted (otherwise, the pseudo-inverse is used under the \code{FALSE} default).
 #'
 #' @return A vector giving the Mahalanobis distance (or squared Mahalanobis distance) between response(s) and fitted values for each observation.
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
@@ -3990,8 +3990,9 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       if(isTRUE(identity))    {
         return(drop(if(isTRUE(squared)) resids^2       else abs(resids)))
       } else       {
-        covar     <- as.numeric(crossprod(resids)/(nrow(resids) - fit$rank))
-        return(drop(if(isTRUE(squared)) resids^2/covar else abs(resids)/sqrt(covar)))
+        resids2   <- resids^2
+        covar     <- sum(resids2)/(nrow(resids) - fit$rank)
+        return(drop(if(isTRUE(squared)) resids2/covar  else abs(resids)/sqrt(covar)))
       }
     }
   }
@@ -4083,7 +4084,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #'
 #' @importFrom matrixStats "colMeans2" "colRanges" "rowDiffs" "rowMeans2"
 #' @importFrom mclust "hypvol"
-#' @note This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically using its arguments \code{noise.meth} or \code{tau0}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying the \code{noise.vol} argument of \code{\link{MoE_control}} directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
+#' @note This function is called when adding a noise component to \code{MoEClust} models via the function \code{MoE_control}, specifically using its arguments \code{noise.meth} &/or \code{tau0}. The function internally only uses the response variables, and not the covariates. However, one can bypass the invocation of this function by specifying the \code{noise.vol} argument of \code{\link{MoE_control}} directly. This is explicitly necessary for models for high-dimensional data which include a noise component for which this function cannot estimate a (hyper)volume.
 #' 
 #' Note that supplying the volume manually to \code{\link{MoE_clust}} can affect the summary of the means in \code{parameters$mean} and by extension the location of the MVN ellipses in \code{\link{MoE_gpairs}} plots for models with \emph{both} expert network covariates and a noise component. The location cannot be estimated when the volume is supplied manually; in this case, prediction is made on the basis of renormalising the \code{z} matrix after discarding the column corresponding to the noise component. Otherwise, the mean of the noise component is accounted for. The renormalisation approach can be forced by specifying \code{noise.args$discard.noise=TRUE}, even when the mean of the noise component is available.
 #' @return A list with the following two elements:
@@ -4178,7 +4179,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     eigs          <- eigen(x, symmetric = TRUE)
     eval          <- eigs$values
     evec          <- eigs$vectors
-     return(chol(x + evec %*% tcrossprod(diag(pmax.int(.Machine$double.eps, 2 * max(abs(eval)) * d * .Machine$double.eps - eval), d), evec)))
+     return(chol(x + tcrossprod(evec * rep(pmax.int(.Machine$double.eps, 2 * eval[1L] * d * .Machine$double.eps - eval), each=NROW(evec)), evec)))
     }
   )
 
@@ -4300,7 +4301,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(rdf         > 5L) {
       nam         <- c("Min", "1Q", "Median", "3Q", "Max")
       rq          <- if(length(dim(resid)) == 2L) { 
-        structure(apply(t(resid), 1L, stats::quantile), dimnames = list(nam, dimnames(resid)[[2L]]))
+        structure(apply(resid, 2L, stats::quantile), dimnames = list(nam, dimnames(resid)[[2L]]))
       } else       {
         zz        <- zapsmall(stats::quantile(resid), digits + 1L)
         structure(zz, names = nam)

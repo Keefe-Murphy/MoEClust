@@ -5,12 +5,14 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.5.1 - (_16<sup>th</sup> release [minor update]: 2022-12-19_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * New `MoE_gpairs` arg. `diag.pars$show.dens=FALSE` added to toggle whether  
   parametric density estimates are drawn over diagonal panels for each response  
   variable (with or without the underlying histograms; see documentation).
 * New function `MoE_Similarity` added and integrated into `plot.MoEClust`.
 * New function `MoE_AvePP` added.
+* Minor speed-ups to `MoE_mahala` for univariate data with (default) `identity=FALSE`.
 
 ## MoEClust v1.5.0 - (_15<sup>th</sup> release [minor update]: 2022-03-28_)
 ### Significant User-Visible Changes
