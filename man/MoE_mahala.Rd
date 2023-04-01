@@ -75,6 +75,11 @@ while(crit < old)   {
 }
 crit}
 }
+\references{
+Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
+
+Mahalanobis, P. C. (1936). On the generalized distance in statistics. \emph{Proceedings of the National Institute of Sciences, India}, 2(1): 49-55.
+}
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }

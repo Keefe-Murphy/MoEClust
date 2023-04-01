@@ -37,6 +37,6 @@ pairs(ais[,c(3:7)], col=as.numeric(ais$sex), main = "AIS data")
 apply(ais[,c(3:7)], 2, summary)
 }
 \references{
-Cook, R. D. and Weisberg, S. (1994), \emph{An Introduction to Regression Graphics}. John Wiley & Sons, New York, NY, USA.
+Cook, R. D. and Weisberg, S. (1994), \emph{An Introduction to Regression Graphics}. Volume 405 of \emph{Wiley Series in Probability and Statistics}, New York, NY, USA: John Wiley & Sons.
 }
 \keyword{datasets}

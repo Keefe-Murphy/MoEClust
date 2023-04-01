@@ -1,8 +1,9 @@
 citHeader("To cite the 'MoEClust' package in publications, please use:")
 
-citEntry(entry = "Article",
-  author  = personList(person(given="Keefe", family="Murphy"),
-                       person(given=c("Thomas", "Brendan"), family="Murphy")),
+bibentry(
+  bibtype = "Article",
+  author  = c(person(given="Keefe", family="Murphy"),
+              person(given=c("Thomas", "Brendan"), family="Murphy")),
   title   = "Gaussian Parsimonious Clustering Models with Covariates and a Noise Component",
   year    = "2020",
   journal = "Advances in Data Analysis and Classification",
@@ -22,9 +23,10 @@ citEntry(entry = "Article",
 year     <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
 vers     <- paste("package version", meta$Version)
 
-citEntry(entry = "Manual",
-  author  = personList(person(given="Keefe", family="Murphy"),
-                       person(given=c("Thomas", "Brendan"), family="Murphy")),
+bibentry(
+  bibtype = "Manual",
+  author  = c(person(given="Keefe", family="Murphy"),
+              person(given=c("Thomas", "Brendan"), family="Murphy")),
   title   = "\\texttt{\\textup{MoEClust}}: {G}aussian Parsimonious Clustering Models with Covariates and a Noise Component",
   year    = year,
   note    = paste0("\\textsf{R} ", vers),

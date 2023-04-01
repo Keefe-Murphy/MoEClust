@@ -5,7 +5,12 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
-## MoEClust v1.5.1 - (_16<sup>th</sup> release [minor update]: 2022-12-19_)
+## MoEClust v1.5.2 - (_17<sup>th</sup> release [patch update]: 2022-12-20_)
+### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
+* `MoE_entropy` gains the arg. `group` for computing the average entropy of each component.
+* Now using newer `CITATION` commands.
+
+## MoEClust v1.5.1 - (_16<sup>th</sup> release [patch update]: 2022-12-19_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * New `MoE_gpairs` arg. `diag.pars$show.dens=FALSE` added to toggle whether  
   parametric density estimates are drawn over diagonal panels for each response  
