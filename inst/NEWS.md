@@ -8,6 +8,7 @@ __and a Noise Component__
 ## MoEClust v1.5.2 - (_17<sup>th</sup> release [patch update]: 2022-12-20_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * `MoE_entropy` gains the arg. `group` for computing the average entropy of each component.
+* Added `FARI` for computing the Frobenius (adjusted) Rand index between two soft &/or hard partitions.
 * Now using newer `CITATION` commands.
 
 ## MoEClust v1.5.1 - (_16<sup>th</sup> release [patch update]: 2022-12-19_)

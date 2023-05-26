@@ -4181,6 +4181,76 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     class(noise)  <- "NoiseVol"
       return(noise)
   }
+  
+#' Compute the Frobenius (adjusted) Rand index
+#'
+#' This function efficiently computes fuzzy generalisations of the Rand and adjusted Rand indices for comparing two partitions, allowing either or both partitions to be "soft" or "hard".
+#' @param z1,z2 A \eqn{n * G}{n * G} matrix representing a hard partition (all entries 0 or 1) or soft cluster-membership probabilities.
+#' @details If \code{z1} &/or \code{z2} is supplied as a vector of cluster labels, they will be coerced to an appropriate matrix via \code{\link[mclust]{unmap}}.
+#' @note The number of columns of the matrices \code{z1} and \code{z2} need not be equal. 
+#'
+#' @importFrom matrixStats "rowSums2"
+#' @importFrom mclust "unmap"
+#' @return A list with the following named components:
+#' \describe{
+#' \item{\code{FRI}}{Measure of Frobenius Rand index between \code{z1} and \code{z2}.}
+#' \item{\code{FARI}}{Measure of Frobenius adjusted Rand index between \code{z1} and \code{z2}.}
+#' }
+#' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
+#' @references Andrew, J. L., Browne, R., and Hvingelby, C. D. (2022). On assessments of agreement between fuzzy partitions. \emph{Journal of Classification}, 39(2): 326-342.
+#' @seealso \code{\link[mclust]{unmap}}
+#' @keywords utility
+#' @export
+#' @usage
+#' FARI(z1,
+#'      z2)
+#' @examples
+#' m1 <- MoE_clust(ais[,3:7], G=2, modelNames="EVE",
+#'                 gating=~BMI, expert=~sex, network.data=ais)
+#' m2 <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", 
+#'                 equalPro=TRUE, expert=~sex, network.data=ais)
+#' m3 <- MoE_clust(ais[,3:7], G=2, modelNames="VEE", algo="CEM", tau0=0.1)
+#' 
+#' # FARI between two soft partitions
+#' FARI(m1$z, m2$z)
+#' # FARI between soft and hard partitions
+#' FARI(m1$z, m3$z)
+#' # FARI between soft partition and hard classification
+#' FARI(m1$z, m2$classification)
+#' # FARI between hard partition and hard classification
+#' FARI(m3$z, m3$classification)
+#' # FARI between hard classification and hard classification
+#' FARI(m1$classification, m2$classification)
+  FARI            <- function(z1, z2) {
+    if(!is.matrix(z1)) {
+      z1          <- unmap(z1)
+    }
+    if(!is.matrix(z2)) {
+      z2          <- unmap(z2)
+    }
+    n             <- nrow(z1)
+    if(nrow(z2)   != n)                           stop("'z1' and 'z2' must contain the same number of observations", call.=FALSE)
+    if(any(z1 < 0, z2 < 0, z1 > 1, z2 > 1))       stop("Entries of 'z1' and 'z2' must be in [0,1]", call.=FALSE)
+    if(!all(isTRUE(all.equal(rowSums2(z1), 
+                             rep(1, n))),
+            isTRUE(all.equal(rowSums2(z2), 
+                             rep(1, n)))))             stop("Rows of 'z1' and 'z2' must sum to 1", call.=FALSE)
+    
+    X             <- tcrossprod(z1)
+    Y             <- tcrossprod(z2)
+    X2            <- sum(X * X)
+    Y2            <- sum(Y * Y)
+    Xj            <- sum(X)
+    Yj            <- sum(Y)
+    Nx            <- Xj/X2 * X
+    Ny            <- Yj/Y2 * Y
+    nc22          <- choose(n, 2) * 2
+    fri           <- (sum(Nx * Ny) + sum((1 - Nx) * (1 - Ny)) - n)/nc22
+    R             <- diag(n) - 1/n
+    Eri           <- (2 * Xj * Yj/(X2 * Y2) * (Xj/n * Yj/n + (1/(n - 1) * sum(R * X) * sum(R * Y))) - (Xj^2)/X2 - (Yj^2)/Y2 + n^2 - n)/nc22
+    fari          <- (fri - Eri)/(1 - Eri)
+      return(list(FRI = fri, FARI = fari))
+  }
 
 #' Show the NEWS file
 #'
