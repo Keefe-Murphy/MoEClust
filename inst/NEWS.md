@@ -9,6 +9,8 @@ __and a Noise Component__
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * `MoE_entropy` gains the arg. `group` for computing the average entropy of each component.
 * Added `FARI` for computing the Frobenius (adjusted) Rand index between two soft &/or hard partitions.
+* Fixed bug in `as.Mclust` for models w/ gating & expert covariates when `expert.covar=TRUE`.
+* Extensive edits to avoid overheads introduced in `matrixStats` v1.0.0 + related minor speed-ups.
 * Now using newer `CITATION` commands.
 
 ## MoEClust v1.5.1 - (_16<sup>th</sup> release [patch update]: 2022-12-19_)

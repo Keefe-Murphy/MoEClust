@@ -14,7 +14,7 @@ BugReports: https://github.com/Keefe-Murphy/MoEClust
 LazyData: true
 Imports:
     lattice (>= 0.12),
-    matrixStats (>= 0.53.1),
+    matrixStats (>= 1.0.0),
     mclust (>= 5.4),
     mvnfast,
     nnet (>= 7.3-0),

@@ -457,7 +457,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   }
   if(response.type == "density"   || show.D) {
     res$parameters$fits <- array(unlist(lapply(res$expert, "[[", "fitted.values")), dim=c(res$n, res$d, G))
-    res$parameters$lpro <- log(if(isTRUE(attr(res, "Gating"))) colMeans2(res$parameters$pro) else res$parameters$pro)
+    res$parameters$lpro <- log(if(isTRUE(attr(res, "Gating"))) colMeans2(res$parameters$pro, refine=FALSE, useNames=FALSE) else res$parameters$pro)
   }
   if(isTRUE(show.D)) {
     diag.pars$grid.size <- density.pars$grid.size[1L]
@@ -1340,7 +1340,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   } else if(gate) {
     den        <- MoE_dens(data=xy, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
   }   else den <- MoE_dens(data=xy, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
-  zz           <- matrix(exp(rowLogSumExps(den)), nrow=lx, ncol=ly, byrow=FALSE)
+  zz           <- matrix(exp(rowLogSumExps(den, useNames=FALSE)), nrow=lx, ncol=ly, byrow=FALSE)
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim))
   .draw_axis(x=x, y=y, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=NULL, horiz=NULL, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
   grid::popViewport(1)
@@ -1420,7 +1420,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
       } else if(gate) {
         den        <- MoE_dens(data=xd, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
       }   else den <- MoE_dens(data=xd, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
-      zz           <- matrix(exp(rowLogSumExps(den)), nrow=xn, ncol=1L)
+      zz           <- matrix(exp(rowLogSumExps(den, useNames=FALSE)), nrow=xn, ncol=1L)
       den          <- exp(den)
       oo           <- order(xd)
       if(diag.pars$show.hist) {
