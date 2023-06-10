@@ -493,6 +493,8 @@
     elogi         <- vapply(expx.covs, is.logical, logical(1L))
     gate.covs[,glogi]          <- sapply(gate.covs[,glogi], as.factor)
     expx.covs[,elogi]          <- sapply(expx.covs[,elogi], as.factor)
+    expx.modmat   <- stats::model.matrix(expert, data=expx.covs)
+    d_exp         <- ncol(expx.modmat) * d
     if(netmiss)    {
       netdat      <- cbind(gate.covs, expx.covs)
       netnames    <- unique(colnames(netdat))
@@ -583,7 +585,7 @@
           if(!mdind)            {
             mcarg <- list(data=XI, G=g.range, verbose=FALSE, control=emControl(equalPro=equalPro), initialization=list(hcPairs=Zhc))
             mcl   <- suppressWarnings(switch(EXPR=init.crit, icl=do.call(mclustICL, mcarg), bic=do.call(mclustBIC, mcarg)))
-            mcerr <- rowAlls(is.na(mcl), useNames = FALSE)
+            mcerr <- rowAlls(is.na(mcl), useNames=FALSE)
             if(any(mcerr))                        stop(paste0("Mclust initialisation failed for the G=", paste(g.range[mcerr], collapse="/"), " model", ifelse(sum(mcerr) > 1, "s", "")), call.=FALSE)
             class(mcl)         <- "mclustBIC"
           }
@@ -621,6 +623,7 @@
       if(exp.g)    {
         z.mat     <- z.alloc   <- matrix(0L, nrow=n * g,  ncol=g)
         muX       <- if(uni)      numeric(g) else matrix(0L, nrow=d, ncol=g)
+        exp.pen   <- g * d_exp
       } else       {
         exp.pen   <- g * d
       }
@@ -709,12 +712,12 @@
             ix    <- ix   + 1L
             for(k in Gseq)      {
              sub  <- z.tmp[,k] == 1
-             exp  <- tryCatch(stats::lm(expN, data=exnoise, subset=sub),              error=function(e) try(if(drop.exp) stop("DROP") else stats::lm(drop_constants(exnoise, expN, sub), data=exnoise, subset=sub), silent=TRUE))
-             if(inherits(exp,   "try-error"))  {
+             EXP  <- tryCatch(stats::lm(expN, data=exnoise, subset=sub),              error=function(e) try(if(drop.exp) stop("DROP") else stats::lm(drop_constants(exnoise, expN, sub), data=exnoise, subset=sub), silent=TRUE))
+             if(inherits(EXP,   "try-error"))  {
                init.exp        <- FALSE
                break
-             } else e.fit[[k]] <- exp
-             pred <- tryCatch(suppressWarnings(stats::predict(exp, newdata=exnoise)), error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(exp, newdata=drop_levels(exp, exnoise)),                  silent=TRUE))
+             } else e.fit[[k]] <- EXP
+             pred <- tryCatch(suppressWarnings(stats::predict(EXP, newdata=exnoise)), error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(EXP, newdata=drop_levels(EXP, exnoise)),                  silent=TRUE))
              if(inherits(pred,  "try-error"))  {
                init.exp        <- FALSE
              } else       {
@@ -735,7 +738,7 @@
                }
                res             <- 
                res.G[[k]]      <- xN     - pred
-               mahala[[k]]     <- MoE_mahala(exp, res, squared=sq_maha, identity=Identity)
+               mahala[[k]]     <- MoE_mahala(EXP, res, squared=sq_maha, identity=Identity)
              }
             }
             if(!init.exp) {
@@ -772,8 +775,8 @@
          noisexp  <- expx.covs[noise,, drop=FALSE]
          for(k in Gseq)   {
            nRG[[k]][!noise,]   <- res.G[[k]]
-           exp    <- e.fit[[k]]
-           pred   <- tryCatch(stats::predict(exp, newdata=noisexp),                   error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(exp, newdata=drop_levels(exp, noisexp)),                  silent=TRUE))
+           EXP    <- e.fit[[k]]
+           pred   <- tryCatch(stats::predict(EXP, newdata=noisexp),                   error=function(e) try(if(drop.exp) stop("DROP") else stats::predict(EXP, newdata=drop_levels(EXP, noisexp)),                  silent=TRUE))
            if(inherits(pred,        "try-error")) {
              init.exp          <- FALSE
            } else  {
@@ -809,9 +812,9 @@
         z         <- z.init    <- z.tmp
       } else   {
         if(g   > 0)  {
-          z[!noise, -gN]       <- z.tmp
+          z[!noise,-gN]        <- z.tmp
           if(tnull)  {
-            z[noise, gN]       <- 1L
+            z[noise,gN]        <- 1L
           } else z             <- cbind(z[,-gN] * (1 - tau0), tau0)
         } else {
           z[]     <- 1L
@@ -835,8 +838,7 @@
       if(noise.gate)      {
         zN        <- z
       } else   {
-        zN        <- z[,-gN,     drop=FALSE]
-        zN        <- zN[!noise,, drop=FALSE]
+        zN        <- z[!noise,-gN, drop=FALSE]
       }
 
     # Initialise gating network
@@ -940,20 +942,26 @@
         }
         nW        <- 1L
         alW       <- switch(EXPR=alG, cemEM="CEM", alG)
+        if(isFALSE(stX))        {
+          if(isFALSE(exp.g))    old.z  <- z
+          if(isFALSE(gate.g))  old.zN  <- zN
+        }
 
       # Run the EM/CEM algorithm
         while(stX)    {
+          if(isFALSE(exp.g))    old.z  <- z
+          if(isFALSE(gate.g))  old.zN  <- zN
 
         # Expert network
           if(exp.g)   {
            e.fit  <- e.res     <- list()
            for(k in Gseq)  {
-            fitE  <- stats::lm(expert, weights=z[,k], data=expx.covs)
-           #fitE  <- glmnet::cv.glmnet(y=X, x=model.matrix(expert, data=expx.covs)[,-1L, drop=FALSE], weights=z[,k], family="mgaussian")
-            e.fit[[k]]        <- fitE
-            e.res[[k]]        <- stats::residuals(fitE)
-           #e.res[[k]]        <- X - stats::predict(fitE, weights=z[,k], type="response", newx=model.matrix(expert, data=expx.covs)[,-1L], s="lambda.1se")
-            z.mat[(k - 1L) * n + Nseq,k]      <- z[,k]
+            fitE  <- stats::lm.wfit(expx.modmat, X, w=z[,k])
+           #fitE  <- glmnet::cv.glmnet(y=X, x=expx.modmat[,-1L, drop=FALSE], weights=z[,k], family="mgaussian")
+            e.fit[[k]]         <- fitE
+            e.res[[k]]         <- fitE$residuals
+           #e.res[[k]]         <- X - stats::predict(fitE, weights=z[,k], type="response", newx=expx.modmat[,-1L, drop=FALSE], s="lambda.1se")
+            z.mat[(k - 1L) * n  + Nseq,k]     <- z[,k]
            }
            res.x  <- if(uni) as.matrix(do.call(base::c, e.res))  else do.call(rbind, e.res)
           }
@@ -1000,7 +1008,7 @@
             if(equal.pro && !noise.null  && !n0pro) {
               t0  <- mean(z[,gN])
               tau <- c(rep((1 - t0)/g, g), t0)
-            } else   if(!equal.pro)      {
+            } else   if(!equal.pro)       {
               tau <- if(noise.null && !ERR)   Mstep$parameters$pro else colMeans2(z, refine=FALSE, useNames=FALSE)
             }
             tau   <- if(!exp.g     || !noise.null  || ERR)     tau else tau/sum(tau)
@@ -1061,9 +1069,8 @@
       # Store values corresponding to the maximum BIC/ICL/AIC so far
         j2        <- max(1L, j  - switch(EXPR=algo, cemEM=1L, 2L))
         if(isTRUE(verbose))       message(paste0("\t\t# Iterations: ", ifelse(ERR, "stopped at ", ""), j2, ifelse(last.G && last.T, "\n\n", "\n")))
-       #pen.exp   <- ifelse(exp.g, g * d * (fitE$glmnet.fit$df[which(fitE$glmnet.fit$lambda == fitE$lambda.1se)] + 1), exp.pen)
-        pen.exp   <- ifelse(exp.g, g * length(stats::coef(fitE)), exp.pen)
-        x.df      <- x.df + pen.exp + gate.pen
+       #exp.pen   <- ifelse(exp.g, g * d * (fitE$glmnet.fit$df[which(fitE$glmnet.fit$lambda == fitE$lambda.1se)] + 1), exp.pen)
+        x.df      <- x.df + exp.pen + gate.pen
         max.ll    <- ll[j]
         choose    <- MoE_crit(modelName=modtype, loglik=max.ll, n=n, d=d, G=g, z=z, df=x.df)
         bics      <- choose["bic",]
@@ -1077,19 +1084,22 @@
           z.x     <- z
           ll.x    <- ll
           gp.x    <- gate.pen
-          ep.x    <- pen.exp
+          ep.x    <- exp.pen
           sig.x   <- vari
           if(stopGx)   {
             linfx <- ait$linf
           }
           if(gate.g)   {
             gfit  <- fitG
+          } else       {
+            oldZn <- old.zN
           }
           if(exp.g)    {
             efit  <- e.fit
             eres  <- e.res
           } else   {
             mu.x  <- mus
+            oldZe <- old.z
           }
         }
         max.ll                 <- ifelse(ERR, -Inf, max.ll)
@@ -1123,12 +1133,15 @@
         }
         if(gate.g)     {
           x.fitG  <- gfit
+        } else         {
+          x.oldZn <- oldZn
         }
         if(exp.g)      {
           x.fitE  <- efit
           x.resE  <- eres
         } else     {
           x.mu    <- mu.x
+          x.oldZe <- oldZe
         }
       }
     } # for (i)
@@ -1162,7 +1175,7 @@
     }
     Gseq          <- seq_len(G)
     GN            <- max(G + !noise.null, 1L)
-    zN       <- z <- x.z
+    z             <- x.z
     rownames(z)   <- as.character(Nseq)
     best.mod      <- colnames(CRITs)[best.ind[2L]]
     bic.fin       <- BICs[best.ind]
@@ -1179,9 +1192,10 @@
     noise.gate    <- noise.null || gate.noise[best.G]
     if(!(bG       <- gate.G[best.G]))  {
       if(GN > 1)           {
-       x.fitG     <- multinom(gating, trace=FALSE, data=gate.covs, maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
+       x.fitG     <- multinom(stats::update.formula(gating, x.oldZn ~ .), 
+                              trace=FALSE, data=gate.covs, maxit=g.itmax, reltol=g.reltol, MaxNWts=MaxNWts)
        if(equal.pro    && !noise.null &&   !n0pro)    {
-         t0       <- mean(z[,GN])
+         t0       <- x.tau[GN]
          x.tau    <- c(rep((1 - t0)/G, G), t0)
        } else      {
          x.tau    <- if(n0pro) rep(1/GN, GN) else if(equal.pro)           rep(1/G, G) else x.fitG$fitted.values[1L,]
@@ -1193,33 +1207,38 @@
        MLRcon     <- MLRcon    && isTRUE(x.fitG$converged)
       }
       attr(x.fitG, "Formula")  <- "~1"
-      if(equal.pro)        {
+      if(GN > 1   && equal.pro) {
        if(!noise.null          && 
-          !equal.noise)    {
+          !n0pro)  {
         x.fitG$wts[-(GN * 2L)] <- 0L  
        } else x.fitG$wts[]     <- 0L  
        x.fitG$fitted.values    <- matrix(x.tau, nrow=n, ncol=GN, byrow=TRUE)
-       x.fitG$residuals        <- zN - x.fitG$fitted.values
+       x.fitG$residuals        <- x.oldZn - x.fitG$fitted.values
       }
     } 
     if(isFALSE(MLRcon))                           warning(paste0("\tFor one or more models, in one or more ", algo, " iterations, the multinomial logistic regression\n\t\tin the gating network failed to converge in ", g.itmax, " iterations:\n\t\tmodify the 3rd element of the 'itmax' argument to MoE_control()\n"), call.=FALSE, immediate.=TRUE)
     if(is.matrix(x.tau))   {
-      colnames(x.tau)          <- paste0("Cluster", if(!noise.null)       c(Gseq, 0L) else Gseq)  
-    } else x.tau  <- stats::setNames(x.tau, paste0("Cluster", if(!noise.null) c(Gseq, 0L) else Gseq))
+      colnames(x.tau)          <- paste0("Cluster",    if(!noise.null)    c(Gseq, 0L) else Gseq)  
+    } else x.tau  <- stats::setNames(x.tau, 
+                                     paste0("Cluster", if(!noise.null)    c(Gseq, 0L) else Gseq))
     x.fitG$lab    <- if(noise.gate && !noise.null && GN > 1)              c(Gseq, 0L) else Gseq
     gnames        <- if(G >= 1) paste0("Cluster", Gseq)                               else "Cluster0"
-    if(!exp.x)     {
-      if(G > 0)    {
+    if(G > 0)      {
+      if(exp.x)    {
+        for(k in Gseq)     {
+          x.fitE[[k]]    <- stats::lm(expert, data=expx.covs, weights=x.fitE[[k]]$weights)
+        }  
+      } else       {
         x.fitE    <- list()
         for(k in Gseq)     {
-          x.fitE[[k]]          <- stats::lm(expert, weights=z[,k], data=expx.covs)
+          x.fitE[[k]]    <- stats::lm(expert, data=expx.covs, weights=x.oldZe[,k])
         }
-      } else       {
-        x.fitE    <- NA
       }
-      residX      <- stats::setNames(replicate(max(G, 1L), matrix(0L, nrow=n, ncol=0L)),   gnames)
-    } else residX <- stats::setNames(x.resE, gnames)
+    } else         {
+      x.fitE      <- NA
+    }
     x.fitE        <- stats::setNames(x.fitE, gnames)
+    residX        <- stats::setNames(if(exp.x) x.resE else replicate(max(G, 1L), matrix(0L, nrow=n, ncol=0L)), gnames)
     colnames(z)   <- if(G != 0 && !noise.null)                  c(gnames, "Cluster0") else gnames
     exp.gate      <- c(exp.x, bG)
     net.msg       <- ifelse(any(exp.gate), paste0(" (incl. ", ifelse(all(exp.gate), "gating and expert", ifelse(exp.x, "expert", ifelse(bG, "gating", ""))), paste0(" network covariates", ifelse(bG, "", ifelse(equal.pro && G > 1, ", with equal mixing proportions", "")), 
@@ -2601,9 +2620,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     new.tau       <- if(isTRUE(Xgat))  params$pro else matrix(params$pro, nrow=nrow(dat), ncol=length(params$pro), byrow=TRUE)
     zstar         <- if(isTRUE(use.y))   object$z else new.tau
   } else       {
-    if(isFALSE(nmiss))            {
-      new.tau     <- predict.MoE_gating(object$gating, newdata=newgate, type="probs", keep.noise=TRUE, droplevels=FALSE)
-    }
+    new.tau       <- predict.MoE_gating(object$gating, newdata=newgate, type="probs", keep.noise=TRUE, droplevels=FALSE)
     if(resid  && !(resid <- !yM))                 warning("'resid' can only be TRUE when response variables are supplied\n", call.=FALSE, immediate.=TRUE)
     attr(net, "Gating")  <-
     attr(net, "Expert")  <-
@@ -4805,7 +4822,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     if(gateNoise)                                 cat(paste("Noise Component Gating:", attr(x, "NoiseGate"), "\n"))
     cat(paste("EqualPro:",  equalpro, ifelse(equalNoise, "\n", "")))
     if(equalNoise)                                cat(paste("Noise Proportion Estimated:", !attr(x, "EqualNoise")))
-    if(equalpro)                                  message("\n\nCoefficients set to zero as this is an equal mixing proportion model")
+    if(equalpro && inherits(x, "multinom"))       message("\n\nCoefficients set to zero as this is an equal mixing proportion model")
       invisible()
   }
 
