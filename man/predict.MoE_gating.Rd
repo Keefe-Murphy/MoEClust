@@ -75,4 +75,3 @@ Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models wit
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{prediction}
-\keyword{utility}

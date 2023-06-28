@@ -12,7 +12,10 @@ __and a Noise Component__
 * Semi-related fixes to expert & gating network output for models w/ no covariates in those parts:  
   coefficients now accurately reflect corresponding estimates of means & mixing proportions  
   (especially for models with a noise component &/or `equalPro=TRUE`).
-* `MoE_entropy` gains the arg. `group` for computing the average entropy of each component.
+* `MoE_entropy` gains the arg. `group` for computing the average entropy of each component:  
+defaults to `FALSE`, i.e. old behaviour.
+* `MoE_AvePP` gains the arg. `group` for computing average posterior probabilities _per component_:  
+defaults to `TRUE`, i.e. old behaviour.
 * Added `FARI` for computing the Frobenius (adjusted) Rand index between two soft &/or hard partitions.
 * Fixed bug in `as.Mclust` for models w/ gating & expert covariates when `expert.covar=TRUE`.
 * Extensive edits to avoid overheads introduced in `matrixStats` v1.0.0 + related minor speed-ups.

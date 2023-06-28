@@ -118,4 +118,3 @@ Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{main}
 \keyword{prediction}
-\keyword{utility}

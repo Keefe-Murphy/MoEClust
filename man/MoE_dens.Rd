@@ -61,4 +61,4 @@ Dens2 <- MoE_dens(data=m2$resid.data, sigs=m2$parameters$variance, mus=0,
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
-\keyword{clustering}
+\keyword{utility}

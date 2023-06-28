@@ -53,4 +53,3 @@ predict(res$expert, newdata=CO2data[1:5,"GNP", drop=FALSE], simplify=TRUE)
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
 \keyword{prediction}
-\keyword{utility}

@@ -76,4 +76,4 @@ Biernacki, C., Celeux, G. and Govaert, G. (2000). Assessing a mixture model for 
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
-\keyword{clustering}
+\keyword{utility}

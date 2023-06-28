@@ -65,4 +65,4 @@ identical(Cstep2$loglik, ll)                                          #TRUE
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>
 }
-\keyword{clustering}
+\keyword{utility}
