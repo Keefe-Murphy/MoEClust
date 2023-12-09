@@ -21,12 +21,12 @@
 #' The package also contains two data sets: \code{ais} and \code{CO2data}.
 #'
 #' @section Details:
-#' \itemize{
+#' \describe{
 #' \item{Type: }{Package}
 #' \item{Package: }{MoEClust}
 #' \item{Version: }{1.5.1}
 #' \item{Date: }{2022-12-19 (this version), 2017-11-28 (original release)}
-#' \item{Licence: }{GPL (>=2)}
+#' \item{Licence: }{GPL (>= 3)}
 #' }
 #'
 #' @section See Also:

@@ -134,10 +134,9 @@
 #' plot(best, what="loglik")
 #'
 #' # Visualise the results using the 'lattice' library
-#' require("lattice")
-#' z     <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
-#' splom(~ hema | sex, groups=z)
-#' splom(~ hema | z, groups=sex)}
+#' z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
+#' lattice::splom(~ hema | sex, groups=z)
+#' lattice::splom(~ hema | z, groups=sex)}
   MoE_clust       <- function(data, G = 1:9, modelNames = NULL, gating = ~1, expert = ~1, control = MoE_control(...), network.data = NULL, ...) {
 
   # Definitions and storage set-up
