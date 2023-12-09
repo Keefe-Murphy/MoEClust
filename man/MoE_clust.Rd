@@ -153,10 +153,9 @@ plot(best, what="gating") # equal mixing proportions!
 plot(best, what="loglik")
 
 # Visualise the results using the 'lattice' library
-require("lattice")
-z     <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
-splom(~ hema | sex, groups=z)
-splom(~ hema | z, groups=sex)}
+z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
+lattice::splom(~ hema | sex, groups=z)
+lattice::splom(~ hema | z, groups=sex)}
 }
 \references{
 Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.

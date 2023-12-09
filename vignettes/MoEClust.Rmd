@@ -73,9 +73,7 @@ library(MoEClust)
 
 it will load in all the __MoEClust__ functions.
 
-The GitHub version contains a few more features but some of these may not yet be fully tested, and occasionally this version might be liable to break when it is in the process of being updated. 
-
-If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). 
+The GitHub version contains a few more features but some of these may not yet be fully tested, and occasionally this version might be liable to break when it is in the process of being updated. If you find bugs or want to suggest new features please visit the __MoEClust__ [GitHub issues page](https://github.com/Keefe-Murphy/MoEClust/issues). 
 
 ## CO2 Data
 Load the CO2 data.

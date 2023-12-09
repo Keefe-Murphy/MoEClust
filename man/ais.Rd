@@ -6,20 +6,20 @@
 \title{Australian Institute of Sport data}
 \format{
 A data frame with 202 observations on the following 13 variables:\cr
-\itemize{
-\item{[,1] \code{sex}}{ - categorical, levels = \code{female, male}}
-\item{[,2] \code{sport}}{ - categorical, levels = \code{B_Ball, Field, Gym, Netball, Row, Swim, T_400m, Tennis, T_Sprnt, W_Polo}}
-\item{[,3] \code{RCC}}{ - red cell count (numeric)}
-\item{[,4] \code{WCC}}{ - white cell count (numeric)}
-\item{[,5] \code{Hc}}{ - Hematocrit (numeric)}
-\item{[,6] \code{Hg}}{ - Hemoglobin (numeric)}
-\item{[,7] \code{Fe}}{ - plasma ferritin concentration (numeric)}
-\item{[,8] \code{BMI}}{ - body mass index: \code{Wt/(Ht)^2} (numeric)}
-\item{[,9] \code{SSF}}{ - sum of skin folds (numeric)}
-\item{[,10] \code{Bfat}}{ - body fat percentage (numeric)}
-\item{[,11] \code{LBM}}{ - lean body mass (numeric)}
-\item{[,12] \code{Ht}}{ - height, cm (numeric)}
-\item{[,13] \code{Wt}}{ - weight, kg (numeric)}
+\describe{
+\item{\code{sex}}{categorical, levels = \code{female, male}}
+\item{\code{sport}}{categorical, levels = \code{B_Ball, Field, Gym, Netball, Row, Swim, T_400m, Tennis, T_Sprnt, W_Polo}}
+\item{\code{RCC}}{red cell count (numeric)}
+\item{\code{WCC}}{white cell count (numeric)}
+\item{\code{Hc}}{Hematocrit (numeric)}
+\item{\code{Hg}}{Hemoglobin (numeric)}
+\item{\code{Fe}}{plasma ferritin concentration (numeric)}
+\item{\code{BMI}}{body mass index: \code{Wt/(Ht)^2} (numeric)}
+\item{\code{SSF}}{sum of skin folds (numeric)}
+\item{\code{Bfat}}{body fat percentage (numeric)}
+\item{\code{LBM}}{lean body mass (numeric)}
+\item{\code{Ht}}{height, cm (numeric)}
+\item{\code{Wt}}{weight, kg (numeric)}
 }
 }
 \usage{
