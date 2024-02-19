@@ -91,8 +91,8 @@
 #' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, \code{axis.pars}, and \code{diag.pars}.
 #'
 #' @importFrom lattice "current.panel.limits" "llines" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
-#' @importFrom matrixStats "colMeans2" "rowLogSumExps"
-#' @importFrom mclust "mclust.options" "sigma2decomp"
+#' @importFrom matrixStats "colMeans2"
+#' @importFrom mclust "logsumexp" "mclust.options" "sigma2decomp"
 #' @importFrom vcd "strucplot"
 #'
 #' @return A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
@@ -1049,8 +1049,8 @@ MoE_Uncertainty.MoEClust <- function(res, type = c("barplot", "profile"), truth 
 #'
 #' @details For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Similarity}}, and \code{\link{MoE_Uncertainty}} directly.
 #' @importFrom lattice "current.panel.limits" "llines" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
-#' @importFrom matrixStats "rowLogSumExps"
-#' @importFrom mclust "mclust.options" "plot.mclustBIC" "plot.mclustICL" "sigma2decomp"
+#' @importFrom matrixStats "colMeans2"
+#' @importFrom mclust "logsumexp" "mclust.options" "plot.mclustBIC" "plot.mclustICL" "sigma2decomp"
 #' @importFrom vcd "strucplot"
 #' @note Caution is advised producing generalised pairs plots when the dimension of the data is large.
 #'
@@ -1299,7 +1299,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   }
 }
 
-#' @importFrom matrixStats "rowLogSumExps"
+#' @importFrom mclust "logsumexp"
 .density_panel <- function(dat, dimens, res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border) {
   pars         <- res$parameters
   modelName    <- res$modelName
@@ -1309,10 +1309,10 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   if(is.element(modelName, c("EEI", "EII", "VII")))           {
     switch(EXPR=modelName, EII=, VII=      {
       sigma    <- c(sigma, list(sigmasq=pars$variance$sigmasq))
-    }, EEI=      {
+    }, EEI=       {
       sigma    <- c(sigma, list(Sigma=pars$variance$Sigma[dimens,dimens]))
     } )
-  } else         {
+  } else          {
     sigma      <- c(sigma, list(sigma=array(dim=c(2, 2, G))))
     for(k in seq_len(G)) sigma$sigma[,,k] <- pars$variance$sigma[dimens,dimens,k]
   }
@@ -1340,7 +1340,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   } else if(gate) {
     den        <- MoE_dens(data=xy, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
   }   else den <- MoE_dens(data=xy, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
-  zz           <- matrix(exp(rowLogSumExps(den, useNames=FALSE)), nrow=lx, ncol=ly, byrow=FALSE)
+  zz           <- matrix(exp(logsumexp(den)), nrow=lx, ncol=ly, byrow=FALSE)
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim))
   .draw_axis(x=x, y=y, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=NULL, horiz=NULL, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
   grid::popViewport(1)
@@ -1351,6 +1351,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 }
 
 #' @importFrom lattice "llines" "panel.histogram"
+#' @importFrom mclust "logsumexp"
 .diag_panel <- function(x, varname, diag.pars, hist.col, axis.pars, xpos, ypos, buffer, index, i, res, col, outer.rot) {
   x         <- x[!is.na(x)]
   drange    <- range(as.numeric(x), na.rm=TRUE)
@@ -1392,7 +1393,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
           sigma    <- c(sigma, list(sigmasq=pars$varianceX$Sigma[i,i]))
         } )
         sigma$modelName  <- switch(EXPR=modelName, V=, VII="V", "E")
-      } else         {
+      } else          {
         sigma      <- c(sigma, list(sigmasq=array(dim=c(1, 1, G))))
         for(k in seq_len(G)) sigma$sigmasq[,,k] <- pars$varianceX$sigma[i,i,k]
         sigma$modelName  <- "V"
@@ -1420,7 +1421,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
       } else if(gate) {
         den        <- MoE_dens(data=xd, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
       }   else den <- MoE_dens(data=xd, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
-      zz           <- matrix(exp(rowLogSumExps(den, useNames=FALSE)), nrow=xn, ncol=1L)
+      zz           <- matrix(exp(logsumexp(den)), nrow=xn, ncol=1L)
       den          <- exp(den)
       oo           <- order(xd)
       if(diag.pars$show.hist) {

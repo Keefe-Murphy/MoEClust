@@ -7,10 +7,10 @@
 MoE_news()
 }
 \value{
-The \code{MoEClust} \code{NEWS} file, provided the session is interactive.
+The \pkg{MoEClust} \code{NEWS} file, provided the session is interactive.
 }
 \description{
-Show the \code{NEWS} file of the \code{MoEClust} package.
+Show the \code{NEWS} file of the \pkg{MoEClust} package.
 }
 \examples{
 MoE_news()

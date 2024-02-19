@@ -11,7 +11,7 @@ noise_vol(data,
 \arguments{
 \item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed, and covariates should not be included. If a matrix or data frame, rows correspond to observations and columns correspond to variables. There \strong{must} be more observations than variables.}
 
-\item{method}{The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The \code{"convexhull"} and \code{"ellipsoidhull"} options require loading the \code{geometry} and \code{cluster} libraries, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used. Note that the \code{"convexhull"} \code{method} is liable to be slow when \code{data} has many columns.}
+\item{method}{The method used to estimate the hypervolume. The default method uses the function \code{\link[mclust]{hypvol}}. The \code{"convexhull"} and \code{"ellipsoidhull"} options require loading the \pkg{geometry} and \pkg{cluster} packages, respectively. This argument is only relevant for multivariate data; for univariate data, the range of the data is used. Note that the \code{"convexhull"} \code{method} is liable to be slow when \code{data} has many columns.}
 
 \item{reciprocal}{A logical variable indicating whether or not the reciprocal hypervolume is desired rather than the hypervolume itself. The default is to return the hypervolume.}
 }

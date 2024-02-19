@@ -20,16 +20,21 @@
 #' 
 #' The package also contains two data sets: \code{ais} and \code{CO2data}.
 #'
-#' @section Details:
+#' @details
 #' \describe{
 #' \item{Type: }{Package}
-#' \item{Package: }{MoEClust}
+#' \item{Date: }{2023-12-11 (this version), 2017-11-28 (original release)}
 #' \item{Version: }{1.5.2}
-#' \item{Date: }{2023-12-10 (this version), 2017-11-28 (original release)}
+#' \item{Package: }{\pkg{MoEClust}}
 #' \item{Licence: }{GPL (>= 3)}
 #' }
 #'
-#' @section See Also:
+#' @seealso Useful links:
+#' \itemize{
+#' \item \url{https://cran.r-project.org/package=MoEClust}
+#' \item Report bugs at \url{https://github.com/Keefe-Murphy/MoEClust}
+#' }
+#' 
 #' Further details and examples are given in the associated vignette document:\cr
 #' \code{vignette("MoEClust", package = "MoEClust")}
 #'

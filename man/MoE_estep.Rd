@@ -22,12 +22,12 @@ MoE_estep(data,
 
 \item{Vinv}{An estimate of the reciprocal hypervolume of the data region. See the function \code{\link{noise_vol}}. Used only if an initial guess as to which observations are noise is supplied. Mixing proportion(s) must be included for the noise component also.}
 
-\item{Dens}{(Optional) A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, to which the softmax function is to be applied, typically obtained by \code{\link{MoE_dens}} but this is not necessary. If this is supplied, all other arguments are ignored, otherwise \code{\link{MoE_dens}} is called according to the other supplied arguments.}
+\item{Dens}{(Optional) A numeric matrix whose \code{[i,k]}-th entry is the \strong{log}-density of observation \emph{i} in component \emph{k}, scaled by the mixing proportions, to which the \code{\link[mclust]{softmax}} function is to be applied, typically obtained by \code{\link{MoE_dens}} but this is not necessary. If this is supplied, all other arguments are ignored, otherwise \code{\link{MoE_dens}} is called according to the other supplied arguments. If a vector is supplied, it will be coerced to a matrix with one row.}
 }
 \value{
 A list containing two elements:
 \item{\code{z}}{A matrix with \code{n} rows and \code{G} columns containing the probability of cluster membership for each of \code{n} observations and \code{G} clusters.}
-\item{\code{loglik}}{The estimated log-likelihood, computed efficiently via \code{\link[matrixStats]{rowLogSumExps}}.}
+\item{\code{loglik}}{The estimated log-likelihood, computed efficiently via \code{\link[mclust]{logsumexp}}.}
 }
 \description{
 Softmax function to compute the responsibility matrix z and the log-likelihood for MoEClust models, with the aid of \code{\link{MoE_dens}}.
@@ -65,7 +65,7 @@ Estep3 <- MoE_estep(data=m2$resid.data, sigs=m2$parameters$variance, mus=0,
                     log.tau=log(m2$parameters$pro), Vinv=m2$parameters$Vinv)
 }
 \seealso{
-\code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link{MoE_cstep}}, \code{\link{MoE_control}}, \code{\link[mclust]{mclustVariance}}, \code{\link[matrixStats]{rowLogSumExps}}
+\code{\link{MoE_dens}}, \code{\link{MoE_clust}}, \code{\link{MoE_cstep}}, \code{\link{MoE_control}}, \code{\link[mclust]{logsumexp}}, \code{\link[mclust]{mclustVariance}}, \code{\link[mclust]{softmax}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>

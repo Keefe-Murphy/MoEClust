@@ -80,34 +80,34 @@ Load the CO2 data.
 
 ```{r}
 data(CO2data)
-CO2   <- CO2data$CO2
-GNP   <- CO2data$GNP
+CO2 <- CO2data$CO2
+GNP <- CO2data$GNP
 ```
 
 Fit various MoEClust mixture models to cluster the CO2 data, allowing the GNP variable to enter the gating &/or expert networks, or neither, via a formula interface. Also consider models with equal mixing proportions. Note that for models with covariates in the gating network, or models with equal mixing proportions, we don't need to fit single-component models (though it could be done!) as this would merely duplicate the single-component models within `m1` and `m3`, respectively. 
 
 ```{r, echo=FALSE}
-m1    <- MoE_clust(CO2, G=1:3, verbose=FALSE)
-m2    <- MoE_clust(CO2, G=2:3, gating= ~ GNP, verbose=FALSE)
-m3    <- MoE_clust(CO2, G=1:3, expert= ~ GNP, verbose=FALSE)
-m4    <- MoE_clust(CO2, G=2:3, gating= ~ GNP, expert= ~ GNP, verbose=FALSE)
-m5    <- MoE_clust(CO2, G=2:3, equalPro=TRUE, verbose=FALSE)
-m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
+m1 <- MoE_clust(CO2, G=1:3, verbose=FALSE)
+m2 <- MoE_clust(CO2, G=2:3, gating= ~ GNP, verbose=FALSE)
+m3 <- MoE_clust(CO2, G=1:3, expert= ~ GNP, verbose=FALSE)
+m4 <- MoE_clust(CO2, G=2:3, gating= ~ GNP, expert= ~ GNP, verbose=FALSE)
+m5 <- MoE_clust(CO2, G=2:3, equalPro=TRUE, verbose=FALSE)
+m6 <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE, verbose=FALSE)
 ```
 
 ```{r, eval=FALSE}
-m1    <- MoE_clust(CO2, G=1:3)
-m2    <- MoE_clust(CO2, G=2:3, gating= ~ GNP)
-m3    <- MoE_clust(CO2, G=1:3, expert= ~ GNP)
-m4    <- MoE_clust(CO2, G=2:3, gating= ~ GNP, expert= ~ GNP)
-m5    <- MoE_clust(CO2, G=2:3, equalPro=TRUE)
-m6    <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE)
+m1 <- MoE_clust(CO2, G=1:3)
+m2 <- MoE_clust(CO2, G=2:3, gating= ~ GNP)
+m3 <- MoE_clust(CO2, G=1:3, expert= ~ GNP)
+m4 <- MoE_clust(CO2, G=2:3, gating= ~ GNP, expert= ~ GNP)
+m5 <- MoE_clust(CO2, G=2:3, equalPro=TRUE)
+m6 <- MoE_clust(CO2, G=2:3, expert= ~ GNP, equalPro=TRUE)
 ```
 
 Choose the best model among these. Specify `optimal.only=TRUE` so that only the optimal model in each set of models is included in the comparison.
 
 ```{r}
-comp  <- MoE_compare(m1, m2, m3, m4, m5, m6, optimal.only=TRUE)
+comp <- MoE_compare(m1, m2, m3, m4, m5, m6, optimal.only=TRUE)
 ```
 
 Now, see if a better model can be found using greedy forward stepwise selection, with the aid of the `MoE_stepwise` function, on the same data. By default, this starts from a single-component model and successively adds components and covariates to both networks, while evaluating each action over all possible model types, until a model which is optimal according to some criterion is found.
@@ -125,7 +125,7 @@ Next, conduct another stepwise search considering models with a noise component.
 Finally, compare all sets of results to choose the optimal model.
 
 ```{r}
-(best  <- MoE_compare(mod1, mod2, comp, pick=1)$optimal)
+(best <- MoE_compare(mod1, mod2, comp, pick=1)$optimal)
 ```
 
 ```{r}
@@ -192,9 +192,9 @@ set.seed(4321)
 ```
 
 ```{r, results="hide"}
-ind     <- sample(1:nrow(CO2data), 2)
-res     <- MoE_clust(CO2data[-ind,]$CO2, G=3, expert= ~ GNP, 
-                     equalPro=TRUE, network.data=CO2data[-ind,])
+ind <- sample(1:nrow(CO2data), 2)
+res <- MoE_clust(CO2data[-ind,]$CO2, G=3, expert= ~ GNP, 
+                 equalPro=TRUE, network.data=CO2data[-ind,])
 ```
 
 Now we can make predictions on the withheld data, either by using the withheld covariates only, or by also using the withheld response variables. Note that `newdata` can be either a list with component(s) `new.x` (and optionally `new.y`) or a single matrix/data.frame with the appropriate columns.
@@ -220,7 +220,7 @@ Load the Australian Institute of Sports data.
 
 ```{r}
 data(ais)
-hema  <- ais[,3:7]
+hema <- ais[,3:7]
 ```
 
 Examine the various additional options around initialisation of the algorithm:
@@ -232,12 +232,12 @@ Examine the various additional options around initialisation of the algorithm:
 Fit a parsimonious Gaussian mixture of experts MoEClust model to the hematological variables within the AIS data, supplying `sex` in the expert network and `BMI` in the gating network via formula interfaces. Include an additional noise component by specifying it's prior mixing proportion `tau0`. Toggle between allowing the mixing proportion for the noise component depend on the gating concomitant or not via the `noise.gate` argument. This time, allow the printing of messages to the screen.
 
 ```{r, eval=FALSE}
-mod   <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, 
-                   network.data=ais, tau0=0.1, noise.gate=FALSE)
+mod <- MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, 
+                 network.data=ais, tau0=0.1, noise.gate=FALSE)
 ```
 
 ```{r, echo=FALSE}
-mod   <- suppressWarnings(MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais, tau0=0.1, noise.gate=FALSE, verbose=FALSE))
+mod <- suppressWarnings(MoE_clust(hema, G=1:3, expert= ~ sex, gating= ~ BMI, network.data=ais, tau0=0.1, noise.gate=FALSE, verbose=FALSE))
 ```
 
 Visualise the results for the optimal model using a generalised pairs plot.

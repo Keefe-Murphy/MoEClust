@@ -5,6 +5,15 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
+* Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
+functions from `mclust` (with `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
+* Further related minor speed-ups for models with `G == 0` and `G == 1`.
+* `MoE_estep` & `MoE_cstep` now work when there is only one observation, with a related  
+fix to `predict.MoEClust(..., use.y=TRUE)` when predicting only one observation.
+* Fixed extremely rare bug in `MoE_clust` & associated `predict`, `fitted`, & `residuals` methods  
+when `algo="CEM"` and a model has only one observation/prediction assigned to its noise component.
+
 ## MoEClust v1.5.2 - (_17<sup>th</sup> release [patch update]: 2023-12-10_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * Massive speed-ups for models w/ expert covariates by replacing `stats::lm` w/ `stats::lm.wfit`:  
@@ -150,8 +159,8 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * Fixes to `print` & `summary` methods for `MoE_gating` objects if `G=1` or `equalPro=TRUE`.
 * Additional minor edits to `MoE_plotGate`.
 * `print.MoECompare` gains the args. `maxi`, `posidens=TRUE`, & `rerank=FALSE`.
-* Ensured `lattice(>=0.12)`, `matrixStats(>=0.53.1)`, & `mclust(>=5.4)` in `Imports:`.
-* Ensured `clustMD(>=1.2.1)` and `geometry(>=0.4.0)` in `Suggests:`.
+* Ensured `lattice (>= 0.12)`, `matrixStats (>= 0.53.1)`, & `mclust (>= 5.4)` in `Imports:`.
+* Ensured `clustMD (>= 1.2.1)` and `geometry (>= 0.4.0)` in `Suggests:`.
 * Use of `NCOL`/`NROW` where appropriate.
 * Package startup message now checks if newer version of package is available from CRAN.
 * Updated citation info after publication in _Advances in Data Analysis and Classification_.

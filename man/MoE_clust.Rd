@@ -152,7 +152,7 @@ plot(best, what="gpairs")
 plot(best, what="gating") # equal mixing proportions!
 plot(best, what="loglik")
 
-# Visualise the results using the 'lattice' library
+# Visualise the results using the 'lattice' package
 z   <- factor(best$classification, labels=paste0("Cluster", seq_len(best$G)))
 lattice::splom(~ hema | sex, groups=z)
 lattice::splom(~ hema | z, groups=sex)}
