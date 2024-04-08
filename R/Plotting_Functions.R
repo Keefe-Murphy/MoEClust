@@ -21,14 +21,14 @@
 #' @param addEllipses Controls whether to add MVN ellipses with axes corresponding to the within-cluster covariances for the response data. The options \code{"inner"} and \code{"outer"} (the default) will colour the axes or the perimeter of those ellipses, respectively, according to the cluster they represent (according to \code{scatter.pars$eci.col}). The option \code{"both"} will obviously colour both the axes and the perimeter. The \code{"yes"} or \code{"no"} options merely govern whether the ellipses are drawn, i.e. \code{"yes"} draws ellipses without any colouring. Ellipses are only ever drawn for multivariate data, and only when \code{response.type} is \code{"points"} or \code{"uncertainty"}.
 #'
 #' Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
-#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} when \code{addEllipses} is invoked accordingly, and/or \code{diag.pars$show.dens=TRUE} (see below), and only relevant for models with expert network covariates.
+#' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} when \code{addEllipses} is invoked accordingly, and only relevant for models with expert network covariates.
 #' @param border.col A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 #'
 #' Defaults to \code{c("purple", "black", "brown", "brown", "navy")}.
 #' @param bg.col A vector of length 5 (or 1) containing \emph{background} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 #'
 #' Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk")}.
-#' @param outer.margins A list of length 4 with units as components named bottom, left, top, and right, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).
+#' @param outer.margins A list of length 4 with units as components named \code{bottom}, \code{left}, \code{top}, and \code{right}, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).
 #' @param outer.labels The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.
 #' @param outer.rot A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels. Defaults to \code{c(0, 90)}.
 #' @param gap The gap between the tiles; defaulting to \code{0.05} of the width of a tile.
@@ -85,7 +85,7 @@
 #'      diagonal=TRUE, hist.color=hist.color, show.counts=TRUE),}
 #' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
 #'
-#' The argument \code{show.dens} toggles whether parametric density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}, though density curves will appear bigger when \code{show.hist=FALSE}. Note that \code{show.dens=TRUE} is also affected by the \code{expert.covar} argument above. Finally, the grid size when \code{show.dens=TRUE} is given by \code{max(res$n, density.pars$grid.size[1])}.
+#' The argument \code{show.dens} toggles whether parametric density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}, though density curves will appear bigger when \code{show.hist=FALSE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{max(res$n, density.pars$grid.size[1])}.
 #' 
 #' When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
 #' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, \code{axis.pars}, and \code{diag.pars}.
@@ -158,11 +158,11 @@
 #'            hist.color=c("black", "cyan", "hotpink", "chartreuse"),
 #'            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
 #'            
-#' # Examine the effect of the expert.covar argument in conjunction with show.dens
+#' # Examine the effect of the expert.covar argument in conjunction with show.dens & show.hist
 #' MoE_gpairs(res, cov.ind=0, expert.covar=TRUE, 
 #'            show.dens=TRUE, show.hist=FALSE, grid.size=1000)
 #' MoE_gpairs(res, cov.ind=0, expert.covar=FALSE, 
-#'            show.dens=TRUE, show.hist=FALSE, grid.size=1000)
+#'            show.dens=TRUE, show.hist=TRUE, grid.size=1000)
 #'            
 #' # Produce a generalised pairs plot for a model with a noise component.
 #' # Reorder the covariates and omit the variables "Hc" and "Hg".
@@ -456,16 +456,16 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     show.D <- diag.pars$show.dens
   }
   if(response.type == "density"   || show.D) {
-    res$parameters$fits <- array(unlist(lapply(res$expert, "[[", "fitted.values")), dim=c(res$n, res$d, G))
-    res$parameters$lpro <- log(if(isTRUE(attr(res, "Gating"))) colMeans2(res$parameters$pro, refine=FALSE, useNames=FALSE) else res$parameters$pro)
+    res$parameters$fits <- if(attr(res, "Expert"))  array(unlist(lapply(res$expert, "[[", "fitted.values")), dim=c(res$n, res$d, G))
+    res$parameters$lpro <- if(attr(res, "Expert") || 
+                              !attr(res, "Gating")) log(res$parameters$pro)
   }
   if(isTRUE(show.D)) {
     diag.pars$grid.size <- density.pars$grid.size[1L]
   }
   res$parameters$varianceX        <- if(isTRUE(expert.covar)  &&
                                         attr(res, "Expert")   &&
-                                        (isTRUE(drawEllipses) || 
-                                        isTRUE(show.D))) suppressMessages(expert_covar(res, ...)) else res$parameters$variance
+                                        isTRUE(drawEllipses)) suppressMessages(expert_covar(res, ...)) else res$parameters$variance
   if(is.null(diag.pars$hist.color))  {
    diag.pars$hist.color <- c("black", "dimgrey", "dimgrey", "dimgrey")
   } else {
@@ -1300,6 +1300,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 }
 
 #' @importFrom mclust "logsumexp"
+#' @importFrom matrixStats "colMeans2"
 .density_panel <- function(dat, dimens, res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border) {
   pars         <- res$parameters
   modelName    <- res$modelName
@@ -1309,10 +1310,10 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   if(is.element(modelName, c("EEI", "EII", "VII")))           {
     switch(EXPR=modelName, EII=, VII=      {
       sigma    <- c(sigma, list(sigmasq=pars$variance$sigmasq))
-    }, EEI=       {
+    }, EEI=          {
       sigma    <- c(sigma, list(Sigma=pars$variance$Sigma[dimens,dimens]))
     } )
-  } else          {
+  } else             {
     sigma      <- c(sigma, list(sigma=array(dim=c(2, 2, G))))
     for(k in seq_len(G)) sigma$sigma[,,k] <- pars$variance$sigma[dimens,dimens,k]
   }
@@ -1325,22 +1326,25 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   x            <- .grid_1(n=lx, range=xlim, edge=TRUE)
   y            <- .grid_1(n=ly, range=ylim, edge=TRUE)
   xy           <- .grid_2(x, y)
-  xyn          <- nrow(xy)
   Vinv         <- pars$Vinv
   noise        <- !is.null(Vinv)
-  GN           <- G + noise
   gate         <- attr(res, "Gating")
   expx         <- attr(res, "Expert")
-  ltau         <- .mat_byrow(pars$lpro, nrow=xyn, ncol=GN)
   mu           <- if(isTRUE(expx)) pars$fits[,dimens,,drop=FALSE] else pars$mean[dimens,, drop=FALSE]
-  if(expx)        {
-    if(noise)     {
-      den      <- cbind(Reduce("+", lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma)))/n, log(Vinv)) + ltau
-    } else den <- Reduce("+",       lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma, Vinv=Vinv)))/n  + ltau
-  } else if(gate) {
-    den        <- MoE_dens(data=xy, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
-  }   else den <- MoE_dens(data=xy, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
-  zz           <- matrix(exp(logsumexp(den)), nrow=lx, ncol=ly, byrow=FALSE)
+  if(expx)           {
+    if(gate)         {
+      den      <- lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma, log.tau=pars$lpro[i,], Vinv=Vinv))
+    } else den <- lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma))
+    den        <- .avg_log_den(den)
+  }   else if(gate)  {
+    den        <- t(MoE_dens(data=xy, mus=mu, sigs=sigma, Vinv=Vinv))
+    den        <- t(den + log(colMeans2(pars$pro, refine=FALSE, useNames=FALSE)))
+  }   else den <- MoE_dens(data=xy,   mus=mu, sigs=sigma)
+  if(isFALSE(gate))  {
+    den        <- if(isTRUE(noise))         cbind(den, log(Vinv)) else den
+    den        <- logsumexp(den, pars$lpro)
+  }   else den <- logsumexp(den)
+  zz           <- matrix(exp(den), nrow=lx, ncol=ly, byrow=FALSE)
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim))
   .draw_axis(x=x, y=y, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=NULL, horiz=NULL, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
   grid::popViewport(1)
@@ -1352,6 +1356,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 
 #' @importFrom lattice "llines" "panel.histogram"
 #' @importFrom mclust "logsumexp"
+#' @importFrom matrixStats "colMeans2"
 .diag_panel <- function(x, varname, diag.pars, hist.col, axis.pars, xpos, ypos, buffer, index, i, res, col, outer.rot) {
   x         <- x[!is.na(x)]
   drange    <- range(as.numeric(x), na.rm=TRUE)
@@ -1373,8 +1378,8 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
       panel.histogram(as.numeric(x), breaks=NULL, type="percent", col=if(diag.pars$show.dens) "white" else if(index == 1)  hist.col[[index]] else hist.col[index])
     } else {
       grid::pushViewport(grid::viewport(xscale=c(min(as.numeric(x), na.rm=TRUE) - 1, max(as.numeric(x), na.rm=TRUE)  + 1), yscale=c(0, 100), clip=TRUE))
-      tabx <- table(x)
-      show.counts    <- if(isTRUE(diag.pars$show.counts)) as.numeric(tabx) else FALSE
+      tabx  <- table(x)
+      show.counts  <- if(isTRUE(diag.pars$show.counts)) as.numeric(tabx) else FALSE
       .barchart_panel(seq_along(tabx), 100 * tabx/sum(tabx), horizontal=FALSE, col=if(index == 1) hist.col[[index]] else hist.col[index], show.counts=show.counts, fontsize=diag.pars$fontsize)
     }
   }
@@ -1382,20 +1387,20 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     if(!is.factor(x)) {
       if(!diag.pars$show.hist) grid::pushViewport(grid::viewport(xscale=xlim, yscale=c(0, 1), clip=TRUE))
       pars         <- res$parameters
-      modelName    <- pars$varianceX$modelName
+      modelName    <- pars$variance$modelName
       G            <- res$G
       n            <- res$n
       sigma        <- list(modelName=modelName, d=1, G=G)
       if(is.element(modelName, c("EEI", "EII", "EEE", "VII", "E", "V"))) {
         switch(EXPR=modelName, E=, V=, EII=, VII=      {
-          sigma    <- c(sigma, list(sigmasq=pars$varianceX$sigmasq))
+          sigma    <- c(sigma, list(sigmasq=pars$variance$sigmasq))
         }, EEI=, EEE=     {
-          sigma    <- c(sigma, list(sigmasq=pars$varianceX$Sigma[i,i]))
+          sigma    <- c(sigma, list(sigmasq=pars$variance$Sigma[i,i]))
         } )
         sigma$modelName  <- switch(EXPR=modelName, V=, VII="V", "E")
       } else          {
         sigma      <- c(sigma, list(sigmasq=array(dim=c(1, 1, G))))
-        for(k in seq_len(G)) sigma$sigmasq[,,k] <- pars$varianceX$sigma[i,i,k]
+        for(k in seq_len(G)) sigma$sigmasq[,,k] <- pars$variance$sigma[i,i,k]
         sigma$modelName  <- "V"
       }
       if((lx       <- diag.pars$grid.size) > n) {
@@ -1412,28 +1417,33 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
       GN           <- G + noise
       gate         <- attr(res, "Gating")
       expx         <- attr(res, "Expert")
-      ltau         <- .mat_byrow(pars$lpro, nrow=xn, ncol=GN)
       mu           <- if(isTRUE(expx)) pars$fits[,i,,drop=FALSE] else if(res$d == 1) pars$mean else pars$mean[i,, drop=FALSE]
       if(expx)        {
-        if(noise)     {
-          den      <- cbind(Reduce("+", lapply(seq_len(n), function(i) MoE_dens(data=xd, mus=mu[i,,], sigs=sigma)))/n, log(Vinv)) + ltau
-        } else den <- Reduce("+",       lapply(seq_len(n), function(i) MoE_dens(data=xd, mus=mu[i,,], sigs=sigma, Vinv=Vinv)))/n  + ltau
-      } else if(gate) {
-        den        <- MoE_dens(data=xd, mus=mu, sigs=sigma, Vinv=Vinv) + ltau
-      }   else den <- MoE_dens(data=xd, mus=mu, sigs=sigma, log.tau=ltau, Vinv=Vinv)
+        if(gate)      {
+          den      <- lapply(seq_len(n), function(i) MoE_dens(data=xd, mus=mu[i,,], sigs=sigma, log.tau=pars$lpro[i,], Vinv=Vinv))
+        } else den <- lapply(seq_len(n), function(i) MoE_dens(data=xd, mus=mu[i,,], sigs=sigma))
+        den        <- .avg_log_den(den)
+      }   else if(gate)   {
+        den        <- t(MoE_dens(data=xd, mus=mu, sigs=sigma, Vinv=Vinv))
+        den        <- t(den + log(colMeans2(pars$pro, refine=FALSE, useNames=FALSE)))
+      }   else den <- MoE_dens(data=xd,   mus=mu, sigs=sigma)
+      if(isFALSE(gate))   {
+        den        <- if(isTRUE(noise))    cbind(den, log(Vinv)) else den
+        den        <- den + .mat_byrow(pars$lpro, nrow=xn, ncol=GN)
+      }
       zz           <- matrix(exp(logsumexp(den)), nrow=xn, ncol=1L)
       den          <- exp(den)
       oo           <- order(xd)
       if(diag.pars$show.hist) {
-        endpoints    <- range(x, finite=TRUE)
-        nint         <- round(log2(length(x)) + 1)
-        counts       <- graphics::hist(x, breaks=endpoints[1L] + diff(endpoints) * (0L:nint)/nint, plot=FALSE)$counts
-        cmax         <- 100 * max(counts)/n
+        endpoints  <- range(x, finite=TRUE)
+        nint       <- round(log2(length(x)) + 1)
+        counts     <- graphics::hist(x, breaks=endpoints[1L] + diff(endpoints) * (0L:nint)/nint, plot=FALSE)$counts
+        cmax       <- 100 * max(counts)/n
       } else {
-        cmax         <- 0.9 - buffer
+        cmax       <- 0.9 - buffer
       }
-      dmax           <- max(den, zz)
-      for(g in seq_len(GN)) {
+      dmax         <- max(den, zz)
+      for(g in seq_len(GN))      {
         llines(xd[oo], den[oo,g] * cmax/dmax, col=col[g])
       }
       llines(xd[oo], zz[oo] * cmax/dmax, col=hist.col[1L], lwd=2)

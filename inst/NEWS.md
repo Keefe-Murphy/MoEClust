@@ -6,9 +6,12 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
+* Fixes for for `MoE_gpairs` when there are expert covariates & `response.type="density"` or  
+`diag.pars$show.dens=TRUE`: now properly using log average density rather than average log density.
 * Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
 functions from `mclust` (with `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
 * Further related minor speed-ups for models with `G == 0` and `G == 1`.
+* The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE` in `MoE_gpairs`.
 * `MoE_estep` & `MoE_cstep` now work when there is only one observation, with a related  
 fix to `predict.MoEClust(..., use.y=TRUE)` when predicting only one observation.
 * Fixed extremely rare bug in `MoE_clust` & associated `predict`, `fitted`, & `residuals` methods  
@@ -89,7 +92,7 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * Improved checks on `G` in `MoE_clust`.
 
 ## MoEClust v1.4.0 - (_12<sup>th</sup> release [minor update]: 2021-06-21_)
-### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
+### New Features & Improvements
 * Various edits to `MoE_stepwise()` (thanks, in part, to requests from Dr. Konstantinos Perrakis):  
   * Added `initialModel` arg. for specifying an initial model from which to begin the search,  
   which may already be a mixture and may already include covariates, etc.
@@ -123,6 +126,10 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * `expert_covar` gains the arg. `weighted` to ensure cluster membership probabilities are properly  
   accounted for in estimating the extra variability due to the component means: defaults to `TRUE`,  
   but `weighted=FALSE` is provided as an option for recovering the old (not recommended) behaviour.
+* Minor speed-up to initialisation for univariate response data with expert network covariates.
+* Minor speed-ups to some other utility functions.
+
+### Bug Fixes & Miscellaneous Edits
 * A warning message is now printed if the MLR in the gating network ever fails to converge,  
   prompting the user to modify the `itmax` arg. to `MoE_control`: the 3<sup>rd</sup> element of this arg. governs  
   the maximum number of MLR iterations --- consequently, its default has been modified from `100` to  
@@ -132,8 +139,6 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * Fixed conflict between `mclust::as.Mclust` & `MoEClust::as.Mclust`:  
 `as.Mclust.MoEClust` now works regardless of order in which `mclust` & `MoEClust` are loaded.
 * Stronger checks for variables in `gating` & `expert` formulas which are not found in `network.data`.
-* Minor speed-up to initialisation for univariate response data with expert network covariates.
-* Minor speed-ups to some other utility functions.
 * Minor documentation, vignette, and vignette styling edits.
 
 ## MoEClust v1.3.3 - (_11<sup>th</sup> release [patch update]: 2020-12-29_)
@@ -179,10 +184,10 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
 * Documentation, vignette, examples, and references improvements.
 
 ## MoEClust v1.3.0 - (_8<sup>th</sup> release [minor update]: 2020-03-30_)
-### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
+### New Features & Improvements 
 * Various fixes and improvements to initialisation when there are expert network covariates:  
     * `MoE_mahala` now correctly uses the covariance of `resids` rather than the response.
-    * New `MoE_mahala` arg. `identity` allow use of Euclidean distance instead:  
+    * New `MoE_mahala` arg. `identity` allows use of Euclidean distance instead:  
     this argument can also be passed via `exp.init$identity` to `MoE_control`.
     * Convergence of the initialisation procedure now explicitly monitored & sped-up.
     * Values of the criterion being minimised are now returned as an attribute.
@@ -198,13 +203,15 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
     * New arg. `use.y` (see documentation for details).
     * Now properly allows empty `newdata` for models with no covariates of any kind.
     * Fixed prediction for equal mixing proportion models when `discard.noise=FALSE`.
+* Odds ratios now returned (and printed) when calling `summary` on `x$gating`.
+
+### Bug Fixes & Miscellaneous Edits
 * Fixed small `MoE_stepwise` bugs when  
     * only one of `gating` or `expert` are supplied.
     * univariate response `data` are supplied.
     * moving from G=1 to G=2 with equal mixing proportions and no covariates.
     * discarding covariates present in the response data.
-* Odds ratios now returned (and printed) when calling `summary` on `x$gating`.
-* `noise_vol` now returns correction location for univariate data when `reciprocal=TRUE`.
+* `noise_vol` now returns correct location for univariate data when `reciprocal=TRUE`.
 * Spell-checking of documentation and fixes to `donttest` examples.
 
 ## MoEClust v1.2.4 - (_7<sup>th</sup> release [patch update]: 2019-12-11_)

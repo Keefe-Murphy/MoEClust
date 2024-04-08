@@ -154,8 +154,9 @@ y.new  <- setNames(seq(par("usr")[3L], par("usr")[4L], length=500L), rep("CO2", 
 grid   <- expand.grid(x.new, y.new)
 getden <- function(x, y, res) {
   sig  <- res$parameters$variance$modelName
-  den  <- do.call(cbind, lapply(seq_len(G), function(k) dnorm(y, predict(expert[[k]], newdata=setNames(data.frame(x), names(x)[1]), type="response"), sqrt(ifelse(sig == "V", res$parameters$variance$sigmasq[k], res$parameters$variance$sigmasq)))))
-  rowSums(matrix(res$parameters$pro, nrow=length(x), ncol=G, byrow=TRUE) * den)
+  Epr  <- predict(expert, newdata=setNames(data.frame(x), names(x)[1]))
+  den  <- do.call(cbind, lapply(seq_len(G), function(k) dnorm(y, Epr[[k]], sqrt(res$parameters$variance$sigmasq[ifelse(sig == "V", k, 1)]))))
+  rowSums(sweep(den, 1, res$parameters$pro, "*", check.margin=FALSE))
 }
 mat    <- matrix(getden(grid[,1L], grid[,2L], res), length(x.new), length(y.new))
 image(x.new, y.new, mat, col=c("white", grDevices::heat.colors(30L, rev=TRUE)), xlab="GNP", ylab=paste('CO'[2]), add=TRUE)

@@ -4308,6 +4308,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   }
 
 # Hidden/Print/Summary Functions
+  .avg_log_den    <- function(x) {
+    m             <- Reduce("pmax", x)
+      m + log(Reduce("+", lapply(x, function(x) exp(x - m)))) - log(length(x))
+  }
+  
   .chol           <- function(x) tryCatch(chol(x), error=function(e) {
     d             <- nrow(x)
     eigs          <- eigen(x, symmetric = TRUE)
@@ -4358,6 +4363,11 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
       .summ_exp(x[[i]],    ...)
       cat("\n")
     }
+  }
+  
+  #' @importFrom mclust "logsumexp"
+  .logmeanexp     <- function(x, v = NULL) {
+      logsumexp(x, v) - log(ifelse(is.matrix(x), ncol(x), length(x)))
   }
 
   .mat_byrow      <- function(x, nrow, ncol) {
