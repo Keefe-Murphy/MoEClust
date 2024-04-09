@@ -59,7 +59,7 @@ All \code{conditional} panel types can be customised further; see \code{stripplo
 
 Ellipses are centered on the posterior mean of the fitted values when there are expert network covariates, otherwise on the posterior mean of the response variables. In the presence of expert network covariates, the component-specific covariance matrices are also (by default, via the argument \code{expert.covar} below) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.}
 
-\item{expert.covar}{Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} when \code{addEllipses} is invoked accordingly, and only relevant for models with expert network covariates.}
+\item{expert.covar}{Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}. Only relevant when \code{response.type} is \code{"points"} or \code{"uncertainty"} when \code{addEllipses} is invoked accordingly, and only relevant for models with expert network covariates and multivariate responses.}
 
 \item{border.col}{A vector of length 5 (or 1) containing \emph{border} colours for plots against the MAP classification, response vs. response, covariate vs. response, response vs. covariate, and covariate vs. covariate panels, respectively.
 
@@ -71,7 +71,9 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \item{outer.margins}{A list of length 4 with units as components named \code{bottom}, \code{left}, \code{top}, and \code{right}, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).}
 
-\item{outer.labels}{The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.}
+\item{outer.labels}{The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.
+
+Note that axis labels always correspond to the \emph{range} of the depicted variable, and thus should not be interpreted as indicating counts or densities for the diagonal panels when \code{diag.pars$show.hist=TRUE} &/or \code{diag.pars$show.dens=TRUE}.}
 
 \item{outer.rot}{A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels. Defaults to \code{c(0, 90)}.}
 
@@ -139,7 +141,7 @@ The argument \code{n.ticks} will be overwritten for categorical variables with f
      diagonal=TRUE, hist.color=hist.color, show.counts=TRUE),}
 where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
 
-The argument \code{show.dens} toggles whether parametric density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}, though density curves will appear bigger when \code{show.hist=FALSE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{max(res$n, density.pars$grid.size[1])}.
+The argument \code{show.dens} toggles whether parametric density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{max(res$n, density.pars$grid.size[1])}.
 
 When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
 
@@ -151,13 +153,20 @@ A generalised pairs plot showing all pairwise relationships between clustered re
 \description{
 Produces a matrix of plots showing pairwise relationships between continuous response variables and continuous/categorical/logical/ordinal associated covariates, as well as the clustering achieved, according to fitted MoEClust mixture models.
 }
-\note{
-For \code{MoEClust} models with more than one expert network covariate, fitted lines produced in continuous covariate vs. continuous response scatterplots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
+\section{Note}{
 
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_gpairs}} which accepts the default arguments, and also produces other types of plots. Caution is advised producing generalised pairs plots when the dimension of the data is large.
 
-Finally, note that all colour-related defaults in \code{scatter.pars}, \code{stripplot.pars}, \code{barcode.pars}, and \code{mosaic.pars} above assume a specific colour-palette (see \code{\link[mclust]{mclust.options}("classPlotColors")}). Thus, for instance, specifying \code{scatter.pars$scat.col=res$classification} will produce different results compared to leaving this argument unspecified. This is especially true for models with a noise component, for which the default is handled quite differently (for one thing, \code{res$G} is the number of \emph{non-noise} components). Similarly, all \code{pch}-related defaults in \code{scatter.pars} and \code{stripplot.pars} above assume a specific set of plotting symbols also (see \code{\link[mclust]{mclust.options}("classPlotSymbols")}). Generally, all colour and symbol related arguments are strongly recommended to be left at their default values, unless being supplied as a single character string, e.g. \code{"black"} for colours. To help in this regard, colour-related arguments sensibly inherent their default from \code{scatter.pars$scat.col} if that is supplied and the argument in question is not.
+Note that all colour-related defaults in \code{scatter.pars}, \code{stripplot.pars}, \code{barcode.pars}, and \code{mosaic.pars} above assume a specific colour-palette (see \code{\link[mclust]{mclust.options}("classPlotColors")}). Thus, for instance, specifying \code{scatter.pars$scat.col=res$classification} will produce different results compared to leaving this argument unspecified. This is especially true for models with a noise component, for which the default is handled quite differently (for one thing, \code{res$G} is the number of \emph{non-noise} components). Similarly, all \code{pch}-related defaults in \code{scatter.pars} and \code{stripplot.pars} above assume a specific set of plotting symbols also (see \code{\link[mclust]{mclust.options}("classPlotSymbols")}). Generally, all colour and symbol related arguments are strongly recommended to be left at their default values, unless being supplied as a single character string, e.g. \code{"black"} for colours. To help in this regard, colour-related arguments sensibly inherent their defaults from \code{scatter.pars$scat.col} if that is supplied and the argument in question is not.
 }
+
+\section{Warning}{
+
+For \code{MoEClust} models with more than one expert network covariate, fitted lines produced in continuous covariate vs. continuous response scatterplots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
+
+Caution is advised when producing \code{"barcode"} plots for the \code{conditional} panels. In some cases, resizing the graphics device after the production of the plot will result in distortion because of the way the rotation of non-horizontal barcodes is performed. Thus, when \code{any(conditional == "barcode")}, it is advisable to ensure the dimensions of the overall plot are square. Furthermore, such plots may not display correctly anyway in RStudio's "Plots" pane and so a different graphics device may need to be used (but not subsequently resized).
+}
+
 \examples{
 \donttest{data(ais)
 res   <- MoE_clust(ais[,3:7], G=2, gating= ~ BMI, expert= ~ sex,
@@ -194,6 +203,10 @@ MoE_gpairs(res, cov.ind=0, expert.covar=FALSE,
 resN  <- MoE_clust(ais[,3:7], G=2, gating= ~ SSF + Ht, expert= ~ sex,
                    network.data=ais, modelNames="EEE", tau0=0.1, noise.gate=FALSE)
                    
+# Note that non-horizontal barcode panels may not display correctly in RStudio's "Plots" pane 
+# it may be necessary to first open a new device:
+
+# dev.new()
 MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), 
            conditional="barcode", noise.size=grid::unit(0.5, "char"))}
 }

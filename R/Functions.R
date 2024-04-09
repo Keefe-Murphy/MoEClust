@@ -4308,7 +4308,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   }
 
 # Hidden/Print/Summary Functions
-  .avg_log_den    <- function(x) {
+  .log_avg_den    <- function(x) {
     m             <- Reduce("pmax", x)
       m + log(Reduce("+", lapply(x, function(x) exp(x - m)))) - log(length(x))
   }

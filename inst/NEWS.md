@@ -6,12 +6,17 @@ __and a Noise Component__
 =======================================================
 
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
-* Fixes for for `MoE_gpairs` when there are expert covariates & `response.type="density"` or  
-`diag.pars$show.dens=TRUE`: now properly using log average density rather than average log density.
+* Various improvements to `MoE_gpairs`:  
+  * Fixes when there are expert covariates & `diag.pars$show.dens=TRUE` &/or  
+  `response.type="density"` by properly using log average density instead of average log density.
+  * The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE`.
+  * Fixed (i.e. increased) height of diagonal panels when `show.hist=TRUE` &/or `show.dens=TRUE`.
+  * Partially fixed dimensions of vertical panels when `conditional="barcode"`  
+  (caution still advised when using RStudio's "Plots" pane).
+  * Many documentation improvements & clarifications.
 * Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
-functions from `mclust` (with `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
+functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
 * Further related minor speed-ups for models with `G == 0` and `G == 1`.
-* The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE` in `MoE_gpairs`.
 * `MoE_estep` & `MoE_cstep` now work when there is only one observation, with a related  
 fix to `predict.MoEClust(..., use.y=TRUE)` when predicting only one observation.
 * Fixed extremely rare bug in `MoE_clust` & associated `predict`, `fitted`, & `residuals` methods  
