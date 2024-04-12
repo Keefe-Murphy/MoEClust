@@ -9,8 +9,13 @@ __and a Noise Component__
 * Various improvements to `MoE_gpairs`:  
   * Fixes when there are expert covariates & `diag.pars$show.dens=TRUE` &/or  
   `response.type="density"` by properly using log average density instead of average log density.
+  * Marginal densities when `show.dens=TRUE` are now always evaluated over an evenly-spaced grid,  
+  the size of which can now be modified via `diag.pars$diag.grid` (equal to 100, by default):  
+  previously, the grid was formed using the observed values, which led to strange behaviour.
   * The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE`.
   * Fixed (i.e. increased) height of diagonal panels when `show.hist=TRUE` &/or `show.dens=TRUE`.
+  * Added `density.pars$dens.points=FALSE` for overlaying points when `response.type="density"`.
+  * `density.pars$show.labels="mixed"` now works properly.
   * Partially fixed dimensions of vertical panels when `conditional="barcode"`  
   (caution still advised when using RStudio's "Plots" pane).
   * Many documentation improvements & clarifications.
