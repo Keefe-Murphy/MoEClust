@@ -24,12 +24,12 @@ MoE_gpairs(res,
            uncert.cov = FALSE,
            scatter.pars = list(...),
            density.pars = list(...),
+           diag.pars = list(...),
            stripplot.pars = list(...),
            boxplot.pars = list(...),
            barcode.pars = list(...),
            mosaic.pars = list(...),
            axis.pars = list(...),
-           diag.pars = list(...),
            ...)
 }
 \arguments{
@@ -39,15 +39,16 @@ MoE_gpairs(res,
 
 Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In doing so, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data). See \code{scatter.pars} below, and note that models fitted via the \code{"CEM"} algorithm will have no associated clustering uncertainty.
 
-Alternatively, the bivariate \emph{parametric} \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets). See \code{density.pars} below.}
+Alternatively, the bivariate \emph{parametric} \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets). However, this is offset somewhat by using pre-calculated densities from the corresponding upper-triangular panels when producing the lower-triangular panels. See \code{density.pars} below.}
 
 \item{subset}{A list giving named arguments for producing only a subset of panels:
 \describe{
 \item{\code{show.map}}{Logical indicating whether to show panels involving the MAP classification (defaults to \code{TRUE}, unless there is only one component, in which case the MAP classification is never plotted.).}
 \item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the response variables.}
 \item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the covariates.}
+\item{\code{submat}}{Can take the values \code{"all"} (default), \code{"upper"}, or \code{"lower"}, for displaying all panels or only the upper/lower triangular panels of the plot matrix.}
 }
-The result of the subsetting must include at least two variables, whether they be the MAP classification, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting.}
+The result of the subsetting must include at least two variables, whether they be the MAP classification, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting. Diagonal panels are always drawn, regardless of the value of \code{submat}.}
 
 \item{scatter.type}{A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, the options \code{"lm2"} or \code{"ci2"} can be used but this is not generally advisable. See \code{scatter.pars} below.}
 
@@ -71,7 +72,7 @@ Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "corn
 
 \item{outer.margins}{A list of length 4 with units as components named \code{bottom}, \code{left}, \code{top}, and \code{right}, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).}
 
-\item{outer.labels}{The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.
+\item{outer.labels}{The default is typically \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed. If \code{subset$submat="upper"} or \code{subset$submat="lower"}, \code{outer.labels} instead defaults to \code{"all"}.
 
 Note that axis labels always correspond to the \emph{range} of the depicted variable, and thus should not be interpreted as indicating counts or densities for the diagonal panels when \code{diag.pars$show.hist=TRUE} &/or \code{diag.pars$show.dens=TRUE}.}
 
@@ -81,7 +82,7 @@ Note that axis labels always correspond to the \emph{range} of the depicted vari
 
 \item{buffer}{The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to \code{0.025}, i.e. 2.5 percent of the range. Particularly useful when ellipses are drawn (see \code{addEllipses}) to ensure ellipses are visible in full.}
 
-\item{uncert.cov}{A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and strip plot panels. When \code{TRUE}, \code{scatter.pars$uncert.pch} is invoked as the plotting symbols for covariate-related scatterplot and strip plot panels, otherwise \code{scatter.pars$scat.pch} and \code{stripplot.pars$strip.pch} is invoked for such panels.}
+\item{uncert.cov}{A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and strip plot panels. When \code{TRUE}, \code{scatter.pars$uncert.pch} is invoked as the plotting symbols for covariate-related scatterplot and strip plot panels, otherwise \code{scatter.pars$scat.pch} and \code{stripplot.pars$strip.pch} are invoked for such panels.}
 
 \item{scatter.pars}{A list supplying select parameters for the continuous vs. continuous scatterplots.
 
@@ -100,6 +101,17 @@ Note also that \code{scat.size} will be modified on an observation-by-observatio
      nlevels=11, show.labels=!dens.points, label.style="mixed"),}
 where \code{grid.size} is a vector of length two giving the number of points in the x & y directions of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours. \code{dens.points} governs whether points should be overlaid when \code{response.type="density"} (in other words, \code{dens.points=TRUE} is akin to specifying \code{response.type="points"} and \code{response.type="density"} simultaneously) and \code{show.labels} governs whether the density contours should be labelled. Note that contours are not labelled when \code{dens.points=TRUE} by default. Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.}
 
+\item{diag.pars}{A list supplying select parameters for panels along the diagonal.
+
+\code{NULL} is equivalent to:
+\preformatted{list(diag.fontsize=9, diagonal=TRUE, hist.color=hist.color, 
+                   show.hist=TRUE, show.counts=TRUE, show.dens=FALSE, dens.grid=100),}
+where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, and violin panels (except for those involving the MAP classification; see \code{boxplot.pars} below). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
+
+The argument \code{show.dens} toggles whether \emph{parametric} density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{diag.grid=100} by default.
+
+When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
+
 \item{stripplot.pars}{A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"stripplot"}.
 
 \code{NULL} is equivalent to:
@@ -112,14 +124,14 @@ where \code{strip.size} and \code{size.noise} retain the definitions for the sim
 \code{NULL} is equivalent to:
 \preformatted{list(box.pch="|", box.col="black", varwidth=FALSE,
      notch=FALSE, notch.frac=0.5, box.fill=1:res$G).}
-All of the above are relevant for \code{"boxplot"} panels, are passed to \code{\link[lattice]{panel.bwplot}} when producing boxplots, and retain the same definitions as the similarly named arguments therein. However, only \code{box.col}, \code{varwidth}, and \code{box.fill} are relevant for \code{"violin"} panels, and in both cases \code{box.fill} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}). See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related boxplot/violin panels. Notably, \code{box.fill} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.}
+All of the above are relevant for \code{"boxplot"} panels, are passed to \code{\link[lattice]{panel.bwplot}} when producing boxplots, and retain the same definitions as the similarly named arguments therein. However, only \code{box.col}, \code{varwidth}, and \code{box.fill} are relevant for \code{"violin"} panels, and in both cases \code{box.fill} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{subset$show.map=TRUE}). See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related boxplot/violin panels. Notably, \code{box.fill} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.}
 
-\item{barcode.pars}{A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
+\item{barcode.pars}{A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"barcode"}.
 
 \code{NULL} is equivalent to:
-\preformatted{list(bar.col=res$G:1, nint=0, ptsize=unit(0.25, "char"), 
-     ptpch=1, bcspace=NULL, use.points=FALSE),}
-where \code{bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}) if it is of length greater than 1, otherwise it is used for all relevant panels. See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related barcode panels. Notably, \code{bar.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.}
+\preformatted{list(bar.col=res$G:1, nint=0, ptsize=scatter.pars$scat.size, 
+     ptpch=scatter.pars$scat.pch, bcspace=NULL, use.points=FALSE),}
+where \code{bar.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not. See the help file for \code{\link[barcode]{barcode}} for details on the remaining arguments. Note that the arguments \code{ptsize} and \code{ptpch}, which are only relevant when \code{use.points=TRUE} are given by the corresponding \code{scatter.pars$scat.size}/\code{scatter.pars$noise.size} and \code{scatter.pars$scat.pch} arguments, by default.}
 
 \item{mosaic.pars}{A list supplying select parameters for categorical vs. categorical panels (if any). 
 
@@ -134,18 +146,7 @@ The current default arguments and values thereof are passed through to \code{\li
 \preformatted{list(n.ticks=5, axis.fontsize=9).}
 The argument \code{n.ticks} will be overwritten for categorical variables with fewer than 5 levels.}
 
-\item{diag.pars}{A list supplying select parameters for panels along the diagonal.
-
-\code{NULL} is equivalent to:
-\preformatted{list(diag.fontsize=9, diagonal=TRUE, hist.color=hist.color, 
-                   show.hist=TRUE, show.counts=TRUE, show.dens=FALSE, dens.grid=100),}
-where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
-
-The argument \code{show.dens} toggles whether \emph{parametric} density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{diag.grid=100} by default.
-
-When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
-
-\item{...}{Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, \code{axis.pars}, and \code{diag.pars}.}
+\item{...}{Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{density.pars}, \code{diag.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, and \code{axis.pars}.}
 }
 \value{
 A generalised pairs plot showing all pairwise relationships between clustered response variables and associated gating &/or expert network continuous &/or categorical variables, coloured according to the MAP classification, with the marginal distributions of each variable along the diagonal.
@@ -190,12 +191,13 @@ MoE_gpairs(res, response.type="density", show.labels=FALSE, dens.points=TRUE,
            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
            
 # Examine effect of expert.covar & diag.grid in conjunction with show.dens & show.hist
-MoE_gpairs(res, cov.ind=0, expert.covar=FALSE, 
-           show.dens=TRUE, show.hist=FALSE, diag.grid=20)
-MoE_gpairs(res, cov.ind=0, expert.covar=TRUE, 
-           show.dens=TRUE, show.hist=TRUE, diag.grid=200)
-MoE_gpairs(res, cov.ind=0, expert.covar=TRUE, 
-           show.dens=FALSE, show.hist=FALSE, diagonal=FALSE)          
+MoE_gpairs(res, show.dens=TRUE, expert.covar=FALSE, show.hist=FALSE, diag.grid=20)
+MoE_gpairs(res, show.dens=TRUE, expert.covar=TRUE, show.hist=TRUE, diag.grid=200)
+           
+# Explore various options to subset and rearrange the panels
+MoE_gpairs(res, data.ind=5:1, cov.ind=0, 
+           show.map=FALSE, show.hist=FALSE, 
+           submat="upper", diagonal=FALSE)          
            
 # Produce a generalised pairs plot for a model with a noise component.
 # Reorder the covariates and omit the variables "Hc" and "Hg".
@@ -207,9 +209,8 @@ resN  <- MoE_clust(ais[,3:7], G=2, gating= ~ SSF + Ht, expert= ~ sex,
                    
 # Note that non-horizontal barcode panels may not display correctly in RStudio's "Plots" pane 
 # it may be necessary to first open a new device:
-
 # dev.new()
-MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), 
+MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), use.points=TRUE,
            conditional="barcode", noise.size=grid::unit(0.5, "char"))}
 }
 \references{

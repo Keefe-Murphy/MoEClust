@@ -7,7 +7,7 @@ __and a Noise Component__
 
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * Various improvements to `MoE_gpairs`:  
-  * Fixes when there are expert covariates & `diag.pars$show.dens=TRUE` &/or  
+  * Major fixes when there are expert covariates & `diag.pars$show.dens=TRUE` &/or  
   `response.type="density"` by properly using log average density instead of average log density.
   * Marginal densities when `show.dens=TRUE` are now always evaluated over an evenly-spaced grid,  
   the size of which can now be modified via `diag.pars$diag.grid` (equal to 100, by default):  
@@ -16,8 +16,13 @@ __and a Noise Component__
   * Fixed (i.e. increased) height of diagonal panels when `show.hist=TRUE` &/or `show.dens=TRUE`.
   * Added `density.pars$dens.points=FALSE` for overlaying points when `response.type="density"`.
   * `density.pars$show.labels="mixed"` now works properly.
+  * Added `subset$submat` for visualising only the upper/lower triangular panels of the plot matrix.
+  * When `subset$submat="all"`, the slowness of `response.type="density"` plots is now offset by  
+  using densities pre-calculated from upper-triangular panels when producing lower-triangular panels.
   * Partially fixed dimensions of vertical panels when `conditional="barcode"`  
-  (caution still advised when using RStudio's "Plots" pane).
+  (caution still advised when using RStudio's "Plots" pane if non-square).
+  * Barcode panels now have colour throughout (previously only MAP-related panels),  
+  with related minor fixes when `barcode.pars$use.points=TRUE`.
   * Many documentation improvements & clarifications.
 * Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
 functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.

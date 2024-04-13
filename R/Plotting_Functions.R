@@ -7,13 +7,14 @@
 #' \item{\code{show.map}}{Logical indicating whether to show panels involving the MAP classification (defaults to \code{TRUE}, unless there is only one component, in which case the MAP classification is never plotted.).}
 #' \item{\code{data.ind}}{For subsetting response variables: a vector of column indices corresponding to the variables in the columns of \code{res$data} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the response variables.}
 #' \item{\code{cov.ind}}{For subsetting covariates: a vector of column indices corresponding to the covariates in the columns \code{res$net.covs} which should be shown. Defaults to all. Can be \code{0}, in order to suppress plotting the covariates.}
+#' \item{\code{submat}}{Can take the values \code{"all"} (default), \code{"upper"}, or \code{"lower"}, for displaying all panels or only the upper/lower triangular panels of the plot matrix.}
 #' }
-#' The result of the subsetting must include at least two variables, whether they be the MAP classification, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting.
+#' The result of the subsetting must include at least two variables, whether they be the MAP classification, a response variable, or a covariate, in order to be valid for plotting purposes. The arguments \code{data.ind} and \code{cov.ind} can also be used to simply reorder the panels, without actually subsetting. Diagonal panels are always drawn, regardless of the value of \code{submat}.
 #' @param response.type The type of plot desired for the scatterplots comparing continuous response variables. Defaults to \code{"points"}. See \code{scatter.pars} below.
 #'
 #' Points can also be sized according to their associated clustering uncertainty with the option \code{"uncertainty"}. In doing so, the transparency of the points will also be proportional to their clustering uncertainty, provided the device supports transparency. See also \code{\link{MoE_Uncertainty}} for an alternative means of visualising observation-specific cluster uncertainties (especially for univariate data). See \code{scatter.pars} below, and note that models fitted via the \code{"CEM"} algorithm will have no associated clustering uncertainty.
 #'
-#' Alternatively, the bivariate \emph{parametric} \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets). See \code{density.pars} below.
+#' Alternatively, the bivariate \emph{parametric} \code{"density"} contours can be displayed (see \code{density.pars}), provided there is at least one Gaussian component in the model. Caution is advised when producing density plots for models with covariates in the expert network; the required number of evaluations of the (multivariate) Gaussian density for each panel (\code{res$G * prod(density.pars$grid.size)}) increases by a factor of \code{res$n}, thus plotting may be slow (particularly for large data sets). However, this is offset somewhat by using pre-calculated densities from the corresponding upper-triangular panels when producing the lower-triangular panels. See \code{density.pars} below.
 #' @param scatter.type A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, pertaining to the associated covariates. Defaults to \code{"lm"} for covariate vs. response panels and \code{"points"} otherwise. Only relevant for models with continuous covariates in the gating &/or expert network. \code{"ci"} and \code{"lm"} type plots are only produced for plots pairing covariates with response, and never response vs. response or covariate vs. covariate. Note that lines &/or confidence intervals will only be drawn for continuous covariates included in the expert network; to include covariates included only in the gating network also, the options \code{"lm2"} or \code{"ci2"} can be used but this is not generally advisable. See \code{scatter.pars} below.
 #' @param conditional A vector of length 2 (or 1) giving the plot type for the upper and lower triangular portions of the plot, respectively, for plots involving a mix of categorical and continuous variables. Defaults to \code{"stripplot"} in the upper triangle and \code{"boxplot"} in the lower triangle (see \code{\link[lattice]{panel.stripplot}} and \code{\link[lattice]{panel.bwplot}}). \code{"violin"} and \code{"barcode"} plots can also be produced. Only relevant for models with categorical covariates in the gating &/or expert network, unless \code{show.MAP} is \code{TRUE}. Comparisons of two categorical variables (which can only ever be covariates or the MAP classification) are always displayed via mosaic plots (see \code{\link[vcd]{strucplot}}). 
 #' 
@@ -29,13 +30,13 @@
 #'
 #' Defaults to \code{c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk")}.
 #' @param outer.margins A list of length 4 with units as components named \code{bottom}, \code{left}, \code{top}, and \code{right}, giving the outer margins; the defaults uses two lines of text. A vector of length 4 with units (ordered properly) will work, as will a vector of length 4 with numeric variables (interpreted as lines).
-#' @param outer.labels The default is \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed.
+#' @param outer.labels The default is typically \code{NULL}, for alternating labels around the perimeter. If \code{"all"}, all labels are printed, and if \code{"none"}, no labels are printed. If \code{subset$submat="upper"} or \code{subset$submat="lower"}, \code{outer.labels} instead defaults to \code{"all"}.
 #' 
 #' Note that axis labels always correspond to the \emph{range} of the depicted variable, and thus should not be interpreted as indicating counts or densities for the diagonal panels when \code{diag.pars$show.hist=TRUE} &/or \code{diag.pars$show.dens=TRUE}.
 #' @param outer.rot A 2-vector (\code{x}, \code{y}) rotating the top/bottom outer labels \code{x} degrees and the left/right outer labels \code{y} degrees. Only works for categorical labels of boxplot and mosaic panels. Defaults to \code{c(0, 90)}.
 #' @param gap The gap between the tiles; defaulting to \code{0.05} of the width of a tile.
 #' @param buffer The fraction by which to expand the range of quantitative variables to provide plots that will not truncate plotting symbols. Defaults to \code{0.025}, i.e. 2.5 percent of the range. Particularly useful when ellipses are drawn (see \code{addEllipses}) to ensure ellipses are visible in full.
-#' @param uncert.cov A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and strip plot panels. When \code{TRUE}, \code{scatter.pars$uncert.pch} is invoked as the plotting symbols for covariate-related scatterplot and strip plot panels, otherwise \code{scatter.pars$scat.pch} and \code{stripplot.pars$strip.pch} is invoked for such panels.
+#' @param uncert.cov A logical indicating whether the expansion factor for points on plots involving covariates should also be modified when \code{response.type="uncertainty"}. Defaults to \code{FALSE}, and only relevant for scatterplot and strip plot panels. When \code{TRUE}, \code{scatter.pars$uncert.pch} is invoked as the plotting symbols for covariate-related scatterplot and strip plot panels, otherwise \code{scatter.pars$scat.pch} and \code{stripplot.pars$strip.pch} are invoked for such panels.
 #' @param scatter.pars A list supplying select parameters for the continuous vs. continuous scatterplots.
 #'
 #' \code{NULL} is equivalent to:
@@ -51,6 +52,16 @@
 #' \preformatted{list(grid.size=c(100, 100), dcol="grey50", dens.points=FALSE,
 #'      nlevels=11, show.labels=!dens.points, label.style="mixed"),}
 #' where \code{grid.size} is a vector of length two giving the number of points in the x & y directions of the grid over which the density is evaluated, respectively (though \code{density.pars$grid.size} can also be supplied as a scalar, which will be automatically recycled to a vector of length 2), and \code{dcol} is either a single colour or a vector of length \code{nlevels} colours. \code{dens.points} governs whether points should be overlaid when \code{response.type="density"} (in other words, \code{dens.points=TRUE} is akin to specifying \code{response.type="points"} and \code{response.type="density"} simultaneously) and \code{show.labels} governs whether the density contours should be labelled. Note that contours are not labelled when \code{dens.points=TRUE} by default. Finally, \code{label.style} can take the values \code{"mixed"}, \code{"flat"}, or \code{"align"}.
+#' @param diag.pars A list supplying select parameters for panels along the diagonal.
+#'
+#' \code{NULL} is equivalent to:
+#' \preformatted{list(diag.fontsize=9, diagonal=TRUE, hist.color=hist.color, 
+#'                    show.hist=TRUE, show.counts=TRUE, show.dens=FALSE, dens.grid=100),}
+#' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, and violin panels (except for those involving the MAP classification; see \code{boxplot.pars} below). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
+#'
+#' The argument \code{show.dens} toggles whether \emph{parametric} density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{diag.grid=100} by default.
+#' 
+#' When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
 #' @param stripplot.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"stripplot"}.
 #'
 #' \code{NULL} is equivalent to:
@@ -62,13 +73,13 @@
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(box.pch="|", box.col="black", varwidth=FALSE,
 #'      notch=FALSE, notch.frac=0.5, box.fill=1:res$G).}
-#' All of the above are relevant for \code{"boxplot"} panels, are passed to \code{\link[lattice]{panel.bwplot}} when producing boxplots, and retain the same definitions as the similarly named arguments therein. However, only \code{box.col}, \code{varwidth}, and \code{box.fill} are relevant for \code{"violin"} panels, and in both cases \code{box.fill} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}). See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related boxplot/violin panels. Notably, \code{box.fill} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
-#' @param barcode.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"barcode"}. See the help file for \code{barcode::barcode}.
+#' All of the above are relevant for \code{"boxplot"} panels, are passed to \code{\link[lattice]{panel.bwplot}} when producing boxplots, and retain the same definitions as the similarly named arguments therein. However, only \code{box.col}, \code{varwidth}, and \code{box.fill} are relevant for \code{"violin"} panels, and in both cases \code{box.fill} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{subset$show.map=TRUE}). See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related boxplot/violin panels. Notably, \code{box.fill} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
+#' @param barcode.pars A list supplying select parameters for continuous vs. categorical panels when one or both of the entries of \code{conditional} is \code{"barcode"}.
 #'
 #' \code{NULL} is equivalent to:
-#' \preformatted{list(bar.col=res$G:1, nint=0, ptsize=unit(0.25, "char"), 
-#'      ptpch=1, bcspace=NULL, use.points=FALSE),}
-#' where \code{bar.col} is only invoked for panels where the categorical variable is the MAP classification (i.e. when \code{isTRUE(subset$show.map)}) if it is of length greater than 1, otherwise it is used for all relevant panels. See \code{diag.pars$hist.color} for controlling the colours of non-MAP-related barcode panels. Notably, \code{bar.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not.
+#' \preformatted{list(bar.col=res$G:1, nint=0, ptsize=scatter.pars$scat.size, 
+#'      ptpch=scatter.pars$scat.pch, bcspace=NULL, use.points=FALSE),}
+#' where \code{bar.col} will inherit a suitable default from \code{scatter.pars$scat.col} if the latter is supplied but the former is not. See the help file for \code{\link[barcode]{barcode}} for details on the remaining arguments. Note that the arguments \code{ptsize} and \code{ptpch}, which are only relevant when \code{use.points=TRUE} are given by the corresponding \code{scatter.pars$scat.size}/\code{scatter.pars$noise.size} and \code{scatter.pars$scat.pch} arguments, by default.
 #' @param mosaic.pars A list supplying select parameters for categorical vs. categorical panels (if any). 
 #'
 #' \code{NULL} is equivalent to:
@@ -80,17 +91,7 @@
 #' \code{NULL} is equivalent to:
 #' \preformatted{list(n.ticks=5, axis.fontsize=9).}
 #' The argument \code{n.ticks} will be overwritten for categorical variables with fewer than 5 levels.
-#' @param diag.pars A list supplying select parameters for panels along the diagonal.
-#'
-#' \code{NULL} is equivalent to:
-#' \preformatted{list(diag.fontsize=9, diagonal=TRUE, hist.color=hist.color, 
-#'                    show.hist=TRUE, show.counts=TRUE, show.dens=FALSE, dens.grid=100),}
-#' where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, violin, and barcode panels (except for those involving the MAP classification). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
-#'
-#' The argument \code{show.dens} toggles whether \emph{parametric} density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{diag.grid=100} by default.
-#' 
-#' When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.
-#' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, \code{axis.pars}, and \code{diag.pars}.
+#' @param ... Catches unused arguments. Alternatively, named arguments can be passed directly here to any/all of \code{scatter.pars}, \code{density.pars}, \code{diag.pars}, \code{stripplot.pars}, \code{boxplot.pars}, \code{barcode.pars}, \code{mosaic.pars}, and \code{axis.pars}.
 #'
 #' @importFrom lattice "current.panel.limits" "llines" "panel.abline" "panel.bwplot" "panel.histogram" "panel.lines" "panel.points" "panel.rect" "panel.stripplot" "panel.text" "panel.violin" "trellis.grobname" "trellis.par.get" "trellis.par.set"
 #' @importFrom matrixStats "colMeans2"
@@ -134,12 +135,12 @@
 #'            uncert.cov = FALSE,
 #'            scatter.pars = list(...),
 #'            density.pars = list(...),
+#'            diag.pars = list(...),
 #'            stripplot.pars = list(...),
 #'            boxplot.pars = list(...),
 #'            barcode.pars = list(...),
 #'            mosaic.pars = list(...),
 #'            axis.pars = list(...),
-#'            diag.pars = list(...),
 #'            ...)
 #' @examples
 #' \donttest{data(ais)
@@ -164,12 +165,13 @@
 #'            bg.col=c("whitesmoke", "white", "mintcream", "mintcream", "floralwhite"))
 #'            
 #' # Examine effect of expert.covar & diag.grid in conjunction with show.dens & show.hist
-#' MoE_gpairs(res, cov.ind=0, expert.covar=FALSE, 
-#'            show.dens=TRUE, show.hist=FALSE, diag.grid=20)
-#' MoE_gpairs(res, cov.ind=0, expert.covar=TRUE, 
-#'            show.dens=TRUE, show.hist=TRUE, diag.grid=200)
-#' MoE_gpairs(res, cov.ind=0, expert.covar=TRUE, 
-#'            show.dens=FALSE, show.hist=FALSE, diagonal=FALSE)          
+#' MoE_gpairs(res, show.dens=TRUE, expert.covar=FALSE, show.hist=FALSE, diag.grid=20)
+#' MoE_gpairs(res, show.dens=TRUE, expert.covar=TRUE, show.hist=TRUE, diag.grid=200)
+#'            
+#' # Explore various options to subset and rearrange the panels
+#' MoE_gpairs(res, data.ind=5:1, cov.ind=0, 
+#'            show.map=FALSE, show.hist=FALSE, 
+#'            submat="upper", diagonal=FALSE)          
 #'            
 #' # Produce a generalised pairs plot for a model with a noise component.
 #' # Reorder the covariates and omit the variables "Hc" and "Hg".
@@ -181,14 +183,13 @@
 #'                    
 #' # Note that non-horizontal barcode panels may not display correctly in RStudio's "Plots" pane 
 #' # it may be necessary to first open a new device:
-#' 
 #' # dev.new()
-#' MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), 
+#' MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), use.points=TRUE,
 #'            conditional="barcode", noise.size=grid::unit(0.5, "char"))}
 MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), expert.covar = TRUE, border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
                                 outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025, uncert.cov = FALSE, 
-                                scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), boxplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
+                                scatter.pars = list(...), density.pars = list(...), diag.pars = list(...), stripplot.pars = list(...), boxplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), ...) {
     UseMethod("MoE_gpairs")
 }
 
@@ -197,7 +198,7 @@ MoE_gpairs          <- function(res, response.type = c("points", "uncertainty", 
 MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", "density"), subset = list(...), scatter.type = c("lm", "points"), conditional = c("stripplot", "boxplot"),
                                 addEllipses = c("outer", "yes", "no", "inner", "both"), expert.covar = TRUE, border.col = c("purple", "black", "brown", "brown", "navy"), bg.col = c("cornsilk", "white", "palegoldenrod", "palegoldenrod", "cornsilk"),
                                 outer.margins = list(bottom=grid::unit(2, "lines"), left=grid::unit(2, "lines"), top=grid::unit(2, "lines"), right=grid::unit(2, "lines")), outer.labels = NULL, outer.rot = c(0, 90), gap = 0.05, buffer = 0.025, uncert.cov = FALSE, 
-                                scatter.pars = list(...), density.pars = list(...), stripplot.pars = list(...), boxplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), diag.pars = list(...), ...) {
+                                scatter.pars = list(...), density.pars = list(...), diag.pars = list(...), stripplot.pars = list(...), boxplot.pars = list(...), barcode.pars = list(...), mosaic.pars = list(...), axis.pars = list(...), ...) {
 
   res   <- if(inherits(res, "MoECompare")) res$optimal else res
   opar  <- suppressWarnings(graphics::par(no.readonly=TRUE))
@@ -250,6 +251,13 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
      subset$cov.ind)) + subset$show.map)  < 1)        stop("Not enough columns to plot based on arguments supplied to 'subset'!", call.=FALSE)
   if((length(c(subset$data.ind,
      subset$cov.ind)) + subset$show.map) == 1)        warning("Try a different plotting method as there is only one panel to display!", call.=FALSE, immediate.=TRUE)
+  if(is.null(subset$submat))  {
+    submat         <- "all"
+  } else {
+    submat         <- subset$submat
+    if(!is.element(submat, c("all", 
+                             "upper", "lower")))      stop("Invalid 'subset$submap'", call.=FALSE)
+  }
   dat   <- dat[,subset$data.ind, drop=FALSE]
   net   <- net[,subset$cov.ind,  drop=FALSE]
   dcol  <- ncol(dat)  + subset$show.map
@@ -339,7 +347,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
       outer.margins     <- if(inherits(outer.margins[1L], "units")) list(bottom=outer.margins[1L], left=outer.margins[2L], top=outer.margins[3L], right=outer.margins[4L]) else list(bottom=grid::unit(outer.margins[1L], "lines"), left=grid::unit(outer.margins[2L], "lines"), top=grid::unit(outer.margins[3L], "lines"), right=grid::unit(outer.margins[4L], "lines"))
     } else                                            stop("'outer.margins' are not valid", call.=FALSE)
   }
-  if(is.null(outer.labels)) {
+  if(is.null(outer.labels) && (submat == "all" || !missing(outer.labels))) {
     lab1   <- switch(EXPR=names(x)[1L], MAP=1L, as.integer(res$d != 1) + 1L)
     lab2   <- switch(EXPR=names(x)[1L], MAP=2L, 1L)
     outer.labels$top    <- logical(N)
@@ -349,6 +357,9 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     outer.labels$right  <- !outer.labels$left
     outer.labels$bottom <- !outer.labels$top
   } else {
+    if(is.null(outer.labels))    {
+      outer.labels      <- "all"
+    }
     if(pmatch(as.character(outer.labels),         "all", nomatch=FALSE)) {
       all.labeling      <- TRUE
     } else if(pmatch(as.character(outer.labels), "none", nomatch=FALSE)) {
@@ -445,6 +456,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
             !is.character(density.pars$label.style) ||
             !is.element(density.pars$label.style,
             c("mixed", "flat", "align"))))            stop("Invalid 'density.pars$label.style", call.=FALSE)
+  densities             <- vector("list", dcol - 1L)
   if(is.null(axis.pars$n.ticks))     {
     axis.pars$n.ticks   <- 5
   }
@@ -459,6 +471,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
     diagonal            <- TRUE
   } else if(length(diagonal)  > 1 ||
             !is.logical(diagonal))                    stop("'diag.pars$diagonal' must be a single logical indicator", call.=FALSE)
+  submat                <- ifelse(diagonal, switch(EXPR=submat, upper="lower", lower="upper", "all"), submat)
   if(is.null(diag.pars$diag.fontsize))    {
     diag.pars$fontsize  <- 9
   } else diag.pars$fontsize       <- diag.pars$diag.fontsize
@@ -553,24 +566,23 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
    }
    if(!(length(boxplot.pars$box.fill) %in% c(1L, L))) stop("'boxplot.pars$box.fill' must be a scalar or a vector with length given by the number of components (incl. the noise component, if any)", call.=FALSE)
   }
-  bar.col               <- FALSE
   if(is.null(barcode.pars$bar.col))  {
     barcode.pars$col    <- if(isFALSE(scat.null)) rev(noise.cols) else colors[rev(seq_along(unique(claSS)))]
   } else {
     if(length(barcode.pars$bar.col) == 1) {
-      bar.col           <- TRUE
       barcode.pars$col              <- rep(barcode.pars$bar.col, L)
     } else barcode.pars$col         <- barcode.pars$bar.col
     if(!(length(barcode.pars$bar.col) %in% c(1L, L))) stop("'barcode.pars$bar.col' must be a scalar or a vector with length given by the number of components (incl. the noise component, if any)", call.=FALSE)
   }
+  barcode.pars$colbar   <- rev(barcode.pars$col)[claSS]
   if(is.null(barcode.pars$nint))     {
     barcode.pars$nint   <- 0
   }
   if(is.null(barcode.pars$ptsize))   {
-    barcode.pars$ptsize <- grid::unit(0.25, "char")
+    barcode.pars$ptsize <- scatter.pars$size
   }
   if(is.null(barcode.pars$ptpch))    {
-    barcode.pars$ptpch  <- 1
+    barcode.pars$ptpch  <- scatter.pars$scat.pch
   }
   if(is.null(barcode.pars$use.points)) {
     barcode.pars$use.points <- FALSE
@@ -602,7 +614,9 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
   grid::pushViewport(vp.main)
   for(i   in Nseq) {
     for(j in Nseq) {
-      MAPpan <- (i == 1L || j == 1L) && names(x)[1L] == "MAP"
+      if((submat == "upper" && i > j) ||
+         (submat == "lower" && i < j))   next
+      MAPpan <- (i == 1L || j == 1L)  && names(x)[1L] == "MAP"
       bg     <- if(isTRUE(MAPpan)) bg.col[1L]     else if(i <= dcol && j <= dcol) bg.col[2L]     else if(i > dcol && j > dcol) bg.col[5L]     else if(j > dcol && i <= dcol) bg.col[3L]     else bg.col[4L]
       border <- if(isTRUE(MAPpan)) border.col[1L] else if(i <= dcol && j <= dcol) border.col[2L] else if(i > dcol && j > dcol) border.col[5L] else if(j > dcol && i <= dcol) border.col[3L] else border.col[4L]
       labelj <- ifelse(diagonal, j, N - j + 1L)
@@ -640,15 +654,17 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
             grid::pushViewport(grid::viewport(gp=grid::gpar(fill=bg)))
             if(is.factor(x[,i])) {
               .bar_code(x=split(x[,j], x[,i])[length(levels(x[,i])):1L], horizontal=TRUE, xlim=NULL, labelloc=ypos, axisloc=xpos, labelouter=TRUE, 
-                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, ptsize=barcode.pars$ptsize, 
-                        ptpch=barcode.pars$ptpch, bcspace=barcode.pars$bcspace, use.points=barcode.pars$use.points, outerbox=border, 
-                        col=if(isTRUE(MAPpan) || bar.col) barcode.pars$col else rep(diag.pars$hist.color[ifelse(j > dcol && i > dcol, j, i)], nlevels(x[,i])))
+                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, bcspace=barcode.pars$bcspace, outerbox=border,
+                        ptsize=if(barcode.pars$use.points && length(barcode.pars$ptsize) > 1) rev(split(barcode.pars$ptsize, x[,i])) else barcode.pars$ptsize, 
+                        ptpch=if(barcode.pars$use.points  && length(barcode.pars$ptpch)  > 1) rev(split(barcode.pars$ptpch,  x[,i])) else barcode.pars$ptpch,  
+                        col=if(isTRUE(MAPpan)) barcode.pars$col else rev(split(barcode.pars$colbar, x[,i])), use.points=barcode.pars$use.points)
             } else {
               if(!is.null(ypos)) ypos <- !ypos
               .bar_code(x=split(x[,i], x[,j])[length(levels(x[,j])):1L], horizontal=FALSE, xlim=NULL, labelloc=xpos, axisloc=ypos, labelouter=TRUE, 
-                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, ptsize=barcode.pars$ptsize, 
-                        ptpch=barcode.pars$ptpch, bcspace=barcode.pars$bcspace, use.points=barcode.pars$use.points, outerbox=border, 
-                        col=if(isTRUE(MAPpan) || bar.col) barcode.pars$col else rep(diag.pars$hist.color[ifelse(j > dcol && i > dcol, j, i)], nlevels(x[,j])))
+                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, bcspace=barcode.pars$bcspace, outerbox=border,
+                        ptsize=if(barcode.pars$use.points && length(barcode.pars$ptsize) > 1) rev(split(barcode.pars$ptsize, x[,j])) else barcode.pars$ptsize, 
+                        ptpch=if(barcode.pars$use.points  && length(barcode.pars$ptpch)  > 1) rev(split(barcode.pars$ptpch,  x[,j])) else barcode.pars$ptpch,  
+                        col=if(isTRUE(MAPpan)) barcode.pars$col else rev(split(barcode.pars$colbar, x[,j])), use.points=barcode.pars$use.points)
             }
             grid::popViewport()
           }
@@ -656,15 +672,17 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
             grid::pushViewport(grid::viewport(gp=grid::gpar(fill=bg)))
             if(is.factor(x[,i])) {
               .bar_code(x=split(x[,j], x[,i])[length(levels(x[,i])):1L], horizontal=TRUE, xlim=NULL, labelloc=ypos, axisloc=xpos, labelouter=TRUE, 
-                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, ptsize=barcode.pars$ptsize, 
-                        ptpch=barcode.pars$ptpch, bcspace=barcode.pars$bcspace, use.points=barcode.pars$use.points, outerbox=border, 
-                        col=if(isTRUE(MAPpan) || bar.col) barcode.pars$col else rep(diag.pars$hist.color[ifelse(j > dcol && i > dcol, i, j)], nlevels(x[,i])))
+                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, bcspace=barcode.pars$bcspace, outerbox=border,
+                        ptsize=if(barcode.pars$use.points && length(barcode.pars$ptsize) > 1) rev(split(barcode.pars$ptsize, x[,i])) else barcode.pars$ptsize, 
+                        ptpch=if(barcode.pars$use.points  && length(barcode.pars$ptpch)  > 1) rev(split(barcode.pars$ptpch,  x[,i])) else barcode.pars$ptpch,  
+                        col=if(isTRUE(MAPpan)) barcode.pars$col else rev(split(barcode.pars$colbar, x[,i])), use.points=barcode.pars$use.points)
             } else {
               if(!is.null(ypos)) ypos <- !ypos
               .bar_code(x=split(x[,i], x[,j])[length(levels(x[,j])):1L], horizontal=FALSE, xlim=NULL, labelloc=xpos, axisloc=ypos, labelouter=TRUE, 
-                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, ptsize=barcode.pars$ptsize, 
-                        ptpch=barcode.pars$ptpch, bcspace=barcode.pars$bcspace, use.points=barcode.pars$use.points, outerbox=border, 
-                        col=if(isTRUE(MAPpan) || bar.col) barcode.pars$col else rep(diag.pars$hist.color[ifelse(j > dcol && i > dcol, i, j)], nlevels(x[,j])))
+                        newpage=FALSE, fontsize=axis.pars$fontsize, buffer=buffer, nint=barcode.pars$nint, bcspace=barcode.pars$bcspace, outerbox=border,
+                        ptsize=if(barcode.pars$use.points && length(barcode.pars$ptsize) > 1) rev(split(barcode.pars$ptsize, x[,j])) else barcode.pars$ptsize, 
+                        ptpch=if(barcode.pars$use.points  && length(barcode.pars$ptpch)  > 1) rev(split(barcode.pars$ptpch,  x[,j])) else barcode.pars$ptpch,  
+                        col=if(isTRUE(MAPpan)) barcode.pars$col else rev(split(barcode.pars$colbar, x[,j])), use.points=barcode.pars$use.points)
             }
             grid::popViewport()
           }
@@ -672,7 +690,7 @@ MoE_gpairs.MoEClust <- function(res, response.type = c("points", "uncertainty", 
         if(!any(is.factor(x[,i]), is.factor(x[,j])))  {
           scatter.pars$pch  <- if(response.type == "uncertainty" && (all(j <= dcol, i <= dcol) || isTRUE(uncert.cov))) scatter.pars$uncert.pch else scatter.pars$scat.pch
           if(response.type  == "density" && all(j <= dcol, i <= dcol)) {
-            .density_panel(cbind(x[,j], x[,i]), dimens=c(subset$data.ind[j - subset$show.map], subset$data.ind[i - subset$show.map]), res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border, scatter.pars)
+            densities[[i - subset$show.map]][[j - subset$show.map]] <- .density_panel(cbind(x[,j], x[,i]), dimens=c(subset$data.ind[j - subset$show.map], subset$data.ind[i - subset$show.map]), res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border, scatter.pars, zz=if(submat == "all" & i > j) densities[[j - subset$show.map]][[i - subset$show.map]])
           } else {
             .scatter_panel(x=x[,j], y=x[,i], type=ifelse(j > dcol   && i <= dcol, ifelse(upr.gate || (j %in% c(expx, both)), upr.exp, "points"), ifelse(j <= dcol && i <= dcol, ifelse(drawEllipses, "ellipses", "points"), ifelse(j <= dcol && (low.gate || (i %in% c(expx, both))), low.exp, "points"))),
                            scatter.pars=scatter.pars, axis.pars=axis.pars, xpos=xpos, ypos=ypos, buffer=buffer, z=z, G=G, res=res, dimens=c(subset$data.ind[j - subset$show.map], subset$data.ind[i - subset$show.map]), outer.rot=outer.rot, bg=bg, mvn.type=addEllipses, border=border,
@@ -1322,7 +1340,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
 
 #' @importFrom mclust "logsumexp"
 #' @importFrom matrixStats "colMeans2"
-.density_panel <- function(dat, dimens, res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border, scatter.pars) {
+.density_panel <- function(dat, dimens, res, density.pars, axis.pars, xpos, ypos, buffer, outer.rot, bg, border, scatter.pars, zz = NULL) {
   pars         <- res$parameters
   modelName    <- res$modelName
   G            <- res$G
@@ -1345,34 +1363,37 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   ly           <- density.pars$grid.size[2L]
   x            <- .grid_1(n=lx, range=xlim, edge=TRUE)
   y            <- .grid_1(n=ly, range=ylim, edge=TRUE)
-  xy           <- .grid_2(x, y)
-  Vinv         <- pars$Vinv
-  noise        <- !is.null(Vinv)
-  gate         <- attr(res, "Gating")
-  expx         <- attr(res, "Expert")
-  mu           <- if(isTRUE(expx)) pars$fits[,dimens,,drop=FALSE] else pars$mean[dimens,, drop=FALSE]
-  if(expx)           {
-    if(gate)         {
-      den      <- lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma, log.tau=pars$lpro[i,], Vinv=Vinv))
-    } else den <- lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma))
-    den        <- .log_avg_den(den)
-  }   else if(gate)  {
-    den        <- t(MoE_dens(data=xy, mus=mu, sigs=sigma, Vinv=Vinv))
-    den        <- t(den + log(colMeans2(pars$pro, refine=FALSE, useNames=FALSE)))
-  }   else den <- MoE_dens(data=xy,   mus=mu, sigs=sigma)
-  if(isFALSE(gate))  {
-    den        <- if(isTRUE(noise))         cbind(den, log(Vinv)) else den
-    den        <- logsumexp(den, pars$lpro)
-  }   else den <- logsumexp(den)
-  zz           <- matrix(exp(den), nrow=lx, ncol=ly, byrow=FALSE)
+  if((z.null   <- is.null(zz)))      {
+    xy         <- .grid_2(x, y)
+    Vinv       <- pars$Vinv
+    noise      <- !is.null(Vinv)
+    gate       <- attr(res, "Gating")
+    expx       <- attr(res, "Expert")
+    mu         <- if(isTRUE(expx)) pars$fits[,dimens,,drop=FALSE] else pars$mean[dimens,, drop=FALSE]
+    if(expx)          {
+      if(gate)        {
+        den    <- lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma, log.tau=pars$lpro[i,], Vinv=Vinv))
+      } else   den <- lapply(seq_len(n), function(i) MoE_dens(data=xy, mus=mu[i,,], sigs=sigma))
+      den      <- .log_avg_den(den)
+    }   else if(gate) {
+      den      <- t(MoE_dens(data=xy, mus=mu, sigs=sigma, Vinv=Vinv))
+      den      <- t(den + log(colMeans2(pars$pro, refine=FALSE, useNames=FALSE)))
+    }   else   den <- MoE_dens(data=xy,   mus=mu, sigs=sigma)
+    if(isFALSE(gate)) {
+      den      <- if(isTRUE(noise))         cbind(den, log(Vinv)) else den
+      den      <- logsumexp(den, pars$lpro)
+    }   else   den <- logsumexp(den)
+    zz         <- matrix(exp(den), nrow=lx, ncol=ly, byrow=FALSE)
+  }
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim))
   .draw_axis(x=x, y=y, axis.pars=axis.pars, xpos=xpos, ypos=ypos, cat.labels=NULL, horiz=NULL, xlim=xlim, ylim=ylim, outer.rot=outer.rot)
   grid::popViewport(1)
   grid::pushViewport(grid::viewport(xscale=xlim, yscale=ylim, clip=TRUE))
   grid::grid.rect(gp=grid::gpar(fill=bg, col=border))
-  .contour_panel(x, y, zz, density.pars)
+  .contour_panel(x, y, if(z.null) zz else t(zz), density.pars)
   if(isTRUE(density.pars$dens.points)) grid::grid.points(dat[,1L], dat[,2L], pch=scatter.pars$pch, size=scatter.pars$size, gp=grid::gpar(col=scatter.pars$col, cex=1))
   grid::popViewport(1)
+    invisible(zz)
 }
 
 #' @importFrom lattice "llines" "panel.histogram"
@@ -1786,8 +1807,8 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
   grid::pushViewport(vp.main)
   grid::grid.rect(gp=grid::gpar(col=outerbox))
   .barcode_panel(x, horizontal=horizontal, nint=nint, xlim=xlim, labelloc=labelloc, labelouter=labelouter,
-                 fontsize=fontsize, ptsize=ptsize, bcspace=bcspace, use.points=use.points, xlab=xlab,
-                 xlaboffset=xlaboffset, axisloc=axisloc, buffer=buffer, log=log, col=col)
+                 fontsize=fontsize, ptsize=ptsize, ptpch=ptpch, bcspace=bcspace, use.points=use.points, 
+                 xlab=xlab, xlaboffset=xlaboffset, axisloc=axisloc, buffer=buffer, log=log, col=col)
   grid::popViewport(1)
   if(!horizontal) grid::popViewport(1)
 }
@@ -1982,7 +2003,7 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     if(length(mids) > 0) {
       vp.barcode <- grid::viewport(x=xleft, y=grid::unit((i - 1L)/K, "npc") + grid::unit(0.05/K, "npc"), width=grid::unit(1, "npc") - xleft - xright, height=grid::unit(1/K, "npc") * bcspace - grid::unit(0.05/K, "npc"), xscale=c(minx, maxx), yscale=c(0, 1), just=c("left", "bottom"), name="barcode", clip="off")
       grid::pushViewport(vp.barcode)
-      grid::grid.segments(grid::unit(mids[z > 0], "native"), 0, gp=grid::gpar(col=col[i]), grid::unit(mids[z > 0], "native"), 1)
+      grid::grid.segments(grid::unit(mids[z > 0], "native"), 0, gp=grid::gpar(col=if(inherits(col, "list")) col[[i]] else col[i]), grid::unit(mids[z > 0], "native"), 1)
       grid::popViewport(1)
       vp.hist    <- grid::viewport(x=xleft, y=grid::unit((i - 1L)/K, "npc") + grid::unit(1/K, "npc") * bcspace, width=grid::unit(1, "npc") - xright - xleft, height=grid::unit(1/K, "npc") - grid::unit(1/K, "npc") * bcspace, xscale=c(minx, maxx), yscale=c(0, 1), just=c("left", "bottom"), name="hist", clip="off")
       grid::pushViewport(vp.hist)
@@ -1993,10 +2014,14 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
           xx     <- rep(mids[j], z[j] - 1L)
           yy     <- if(log) log(2L + seq_len(z[j] - 1L))/maxct else seq_len(z[j] - 1L)/maxct
           if(use.points) {
-            grid::grid.points(grid::unit(xx, "native"), yy, pch=ptpch, size=ptsize, gp=grid::gpar(col=col[i]))
+            uord <- order(y[!duplicated(y)])
+            grid::grid.points(grid::unit(xx, "native"), yy, 
+                              size=if(!inherits(ptsize, "list")) ptsize else rep(rep(ptsize[[i]][uord], z)[j], z[j] - 1), 
+                              pch=if(!inherits(ptpch,   "list")) ptpch  else rep(rep(ptpch[[i]][uord],  z)[j], z[j] - 1), 
+                              gp=grid::gpar(col=if(inherits(col, "list"))    rep(rep(col[[i]][uord],    z)[j], z[j] - 1)  else col[i]))
           } else  {
             yy   <- if(log) c(yy, log(2L + z[j])/maxct)        else c(yy, (z[j])/maxct)
-            grid::grid.segments(grid::unit(mids[j], "native"), gp=grid::gpar(col=col[i]), grid::unit(1/maxct, "npc"), grid::unit(mids[j], "native"), grid::unit(max(yy), "npc"))
+            grid::grid.segments(grid::unit(mids[j], "native"), gp=grid::gpar(col=if(inherits(col, "list")) col[[i]]       else col[i]), grid::unit(1/maxct, "npc"), grid::unit(mids[j], "native"), grid::unit(max(yy), "npc"))
           }
         }
       }
