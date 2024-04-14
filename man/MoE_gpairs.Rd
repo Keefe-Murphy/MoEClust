@@ -108,7 +108,7 @@ where \code{grid.size} is a vector of length two giving the number of points in 
                    show.hist=TRUE, show.counts=TRUE, show.dens=FALSE, dens.grid=100),}
 where \code{hist.color} is a vector of length 4, giving the colours for the response variables, gating covariates, expert covariates, and covariates entering both networks, respectively. By default, diagonal panels for response variables are \code{ifelse(diag.pars$show.dens, "white", "black")} and covariates of any kind are \code{"dimgrey"}. \code{hist.color} also governs the outer colour for mosaic panels and the fill colour for boxplot, and violin panels (except for those involving the MAP classification; see \code{boxplot.pars} below). However, in the case of response vs. (categorical) covariates boxplots and violin plots, the fill colour is always \code{"white"}. The MAP classification is always coloured by cluster membership, by default. The argument \code{show.counts} is only relevant for categorical variables.
 
-The argument \code{show.dens} toggles whether \emph{parametric} density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{diag.grid=100} by default.
+The argument \code{show.dens} toggles whether \emph{parametric} density estimates are drawn over the diagonal panels for each response variable. When \code{show.dens=TRUE}, the component densities are shown via thin lines, with colours given by \code{scatter.pars$scat.col}, while a thick \code{"black"} line is used for the overall mixture density. This argument can be used with or without \code{show.hist} also being \code{TRUE}. Finally, the grid size when \code{show.dens=TRUE} is given by \code{diag.grid=100} by default. As per \code{response.type="density"}, plotting is liable to be a little slower when \code{show.dens=TRUE} for models with expert network covariates. This is why \code{show.dens=FALSE} by default; otherwise it is recommended to be set to \code{TRUE}.
 
 When \code{diagonal=TRUE} (the default), the diagonal from the top left to the bottom right is used for displaying the marginal distributions of variables (via histograms, with or without overlaid density estimates, or barplots, as appropriate). Specifying \code{diagonal=FALSE} will place the diagonal running from the top right down to the bottom left.}
 
@@ -166,6 +166,8 @@ Note that all colour-related defaults in \code{scatter.pars}, \code{stripplot.pa
 For \code{MoEClust} models with more than one expert network covariate, fitted lines produced in continuous covariate vs. continuous response scatterplots via \code{scatter.type="lm"} or \code{scatter.type="ci"} will \strong{NOT} correspond to the coefficients in the expert network (\code{res$expert}).
 
 Caution is advised when producing \code{"barcode"} plots for the \code{conditional} panels. In some cases, resizing the graphics device after the production of the plot will result in distortion because of the way the rotation of non-horizontal barcodes is performed. Thus, when \code{any(conditional == "barcode")}, it is advisable to ensure the dimensions of the overall plot are square. Furthermore, such plots may not display correctly anyway in RStudio's "Plots" pane and so a different graphics device may need to be used (but not subsequently resized).
+
+Caution is also advised when producing generalised pairs plots when the dimension of the data is large.
 }
 
 \examples{
@@ -211,7 +213,12 @@ resN  <- MoE_clust(ais[,3:7], G=2, gating= ~ SSF + Ht, expert= ~ sex,
 # it may be necessary to first open a new device:
 # dev.new()
 MoE_gpairs(resN, data.ind=c(1,2,5), cov.ind=c(3,1,2), use.points=TRUE,
-           conditional="barcode", noise.size=grid::unit(0.5, "char"))}
+           conditional="barcode", noise.size=grid::unit(0.5, "char"))
+           
+# Plots can be modified to show only a single (diagonal) panel of interest
+MoE_gpairs(resN, data.ind=0, cov.ind=0)
+MoE_gpairs(resN, data.ind=0, cov.ind=1, show.map=FALSE)
+MoE_gpairs(resN, data.ind=1, cov.ind=0, show.map=FALSE, show.dens=TRUE)}
 }
 \references{
 Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.

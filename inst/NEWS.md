@@ -14,6 +14,7 @@ __and a Noise Component__
   previously, the grid was formed using the observed values, which led to strange behaviour.
   * The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE`.
   * Fixed (i.e. increased) height of diagonal panels when `show.hist=TRUE` &/or `show.dens=TRUE`.
+  * `show.dens=TRUE` now works properly when `subset$data.ind` is used.
   * Added `density.pars$dens.points=FALSE` for overlaying points when `response.type="density"`.
   * `density.pars$show.labels="mixed"` now works properly.
   * Added `subset$submat` for visualising only the upper/lower triangular panels of the plot matrix.
@@ -24,6 +25,10 @@ __and a Noise Component__
   * Barcode panels now have colour throughout (previously only MAP-related panels),  
   with related minor fixes when `barcode.pars$use.points=TRUE`.
   * Many documentation improvements & clarifications.
+* `MoE_Uncertainty` gain the arg. `col`: default of `"cluster"` colours according to cluster-membership,  
+but old behaviour of highlighting uncertain observations can be recovered via `col="uncertain"`.
+* `MoE_Uncertainty` gains the arg. `rug1d=TRUE` for use with univariate models,  
+which puts the actual observation values along the x-axis when `type="barplot"`.
 * Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
 functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
 * Further related minor speed-ups for models with `G == 0` and `G == 1`.
@@ -31,6 +36,8 @@ functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where a
 fix to `predict.MoEClust(..., use.y=TRUE)` when predicting only one observation.
 * Fixed extremely rare bug in `MoE_clust` & associated `predict`, `fitted`, & `residuals` methods  
 when `algo="CEM"` and a model has only one observation/prediction assigned to its noise component.
+* Fixed minor bug when `as.Mclust` is used with `expert.covar=TRUE` for multivariate models  
+with expert network covariates and subsequently used to produce density-related plots.
 
 ## MoEClust v1.5.2 - (_17<sup>th</sup> release [patch update]: 2023-12-10_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits

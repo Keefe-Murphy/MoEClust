@@ -24,7 +24,7 @@
 #' @param ... An alternative means of passing control parameters directly via the named arguments of \code{\link{MoE_control}}. Do not pass the output from a call to \code{\link{MoE_control}} here! This argument is only relevant for the \code{\link{MoE_clust}} function and will be ignored for the associated \code{print} and \code{summary} functions.
 #' @param x,object,digits,classification,parameters,networks Arguments required for the \code{print} and \code{summary} functions: \code{x} and \code{object} are objects of class \code{"MoEClust"} resulting from a call to \code{\link{MoE_clust}}, while \code{digits} gives the number of decimal places to round to for printing purposes (defaults to 3). \code{classification}, \code{parameters}, and \code{networks} are logicals which govern whether a table of the MAP classification of observations, the mixture component parameters, and the gating/expert network coefficients are printed, respectively.
 
-#' @importFrom matrixStats "colMaxs" "colMeans2" "colSums2" "rowAlls" "rowMaxs" "rowMins" "rowSums2"
+#' @importFrom matrixStats "colMaxs" "colMeans2" "colSums2" "rowAlls" "rowLogSumExps" "rowMaxs" "rowMins" "rowSums2"
 #' @importFrom mclust "emControl" "hc" "hclass" "hcE" "hcEEE" "hcEII" "hcV" "hcVII" "hcVVV" "logsumexp" "Mclust" "mclust.options" "mclustBIC" "mclustICL" "mclustModelNames" "mclustVariance" "mstep" "mstepE" "mstepEEE" "mstepEEI" "mstepEEV" "mstepEII" "mstepEVE" "mstepEVI" "mstepEVV" "mstepV" "mstepVEE" "mstepVEI" "mstepVEV" "mstepVII" "mstepVVE" "mstepVVI" "mstepVVV" "nVarParams" "softmax" "unmap"
 #' @importFrom mvnfast "dmvn"
 #' @importFrom nnet "multinom"
@@ -129,7 +129,7 @@
 #' summary(best$expert)
 #'
 #' # Visualise the results, incl. the gating network and log-likelihood
-#' plot(best, what="gpairs")
+#' plot(best, what="gpairs", show.dens=TRUE)
 #' plot(best, what="gating") # equal mixing proportions!
 #' plot(best, what="loglik")
 #'
@@ -935,7 +935,7 @@
           if(gN   <= 1)         {
             ll    <- c(-Inf, ifelse(!exp.g, sum(medens), -sqrt(.Machine$double.xmax)))
           } else   {
-            z     <- zN        <- switch(EXPR=alG, EM=softmax(medens), unmap(max.col(medens), groups=seq_len(gN)))
+            z     <- zN        <- switch(EXPR=alG, EM=.softmax(medens), unmap(max.col(medens), groups=seq_len(gN)))
             if((any(is.nan(z))  -> ERR))          next
             ll    <- c(-Inf, -sqrt(.Machine$double.xmax))
           }
@@ -1276,8 +1276,8 @@
           z.norm  <- if(noise.null) z else .renorm_z(z[,-GN, drop=FALSE])
           if(algo == "CEM"     &&
              any(nan           <- rowAlls(is.nan(z.norm), useNames=FALSE))) {
-            z.norm[nan,]       <- .renorm_z(softmax(MoE_dens(data=lapply(x.resE, "[", nan, TRUE, drop=FALSE), mus=mus, sigs=vari.fin, Vinv=Xinv, 
-                                                             log.tau = log(if(is.matrix(x.tau)) x.tau[nan,, drop=FALSE] else x.tau)))[,-GN, drop=FALSE])
+            z.norm[nan,]       <- .renorm_z(.softmax(MoE_dens(data=lapply(x.resE, "[", nan, TRUE, drop=FALSE), mus=mus, sigs=vari.fin, Vinv=Xinv, 
+                                                              log.tau = log(if(is.matrix(x.tau)) x.tau[nan,, drop=FALSE] else x.tau)))[,-GN, drop=FALSE])
           }
           if(any(nan           <- rowAlls(is.nan(z.norm), useNames=FALSE))) {
             z.norm[nan,]       <- 1/G
@@ -1557,6 +1557,7 @@
 #' \item{\code{z}}{A matrix with \code{n} rows and \code{G} columns containing the probability of cluster membership for each of \code{n} observations and \code{G} clusters.}
 #' \item{\code{loglik}}{The estimated log-likelihood, computed efficiently via \code{\link[mclust]{logsumexp}}.}
 #'
+#' @importFrom matrixStats "rowLogSumExps"
 #' @importFrom mclust "logsumexp" "mclustVariance"
 #' @export
 #' @note This softmax function is intended for joint use with \code{\link{MoE_dens}}, using the \strong{log}-densities. Caution is advised using this function without explicitly naming the arguments. Models with a noise component are facilitated here too.
@@ -1602,7 +1603,7 @@
     if(missing(Dens)) {
       Dens        <- do.call(MoE_dens, list(data=data, mus=mus, sigs=sigs, log.tau=log.tau, Vinv=Vinv))
     } else if(!is.numeric(Dens))                  stop("'Dens' must be a numeric matrix", call.=FALSE)
-    norm          <- logsumexp(Dens)
+    norm          <- .logsumexp(Dens)
     z             <- provideDimnames(exp(Dens - norm), base=list("", paste0("Cluster", seq_len(ncol(Dens)))))
       return(list(z = z, loglik = sum(norm)))
   }
@@ -2460,7 +2461,7 @@
 #' @seealso \code{\link{MoE_clust}}, \code{\link{MoE_control}}, \code{\link{noise_vol}}, \code{\link{predict.MoE_gating}}, \code{\link{predict.MoE_expert}}
 #' @method predict MoEClust
 #' @keywords prediction main
-#' @importFrom matrixStats "rowAlls" "rowSums2"
+#' @importFrom matrixStats "rowAlls" "rowLogSumExps" "rowSums2"
 #' @importFrom mclust "softmax"
 #' @export
 #' @usage
@@ -2645,7 +2646,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     } else     {
       new.exp     <- if(Xexp) lapply(pred.exp, "-", newdata.y)    else newdata.y
       mus         <- if(Xexp) 0L                                  else params$mean
-      zstar       <- softmax(MoE_dens(data=new.exp, mus=mus, sigs=params$variance, log.tau=log(new.tau), Vinv=params$Vinv))
+      zstar       <- .softmax(MoE_dens(data=new.exp, mus=mus, sigs=params$variance, log.tau=log(new.tau), Vinv=params$Vinv))
     }
   }
   if(ZD           <- !noise || attr(hypvol, "Meth") == "manual" || isTRUE(dcard))  {
@@ -2654,8 +2655,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
        any(nan           <- rowAlls(is.nan(zstar2), useNames=FALSE))) {
       new.exp     <- if(!is.null(new.exp)) new.exp else if(Xexp) lapply(pred.exp, "-", newdata.y)  else newdata.y
       mus         <- if(!is.null(mus))     mus     else if(Xexp) 0L                                else params$mean
-      zstar2[nan,]       <- .renorm_z(softmax(MoE_dens(data=lapply(new.exp, "[", nan, TRUE, drop=FALSE), mus=mus, sigs=params$variance, Vinv=params$Vinv, 
-                                                       log.tau = log(if(is.matrix(new.tau)) new.tau[nan,, drop=FALSE] else new.tau)))[,-GN, drop=FALSE])
+      zstar2[nan,]       <- .renorm_z(.softmax(MoE_dens(data=lapply(new.exp, "[", nan, TRUE, drop=FALSE), mus=mus, sigs=params$variance, Vinv=params$Vinv, 
+                                                        log.tau = log(if(is.matrix(new.tau)) new.tau[nan,, drop=FALSE] else new.tau)))[,-GN, drop=FALSE])
     }
     if(any(nan           <- rowAlls(is.nan(zstar2), useNames=FALSE))) {
       zstar2[nan,]       <- 1/G
@@ -2704,7 +2705,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @rdname predict.MoEClust
 #' @method fitted MoEClust
 #' @keywords prediction
-#' @importFrom matrixStats "rowAlls" "rowSums2"
+#' @importFrom matrixStats "rowAlls" "rowLogSumExps" "rowSums2"
 #' @importFrom mclust "softmax"
 #' @usage 
 #' \method{fitted}{MoEClust}(object,
@@ -2719,7 +2720,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @rdname predict.MoEClust
 #' @method residuals MoEClust
 #' @keywords prediction
-#' @importFrom matrixStats "rowAlls" "rowSums2"
+#' @importFrom matrixStats "rowAlls" "rowLogSumExps" "rowSums2"
 #' @importFrom mclust "softmax"
 #' @usage
 #' \method{residuals}{MoEClust}(object,
@@ -3585,21 +3586,19 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   
 #' Convert MoEClust objects to the Mclust class
 #'
-#' Converts an object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} and converts it to an object of class \code{"Mclust"} as generated by fitting \code{\link[mclust]{Mclust}}, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package. Some caution is advised when converting models with gating &/or expert covariates (see Note below).
+#' Converts an object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} and converts it to an object of class \code{"Mclust"} as generated by fitting \code{\link[mclust]{Mclust}}, to facilitate use of plotting and other functions for the \code{"Mclust"} class within the \pkg{mclust} package. Some caution is advised when converting models with gating &/or expert covariates (see Note below) and users are always encouraged to use the dedicated \code{\link{plot.MoEClust}} function for objects of the \code{"MoEClust"} class instead.
 #' @param x An object of class \code{"MoEClust"} generated by \code{\link{MoE_clust}} or an object of class \code{"MoECompare"} generated by \code{\link{MoE_compare}}. Models with a noise component are facilitated here too.
 #' @param expert.covar Logical (defaults to \code{TRUE}) governing whether the extra variability in the component means is added to the MVN ellipses corresponding to the component covariance matrices in the presence of expert network covariates. See the function \code{\link{expert_covar}}.
 #' @param signif Significance level for outlier removal. Must be a single number in the interval [0, 1). Corresponds to the percentage of data to be considered extreme and therefore removed (half of \code{signif} at each endpoint, on a column-wise basis). The default, \code{0}, corresponds to no outlier removal. \strong{Only} invoke this argument as an aid to visualisation via \code{\link[mclust]{plot.Mclust}}.
 #' @param ... Further arguments to be passed to other methods.
 #'
 #' @return An object of class \code{"Mclust"}. See \code{methods(class="Mclust")} for a (non-exhaustive) list of functions which can be applied to this class.
-#' @details Of course, the user is always encouraged to use the dedicated \code{\link[=plot.MoEClust]{plot}} function for objects of the \code{"MoEClust"} class instead, but calling \code{plot} after converting via \code{\link[=as.Mclust.MoEClust]{as.Mclust}} can be particularly useful for univariate mixtures.
-#'
+#' @details Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion. For models with expert network covariates, the means are given by the posterior means of the fitted values of the expert network.
+#' 
 #' In the presence of expert network covariates, the component-specific covariance matrices are (by default, via the argument \code{expert.covar}) modified for plotting purposes via the function \code{\link{expert_covar}}, in order to account for the extra variability of the means, usually resulting in bigger shapes & sizes for the MVN ellipses.
 #'
-#' The \code{signif} argument is intended only to aid visualisation via \code{\link[mclust]{plot.Mclust}}, as plots therein can be sensitive to outliers, particularly with regard to axis limits.
-#' @note Mixing proportions are averaged over observations in components in the presence of gating network covariates during the coercion.
-#'
-#' Plots may be quite misleading in the presence of gating &/or (especially) expert network covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} instead.
+#' The \code{signif} argument is intended only to aid visualisation via \code{\link[mclust]{plot.Mclust}}, as plots therein can be sensitive to outliers, particularly with regard to axis limits. However, users are always encouraged to use the dedicated \code{\link{plot.MoEClust}} function for objects of the \code{"MoEClust"} class instead (see Note below).
+#' @note Plots may be quite misleading in the presence of gating &/or (especially) expert network covariates when the \code{what} argument is \code{"density"} within \code{\link[mclust]{plot.Mclust}}; users are \strong{strongly} encouraged to use \code{\link{MoE_gpairs}} with \code{response.type="density"} &/or \code{show.dens=TRUE} instead.
 #' 
 #' Predictions (via \code{\link[mclust]{predict.Mclust}}) will also be misleading in the presence of covariates of any kind when \code{newdata} is supplied; thus, users are \strong{strongly} encouraged to use \code{\link{predict.MoEClust}} instead. 
 #'
@@ -3609,7 +3608,7 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @importFrom matrixStats "colMeans2"
 #' @importFrom mclust "as.Mclust" "clustCombi" "clustCombiOptim" "logLik.Mclust" "icl" "plot.Mclust" "plot.mclustBIC" "plot.mclustICL" "predict.Mclust" "print.Mclust" "sigma2decomp" "summary.Mclust"
 #' @method as.Mclust MoEClust
-#' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{expert_covar}}, \code{\link{MoE_control}}
+#' @seealso \code{\link[mclust]{Mclust}}, \code{\link[mclust]{plot.Mclust}}, \code{\link{MoE_clust}}, \code{\link{plot.MoEClust}}, \code{\link{predict.MoEClust}}, \code{\link{expert_covar}}, \code{\link{MoE_control}}, \code{\link[mclust]{clustCombi}}, \code{\link[mclust]{clustCombiOptim}}
 #' @author Keefe Murphy - <\email{keefe.murphy@@mu.ie}>
 #' @references Fraley, C. and Raftery, A. E. (2002). Model-based clustering, discriminant analysis, and density estimation. \emph{Journal of the American Statistical Association}, 97(458): 611-631.
 #' 
@@ -3623,30 +3622,37 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
 #' @export
 #' @name as.Mclust
 #' @examples
-#' \donttest{# library(mclust)
+#' \donttest{library(mclust)
 #' 
 #' # Fit a gating network mixture of experts model to the ais data
-#' # data(ais)
-#' # mod   <- MoE_clust(ais[,3:7], G=1:9, gating= ~ BMI + sex, network.data=ais)
+#' data(ais)
+#' mod   <- MoE_clust(ais[,3:7], G=3, gating= ~ BMI + sex, modelNames="EEE", network.data=ais)
 #'
 #' # Convert to the "Mclust" class and examine the classification
-#' # mod2  <- as.Mclust(mod)
-#' # plot(mod2, what="classification")
+#' mod2  <- as.Mclust(mod)
+#' plot(mod2, what="classification")
 #'
 #' # Examine the uncertainty
-#' # plot(mod2, what="uncertainty")
+#' plot(mod2, what="uncertainty")
 #'
 #' # Return the optimal number of clusters according to entropy
-#' # combi <- mclust::clustCombi(object=mod2)
-#' # optim <- mclust::clustCombiOptim(object=combi)
-#' # table(mod2$classification, ais$sex)
-#' # table(optim$cluster.combi, ais$sex)
+#' combi <- mclust::clustCombi(object=mod2)
+#' optim <- mclust::clustCombiOptim(object=combi)
+#' table(mod2$classification, ais$sex)
+#' table(optim$cluster.combi, ais$sex)
 #'
-#' # While we could have just used plot.MoEClust above,
-#' # plot.Mclust is especially useful for univariate data
-#' # data(CO2data)
-#' # res <- MoE_clust(CO2data$CO2, G=3, equalPro=TRUE, expert = ~ GNP, network.data=CO2data)
-#' # plot(as.Mclust(res))}
+#' # Compare plot.MoEClust and plot.Mclust for univariate mixtures
+#' data(CO2data)
+#' res <- MoE_clust(CO2data$CO2, G=2, expert = ~ GNP, modelNames="V", network.data=CO2data)
+#' plot(as.Mclust(res), what="classification")
+#' plot(as.Mclust(res), what="density")
+#' plot(as.Mclust(res), what="uncertainty") 
+#' 
+#' # Proper version of what="density" plot:
+#' MoE_gpairs(res, show.map=FALSE, cov.ind=0, show.dens=TRUE)
+#' 
+#' # Equivalent what="uncertainty" plot:
+#' MoE_Uncertainty(res)}
   as.Mclust.MoEClust      <- function(x, expert.covar = TRUE, signif = 0L, ...) {
     x             <- if(inherits(x, "MoECompare")) x$optimal else x
     if(length(signif) > 1 || !is.numeric(signif)     ||
@@ -3663,10 +3669,17 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     x$classification      <- if(uni)                   unname(x$classification) else x$classification
     x$parameters$pro      <- if(gating)             colMeans2(x$parameters$pro,
                                                               refine=FALSE)     else x$parameters$pro
-    x$parameters$variance <- if(isTRUE(expert.covar) &&
-                                expert)  suppressWarnings(expert_covar(x, ...)) else x$parameters$variance
+    if(isTRUE(expert.covar)     &&
+       expert)     {
+     x$parameters$variance      <- suppressWarnings(expert_covar(x, ...))
+     if(isFALSE(uni))     {
+      x$parameters$variance$modelName   <- "VVV"
+      x$parameters$variance$cholsigma   <- x$parameters$variance$sigma
+      x$parameters$variance$cholsigma[] <- apply(x$parameters$variance$sigma, 3L, .chol)
+     }
+    }
     x$data        <- if(signif   > 0)      apply(x$data, 2L, .trim_out, signif) else x$data
-    x$modelName   <- ifelse(x$G == 0, "EII", x$modelName)
+    x$modelName   <- ifelse(x$G == 0, "EII", x$parameters$variance$modelName)
     colnames(x$z) <- NULL
     x             <- x[-which(is.element(names(x), c("ICL", "AIC", "aic", "gating", "expert", "LOGLIK", "linf", "iters", "net.covs", "resid.data", "DF", "ITERS")))]
     name.x        <- names(x)
@@ -4365,9 +4378,19 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     }
   }
   
+  #' @importFrom matrixStats "rowLogSumExps"
   #' @importFrom mclust "logsumexp"
   .logmeanexp     <- function(x, v = NULL) {
-      logsumexp(x, v) - log(ifelse(is.matrix(x), ncol(x), length(x)))
+      .logsumexp(x, v) - log(ifelse(is.matrix(x), ncol(x), length(x)))
+  }
+  
+  #' @importFrom matrixStats "rowLogSumExps"
+  #' @importFrom mclust "logsumexp"
+  .logsumexp     <- function(x, v = NULL)            {
+    if(all(is.finite(x))) logsumexp(x, v)       else {
+      x          <- if(is.null(v)) as.matrix(x) else t(t(x) + v)
+        rowLogSumExps(x, useNames=FALSE)
+    }
   }
 
   .mat_byrow      <- function(x, nrow, ncol) {
@@ -4439,6 +4462,13 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
     small         <- sqrt(.Machine$double.neg.eps)
     z[z < small]  <- small
       .renorm_z(z)  
+  }
+  
+  .softmax        <- function(x, v =  NULL)  {
+    if(all(is.finite(x))) softmax(x, v) else {
+      x         <- if(is.null(v)) x     else t(t(x) + v)
+        exp(x - rowLogSumExps(x, use.names=FALSE))
+    }
   }
   
   .sq_mat         <- function(x) diag(sqrt(diag(x)))

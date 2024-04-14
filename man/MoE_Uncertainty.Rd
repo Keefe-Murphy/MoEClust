@@ -8,6 +8,8 @@ MoE_Uncertainty(res,
                 type = c("barplot", "profile"),
                 truth = NULL,
                 decreasing = FALSE,
+                col = c("cluster", "uncertain", "none"),
+                rug1d = TRUE,
                 ...)
 }
 \arguments{
@@ -17,7 +19,11 @@ MoE_Uncertainty(res,
 
 \item{truth}{An optional argument giving the true classification of the data. When \code{truth} is supplied and \code{type="barplot"}, misclassified observations are highlighted in a different colour, otherwise observations with uncertainty greater than \code{1/res$G} are given in a different colour. When \code{truth} is supplied and \code{type="profile"}, the uncertainty of misclassified observations is marked by vertical lines on the plot.}
 
-\item{decreasing}{Logical indicating whether uncertainties should be ordered in decreasing order (defaults to \code{FALSE}). Only relevant when \code{type="profile"}.}
+\item{decreasing}{A logical indicating whether uncertainties should be ordered in decreasing order (defaults to \code{FALSE}). Only relevant when \code{type="profile"}.}
+
+\item{col}{Only relevant when \code{truth=NULL}. A character string indicating whether points should be coloured according to their \code{"cluster"}-memberships (the default) in \code{res$classification}, according to whether they exceed the threshold to be deemed \code{"uncertain"}, or not at all (\code{"none"}). \code{"cluster"} is inadvisable when the number of clusters \code{res$G} is large.}
+
+\item{rug1d}{A logical which is relevant only when \code{type="barplot"} and \code{res$d == 1}, i.e. the model was fitted to univariate data. When \code{rug1d=TRUE}, the x-axis is given by the actual observations (indicated with a rug), otherwise the x-axis is given by the indices of the observations as per similar plots when \code{res$d > 1}.}
 
 \item{...}{Catches unused arguments.}
 }
@@ -33,7 +39,7 @@ The y-axis of this plot runs from \code{0} to \code{1 - 1/res$G}, with a horizon
 \note{
 \code{\link{plot.MoEClust}} is a wrapper to \code{\link{MoE_Uncertainty}} which accepts the default arguments, and also produces other types of plots.
 
-An alternative means of visualising clustering uncertainties (at least for multivariate data) is provided by the functions \code{MoE_gpairs} and \code{plot.MoEClust}, specifically when their argument \code{response.type} is given as \code{"uncertainty"}.
+An alternative means of visualising clustering uncertainties (at least for multivariate data) is provided by the functions \code{\link{MoE_gpairs}} and \code{\link{plot.MoEClust}}, specifically when their argument \code{response.type} is given as \code{"uncertainty"}.
 }
 \examples{
 data(ais)
@@ -42,12 +48,20 @@ res <- MoE_clust(ais[,3:7], gating= ~ sex, G=3, modelNames="EEE", network.data=a
 # Produce an uncertainty barplot
 MoE_Uncertainty(res)
 
+# Change the colour scheme
+MoE_Uncertainty(res, col="uncertain")
+
 # Produce an uncertainty profile plot
 MoE_Uncertainty(res, type="profile")
 
 # Let's assume the true clusters correspond to sex
 (ub <- MoE_Uncertainty(res, truth=ais$sex))
 (up <- MoE_Uncertainty(res, type="profile", truth=ais$sex))
+
+# Examine the effect of rug1d for univariate models
+mod <- MoE_clust(CO2data$CO2, expert=~GNP, G=2, modelNames="V", network.data=CO2data)
+MoE_Uncertainty(mod, rug1d=FALSE)
+MoE_Uncertainty(mod)
 }
 \seealso{
 \code{\link{MoE_clust}}, \code{\link{MoE_gpairs}}, \code{\link{plot.MoEClust}}

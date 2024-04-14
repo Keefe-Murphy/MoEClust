@@ -34,9 +34,7 @@ Plot results for fitted MoE_clust mixture models with gating &/or expert network
 For more flexibility in plotting, use \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Similarity}}, and \code{\link{MoE_Uncertainty}} directly.
 }
 \note{
-Caution is advised producing generalised pairs plots when the dimension of the data is large.
-
-Other types of plots are available by first calling \code{\link{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. These can be especially useful for univariate data.
+Other plotting options are available by first calling \code{\link[=as.Mclust.MoEClust]{as.Mclust}} on the fitted object, and then calling \code{\link[mclust]{plot.Mclust}} on the results. However, caution is advised for models with gating &/or expert covariates (see the Note in \code{\link[=as.Mclust.MoEClust]{as.Mclust}}).
 }
 \examples{
 \donttest{data(ais)
@@ -59,14 +57,14 @@ plot(res, what="gpairs")
 plot(res, what="similarity")
 
 # Modify the gpairs plot by passing arguments to MoE_gpairs()
-plot(res, what="gpairs", response.type="density", varwidth=TRUE,
+plot(res, what="gpairs", response.type="density", varwidth=TRUE, show.dens=TRUE,
      data.ind=c(5,3,4,1,2), jitter=FALSE, show.counts=FALSE)}
 }
 \references{
 Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 }
 \seealso{
-\code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Similarity}}, \code{\link{MoE_Uncertainty}}, \code{\link{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
+\code{\link{MoE_clust}}, \code{\link{MoE_stepwise}}, \code{\link{MoE_gpairs}}, \code{\link{MoE_plotGate}}, \code{\link{MoE_plotCrit}}, \code{\link{MoE_plotLogLik}}, \code{\link{MoE_Similarity}}, \code{\link{MoE_Uncertainty}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}, \code{\link[mclust]{plot.Mclust}}
 }
 \author{
 Keefe Murphy - <\email{keefe.murphy@mu.ie}>

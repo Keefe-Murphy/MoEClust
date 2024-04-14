@@ -51,7 +51,7 @@ res2  <- MoE_clust(ais[,3:7], G=2, equalPro=TRUE, expert= ~ sex,
 (comp <- MoE_compare(res1, res2, optimal.only=TRUE))
 
 # Produce a plot for the optimal model                                                   
-plot(comp$optimal, what="gpairs")
+plot(comp$optimal, what="gpairs", show.dens=TRUE)
 
 # Summarise its classification table, component parameters, and gating/expert networks
 summary(comp$optimal, classification=TRUE, parameters=TRUE, networks=TRUE)

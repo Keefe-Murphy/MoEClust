@@ -247,10 +247,10 @@ Visualise the results for the optimal model using a generalised pairs plot.
 plot(mod, what="gpairs")
 ```
 
-Replace the scatterplots in response vs. response panels with bivariate density contours. Note that this is liable to be slow for models with expert network covariates.
+Replace the scatterplots in response vs. response panels with bivariate density contours and add corresponding parametric marginal density estimates along the diagonal. Note that this is liable to be slow for models with expert network covariates.
 
 ```{r}
-plot(mod, what="gpairs", response.type="density")
+plot(mod, what="gpairs", response.type="density", show.dens=TRUE, buffer=0.1)
 ```
 
 Visualise the clustering uncertainty for the optimal model using a generalised pairs plot.

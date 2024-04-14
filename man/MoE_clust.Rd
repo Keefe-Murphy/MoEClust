@@ -148,7 +148,7 @@ m6    <- MoE_clust(hema, G=2:3, tau0=0.1, gating= ~ BMI, network.data=ais)
 summary(best$expert)
 
 # Visualise the results, incl. the gating network and log-likelihood
-plot(best, what="gpairs")
+plot(best, what="gpairs", show.dens=TRUE)
 plot(best, what="gating") # equal mixing proportions!
 plot(best, what="loglik")
 
