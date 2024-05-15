@@ -7,25 +7,36 @@ __and a Noise Component__
 
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
 * Various improvements to `MoE_gpairs`:  
-  * Major fixes when there are expert covariates & `diag.pars$show.dens=TRUE` &/or  
+  * _Significant_ fixes when there are expert covariates & `diag.pars$show.dens=TRUE` &/or  
   `response.type="density"` by properly using log average density instead of average log density.
-  * Marginal densities when `show.dens=TRUE` are now always evaluated over an evenly-spaced grid,  
+  * Various edits in relation to `subset` args.:  
+    * Added `submat` for showing only `"upper"`/`"lower"` triangular & `"diagonal"` plot panels.
+    * When `submat="all"`, the slowness of `response.type="density"` plots is now offset  
+    by using densities pre-calculated from upper-triangular panels for lower-triangular panels.
+    * `data.ind` & `cov.ind` can now be character strings / variable names (previously numeric indices only).
+    * Subsetting is now allowed to result in only one single panel.
+    * `diag.pars$show.dens=TRUE` now works properly when `subset$data.ind` is used.
+  * Other edits in relation to `diag.pars$show.dens`:  
+    * Marginal densities when `show.dens=TRUE` are now always evaluated over an evenly-spaced grid,  
   the size of which can now be modified via `diag.pars$diag.grid` (equal to 100, by default):  
   previously, the grid was formed using the observed values, which led to strange behaviour.
-  * The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE`.
-  * Fixed (i.e. increased) height of diagonal panels when `show.hist=TRUE` &/or `show.dens=TRUE`.
-  * `show.dens=TRUE` now works properly when `subset$data.ind` is used.
-  * Added `density.pars$dens.points=FALSE` for overlaying points when `response.type="density"`.
-  * `density.pars$show.labels="mixed"` now works properly.
-  * Added `subset$submat` for visualising only the upper/lower triangular panels of the plot matrix.
-  * When `subset$submat="all"`, the slowness of `response.type="density"` plots is now offset by  
-  using densities pre-calculated from upper-triangular panels when producing lower-triangular panels.
+    * The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE`.
+    * Fixed (i.e. increased) height of diagonal panels when `show.dens=TRUE` &/or `show.hist=TRUE`.
+  * Minor label-related adjustments:  
+    * Outer labels of mosaic panels now correct when `diagonal=FALSE`.
+    * Cosmetic adjustments to default orientation of labels matching categorical variable levels.
+    * `density.pars$show.labels="mixed"` now works properly.
   * Partially fixed dimensions of vertical panels when `conditional="barcode"`  
   (caution still advised when using RStudio's "Plots" pane if non-square).
   * Barcode panels now have colour throughout (previously only MAP-related panels),  
   with related minor fixes when `barcode.pars$use.points=TRUE`.
+  * Added `density.pars$dens.points=FALSE` for overlaying points when `response.type="density"`.
   * Many documentation improvements & clarifications.
-* `MoE_Uncertainty` gain the arg. `col`: default of `"cluster"` colours according to cluster-membership,  
+* Minor fixes in relation to `MoECriterion` objects and `MoE_plotCrit`:
+  * Bug fix in relation to non-finite values for direct plots of `MoECriterion` objects, e.g. `plot(x$BIC)`.
+  * `crit="loglik"` formerly erroneously produced the same plot as `crit="aic"`.
+  * New `crit` options `"df"` & `"iters"` added. 
+* `MoE_Uncertainty` gains the arg. `col`: default of `"cluster"` colours according to cluster-membership,  
 but old behaviour of highlighting uncertain observations can be recovered via `col="uncertain"`.
 * `MoE_Uncertainty` gains the arg. `rug1d=TRUE` for use with univariate models,  
 which puts the actual observation values along the x-axis when `type="barplot"`.
@@ -38,6 +49,7 @@ fix to `predict.MoEClust(..., use.y=TRUE)` when predicting only one observation.
 when `algo="CEM"` and a model has only one observation/prediction assigned to its noise component.
 * Fixed minor bug when `as.Mclust` is used with `expert.covar=TRUE` for multivariate models  
 with expert network covariates and subsequently used to produce density-related plots.
+* Additional minor documentation improvements.
 
 ## MoEClust v1.5.2 - (_17<sup>th</sup> release [patch update]: 2023-12-10_)
 ### New Features, Improvements, Bug Fixes, & Miscellaneous Edits

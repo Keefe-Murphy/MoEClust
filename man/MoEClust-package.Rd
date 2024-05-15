@@ -91,8 +91,8 @@ Useful links:
 \item Report bugs at \url{https://github.com/Keefe-Murphy/MoEClust}
 }
 
-Further details and examples are given in the associated vignette document:\cr
-\code{vignette("MoEClust", package = "MoEClust")}
+Further details and examples are given in the associated vignette document:
+\preformatted{vignette("MoEClust", package = "MoEClust")}
 }
 \author{
 Keefe Murphy [aut, cre], Thomas Brendan Murphy [ctb]

@@ -5,7 +5,7 @@
 \alias{ais}
 \title{Australian Institute of Sport data}
 \format{
-A data frame with 202 observations on the following 13 variables:\cr
+A data frame with 202 observations on the following 13 variables:
 \describe{
 \item{\code{sex}}{categorical, levels = \code{female, male}}
 \item{\code{sport}}{categorical, levels = \code{B_Ball, Field, Gym, Netball, Row, Swim, T_400m, Tennis, T_Sprnt, W_Polo}}

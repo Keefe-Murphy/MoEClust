@@ -5,7 +5,7 @@
 \alias{CO2data}
 \title{GNP and CO2 Data Set}
 \format{
-This data frame consists of 28 countries and the following variables:\cr
+This data frame consists of 28 countries and the following variables:
 \describe{
 \item{\code{GNP}}{The gross product per capita in 1996.}
 \item{\code{CO2}}{The estimated carbon dioxide emission per capita in 1996.}

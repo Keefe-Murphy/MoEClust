@@ -18,7 +18,7 @@ A list with the following named components:
 }
 }
 \description{
-This function efficiently computes fuzzy generalisations of the Rand and adjusted Rand indices for comparing two partitions, allowing either or both partitions to be "soft" or "hard".
+This function efficiently computes fuzzy generalisations of the Rand and adjusted Rand indices for comparing two partitions, allowing either or both partitions to be ``soft'' or ``hard''.
 }
 \details{
 If \code{z1} &/or \code{z2} is supplied as a vector of cluster labels, they will be coerced to an appropriate matrix via \code{\link[mclust]{unmap}}.

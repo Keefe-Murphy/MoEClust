@@ -55,7 +55,7 @@ The arguments \code{tau0} and \code{noise.init} can be used separately, to provi
 
 \item{asMclust}{The default values of \code{stopping} and \code{hc.args$hcUse} (see below) are such that results for models with \emph{no covariates in either network} are liable to differ from results for equivalent models obtained via \code{\link[mclust]{Mclust}}. \pkg{MoEClust} uses \code{stopping="aitken"} and \code{hcUse="VARS"} by default, while \pkg{mclust} always implicitly uses \code{stopping="relative"} and defaults to \code{hcUse="SVD"}.
 
-\code{asMclust} is a logical variable (\code{FALSE}, by default) which functions as a simple convenience tool for overriding these two arguments (even if explicitly supplied!) such that they behave like the function \code{\link[mclust]{Mclust}}. Other \emph{user-specified} arguments which differ from \pkg{mclust} are not affected by \code{asMclust}, as their defaults already correspond to \pkg{mclust}. Results may still differ slightly as \pkg{MoEClust} calculates log-likelihood values with greater precision. Finally, note that \code{asMclust=TRUE} is invoked even for models with covariates which are not accommodated by \pkg{mclust}.}
+\code{asMclust} is a logical variable (\code{FALSE}, by default) which functions as a simple convenience tool for overriding \strong{only} these two arguments (even if explicitly supplied!) such that they behave like the function \code{\link[mclust]{Mclust}}. Other \emph{user-specified} arguments which differ from \pkg{mclust} are not affected by \code{asMclust}, as their defaults already correspond to \pkg{mclust}. Results may still differ slightly as \pkg{MoEClust} calculates log-likelihood values with greater precision and may also differ slightly in other numerical aspects which affect parameter estimation or convergence in some cases. Finally, note that \code{asMclust=TRUE} can be invoked even for models with covariates which are not accommodated by \pkg{mclust}.}
 
 \item{equalPro}{Logical variable indicating whether or not the mixing proportions are to be constrained to be equal in the model. Default: \code{equalPro = FALSE}. Only relevant when \code{gating} covariates are \emph{not} supplied within \code{\link{MoE_clust}}, otherwise ignored. In the presence of a noise component (see \code{noise.args}), only the mixing proportions for the non-noise components are constrained to be equal (by default, see \code{equalNoise}), after accounting for the noise component.}
 
@@ -76,7 +76,7 @@ Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be in
 
 \item{algo}{Switch controlling whether models are fit using the \code{"EM"} (the default) or \code{"CEM"} algorithm. The option \code{"cemEM"} allows running the EM algorithm starting from convergence of the CEM algorithm.}
 
-\item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the \code{"bic"} (Bayesian Information Criterion), \code{"icl"} (Integrated Complete Likelihood), \code{"aic"} (Akaike Information Criterion) is used to determine the 'best' model when gathering output. Note that all criteria will be returned in any case.}
+\item{criterion}{When either \code{G} or \code{modelNames} is a vector, \code{criterion} determines whether the \code{"bic"} (Bayesian Information Criterion), \code{"icl"} (Integrated Complete Likelihood), \code{"aic"} (Akaike Information Criterion) is used to determine the `best' model when gathering output. Note that all criteria will be returned in any case.}
 
 \item{stopping}{The criterion used to assess convergence of the EM/CEM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). The \code{"relative"} option corresponds to the stopping criterion used by \code{\link[mclust]{Mclust}}: see \code{asMclust} above. 
 
@@ -169,6 +169,12 @@ res4  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
 # Include a noise component by specifying its prior mixing proportion
 res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
                    network.data=ais, tau0=0.1)
+                   
+# Include a noise component via an initial guess of which observations are noise
+mdist <- mahalanobis(ais[,3:7], colMeans(ais[,3:7]), cov(ais[,3:7]))
+cutp  <- qchisq(p = 0.95, df = ncol(ais[,3:7]))
+res6  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
+                   network.data=ais, noise.init=mdist > cutp)                   
                    
 # Investigate the use of random starts
 sex  <- ais$sex

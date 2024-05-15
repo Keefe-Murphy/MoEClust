@@ -36,7 +36,7 @@ This argument is only relevant for the \code{\link{MoE_compare}} function and wi
 \item{\code{index}}{A logical or numeric vector giving the indices of the rows of the table of ranked models to print. This defaults to the full set of ranked models. It can be useful when the table of ranked models is large to examine a subset via this \code{index} argument, for display purposes. See \code{rerank}.}
 \item{\code{posidens}}{A logical indicating whether models which have been flagged for having positive log-densities should be included in the comparison (defaults to \code{TRUE}). Such models may correspond to spurious solutions and can be discarded by specifying \code{posidens=FALSE}. Only relevant if any of the \code{"MoEClust"} objects being compared were themselves run with \code{posidens=TRUE}.}
 \item{\code{rerank}}{A logical indicating whether the ranks should be recomputed when subsetting using \code{index}. Defaults to \code{FALSE}. Only relevant when \code{details=TRUE}.}
-\item{\code{digits}}{The number of decimal places to round model selection criteria to (defaults to 3).}
+\item{\code{digits}}{The number of decimal places to round model selection criteria to (defaults to \code{3}).}
 \item{\code{details}}{Logical indicating whether some additional details should be printed, defaults to \code{TRUE}. Exists to facilitate \code{\link{MoE_stepwise}} printing.}
 \item{\code{maxi}}{A number specifying the maximum number of rows/models to print. Defaults to \code{length(index)}.}}}
 }
@@ -50,10 +50,10 @@ A list of class \code{"MoECompare"}, for which a dedicated print function exists
 \item{\code{G}}{The optimal numbers of components.}
 \item{\code{df}}{The numbers of estimated parameters.}
 \item{\code{iters}}{The numbers of EM/CEM iterations.}
-\item{\code{bic}}{BIC values, ranked according to \code{criterion}.}
-\item{\code{icl}}{ICL values, ranked according to \code{criterion}.}
-\item{\code{aic}}{AIC values, ranked according to \code{criterion}.}
-\item{\code{loglik}}{Maximal log-likelihood values, ranked according to \code{criterion}.}
+\item{\code{bic}}{BIC values, ranked according to \code{criterion} (not necessarily \code{"bic"}).}
+\item{\code{icl}}{ICL values, ranked according to \code{criterion} (not necessarily \code{"icl"}).}
+\item{\code{aic}}{AIC values, ranked according to \code{criterion} (not necessarily \code{"aic"}).}
+\item{\code{loglik}}{Maximal log-likelihood values.}
 \item{\code{gating}}{The gating formulas.}
 \item{\code{expert}}{The expert formulas.}
 \item{\code{algo}}{The algorithm used for fitting the model - either \code{"EM"}, \code{"CEM"}, \code{"cemEM"}.}
@@ -71,7 +71,7 @@ The purpose of this function is to conduct model selection on \code{"MoEClust"} 
 
 Model selection will have already been performed in terms of choosing the optimal number of components and GPCM/\pkg{mclust} model type within each supplied set of results, but \code{\link{MoE_compare}} will respect the internal ranking of models when producing the final ranking if \code{optimal.only} is \code{FALSE}: otherwise only those models already deemed optimal within each \code{"MoEClust"} object will be ranked.
 
-As such if two sets of results are supplied when \code{optimal.only} is \code{FALSE}, the 1st, 2nd and 3rd best models could all belong to the first set of results, meaning a model deemed suboptimal according to one set of covariates could be superior to one deemed optimal under another set of covariates.
+As such if two sets of results are supplied when \code{optimal.only} is \code{FALSE}, the 1st, 2nd, and 3rd best models could all belong to the first set of results, meaning a model deemed suboptimal according to one set of covariates could be superior to one deemed optimal under another set of covariates.
 }
 \note{
 The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.
@@ -119,7 +119,7 @@ print(comp2, index=comp2$expert != "None" & comp2$G > 1)
 Murphy, K. and Murphy, T. B. (2020). Gaussian parsimonious clustering models with covariates and a noise component. \emph{Advances in Data Analysis and Classification}, 14(2): 293-325. <\doi{10.1007/s11634-019-00373-8}>.
 }
 \seealso{
-See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.\cr
+See \code{\link{MoE_stepwise}} for identifying the optimal model and its covariates via greedy forward stepwise selection.
 
 \code{\link{MoE_clust}}, \code{\link[mclust]{mclustModelNames}}, \code{\link{plot.MoEClust}}, \code{\link[=as.Mclust.MoEClust]{as.Mclust}}
 }
