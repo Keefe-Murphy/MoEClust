@@ -39,7 +39,7 @@ Finally, when the model includes expert network covariates and \code{isTRUE(exp.
 
 \item{noise.args}{A list supplying select named parameters to control inclusion of a noise component in the estimation of the mixture. If either or both of the arguments \code{tau0} &/or \code{noise.init} are supplied, a noise component is added to the the model in the estimation.
 \describe{
-\item{\code{tau0}}{Prior mixing proportion for the noise component. If supplied, a noise component will be added to the model in the estimation, with \code{tau0} giving the prior probability of belonging to the noise component for \emph{all} observations. Typically supplied as a scalar in the interval (0, 1), e.g. \code{0.1}. Can be supplied as a vector when gating covariates are present and \code{noise.args$noise.gate} is \code{TRUE}. This argument can be supplied instead of or in conjunction with the argument \code{noise.init} below.}
+\item{\code{tau0}}{Prior mixing proportion for the noise component. If supplied, a noise component will be added to the model in the estimation, with \code{tau0} giving the prior probability of belonging to the noise component. Typically supplied as a scalar in the interval (0, 1), e.g. \code{0.1}, such that the same prior probability of belonging to the noise component applies to \emph{all} observations. However, \code{tau0} can also be supplied as a vector (with length equal to the number of observations), which may be particularly useful when gating covariates are present and \code{noise.args$noise.gate} is \code{TRUE}. Finally, note that this argument can be supplied instead of or in conjunction with the argument \code{noise.init} below.}
 \item{\code{noise.init}}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise component will be added to the model in the estimation. This argument can be used in conjunction with \code{tau0} above, or can be replaced by that argument also.}
 \item{\code{noise.gate}}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
 \item{\code{noise.meth}}{The method used to estimate the volume when a noise component is invoked. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead (unless \code{noise.vol} below is specified). The options \code{"convexhull"} and \code{"ellipsoidhull"} require loading the \pkg{geometry} and \pkg{cluster} packages, respectively. This argument is only relevant if \code{noise.vol} below is not supplied.}
@@ -51,7 +51,7 @@ The means for models with expert network covariates are summarised by the poster
 }
 In particular, the argument \code{noise.meth} will be ignored for high-dimensional \code{n <= d} data, in which case the argument \code{noise.vol} \emph{must be} specified. Note that this forces \code{noise.args$discard.noise} to \code{TRUE}. See \code{\link{noise_vol}} for more details.
 
-The arguments \code{tau0} and \code{noise.init} can be used separately, to provide alternative means to invoke a noise component. However, they can also be supplied together, in which case observations corresponding to \code{noise.init} have probability \code{tau0} (rather than 1) of belonging to the noise component.}
+The arguments \code{tau0} and \code{noise.init} can be used separately, to provide alternative means to invoke a noise component. However, they can also be supplied together, in which case observations corresponding to \code{noise.init} have probability \code{tau0} (rather than 1) of belonging to the noise component. This strategy also works when \code{tau0} is supplied as a vector.}
 
 \item{asMclust}{The default values of \code{stopping} and \code{hc.args$hcUse} (see below) are such that results for models with \emph{no covariates in either network} are liable to differ from results for equivalent models obtained via \code{\link[mclust]{Mclust}}. \pkg{MoEClust} uses \code{stopping="aitken"} and \code{hcUse="VARS"} by default, while \pkg{mclust} always implicitly uses \code{stopping="relative"} and defaults to \code{hcUse="SVD"}.
 
@@ -82,7 +82,7 @@ Otherwise, \code{\link{drop_constants}} and \code{\link{drop_levels}} will be in
 
 Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the asymptotic estimate of the final converged maximised log-likelihood is also returned as \code{linf} for models with 2 or more components, though the largest element of the returned vector \code{loglik} still gives the log-likelihood value achieved by the parameters returned at convergence, under both \code{stopping} methods (see \code{\link{MoE_clust}}).}
 
-\item{z.list}{A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. In particular, \code{z.list} must only include columns corresponding to \emph{non-noise} components when using this method to initialise in the presence of a noise component. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1. See \code{noise.init} and \code{tau0} above for details on initialisation in the presence of a noise component.}
+\item{z.list}{A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. In particular, \code{z.list} must only include columns corresponding to \emph{non-noise} components when using this method to initialise in the presence of a noise component. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1 (or coerced always to a 'hard' matrix if \code{algo != "EM"}). See \code{noise.init} and \code{tau0} above for details on initialisation in the presence of a noise component.}
 
 \item{nstarts}{The number of random initialisations to use when \code{init.z="random"}. Defaults to \code{1}. When there are no expert covariates (or when \code{exp.init$mahalanobis=FALSE} or \code{exp.init$estart=FALSE}), the results will be based on the random start yielding the highest estimated log-likelihood after each initial partition is subjected to a full run of the EM algorithm. Note, in this case, that all \code{nstarts} random initialisations are affected by \code{exp.init$mahalanobis}, if invoked in the presence of expert network covariates, which may remove some of the randomness. 
 
@@ -172,9 +172,13 @@ res5  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
                    
 # Include a noise component via an initial guess of which observations are noise
 mdist <- mahalanobis(ais[,3:7], colMeans(ais[,3:7]), cov(ais[,3:7]))
-cutp  <- qchisq(p = 0.95, df = ncol(ais[,3:7]))
+cutp  <- qchisq(p=0.95, df=ncol(ais[,3:7]))
 res6  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
-                   network.data=ais, noise.init=mdist > cutp)                   
+                   network.data=ais, noise.init=mdist > cutp)
+                   
+# Include a noise component by specifying tau0 as a vector
+res7  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
+                   network.data=ais, tau0=pchisq(mdist, df=ncol(ais[,3:7])))                                    
                    
 # Investigate the use of random starts
 sex  <- ais$sex

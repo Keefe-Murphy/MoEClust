@@ -37,7 +37,7 @@ A dedicated plotting function exists for visualising the results using generalis
 
 An `as.Mclust` method is provided to coerce the output of class `"MoEClust"` from `MoE_clust` to the `"Mclust"` class, to facilitate use of plotting and other functions for the `"Mclust"` class within the __mclust__ package. As per __mclust__, __MoEClust__ also facilitates modelling with an additional noise component (with or without the mixing proportion for the noise component depending on covariates). 
 
-Finally, a `predict` method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response data, or new covariates only.
+Finally, a `predict` method is provided for predicting the fitted response and probability of cluster membership (and by extension the MAP classification) for new data, in the form of new covariates and new response variables, or new covariates only.
 
 Other functions also exist, e.g. `MoE_crit`, `MoE_dens`, `MoE_estep`, and `aitken`, which are all used within `MoE_clust` but are nonetheless made available for standalone use. The package also contains two data sets: `CO2data` and `ais`. 
 
@@ -148,7 +148,7 @@ x.name <- names(res$net.covs)
 y.name <- names(res$data)
 x      <- as.matrix(res$net.covs)
 y      <- as.matrix(res$data)
-plot(x=x, y=y, main=substitute(atop(paste('CO'[2], " Data"), paste(Mname, " model, G=", rG, ", equal mixing proportions, incl. expert network covariate: GNP")), list(Mname=res$modelName, rG=G)), ylab=expression('CO'[2]), xlab="GNP", type="n", cex.main=0.95)
+plot(x=x, y=y, main=substitute(atop(paste('CO'[2], " Data"), paste(Mname, " model, G=", rG, ", equal mixing proportions, with expert network covariate: GNP")), list(Mname=res$modelName, rG=G)), ylab=expression('CO'[2]), xlab="GNP", type="n", cex.main=0.9)
 x.new  <- setNames(seq(par("usr")[1L], par("usr")[2L], length=500L), rep("GNP", 500L))
 y.new  <- setNames(seq(par("usr")[3L], par("usr")[4L], length=500L), rep("CO2", 500L))
 grid   <- expand.grid(x.new, y.new)
@@ -204,7 +204,7 @@ Now we can make predictions on the withheld data, either by using the withheld c
 # Using new covariates only
 predict(res, newdata = CO2data[ind,], use.y = FALSE)[1:3]
 
-# Using both new covariates & new response data
+# Using both new covariates & new response variables
 predict(res, newdata = CO2data[ind,])[1:3]         
 ```
 

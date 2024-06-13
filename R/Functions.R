@@ -328,7 +328,9 @@
       if(!all(pmax(G, 1L)  ==
               vapply(z.list, ncol, numeric(1L)))) stop("Each element of 'z.list' must have 'G' columns",                 call.=FALSE)
       if(!all(n            == 
-              vapply(z.list, nrow, numeric(1L)))) stop(paste0("Each element of 'z.list' must have N=", n, " rows"),      call.=FALSE) 
+              vapply(z.list, nrow, numeric(1L)))) stop(paste0("Each element of 'z.list' must have N=", n, " rows"),      call.=FALSE)
+      if(!all(vapply(z.list, is.numeric,
+                     logical(1L))))               stop("Each element of 'z.list' must be a numeric matrix",              call.=FALSE)
       exp.init$clustMD         <- FALSE
     }
     if(all(miss.list, init.z   == "list"))        stop(paste0("'z.list' must be supplied if 'init.z' is set to 'list'"), call.=FALSE)
@@ -409,30 +411,25 @@
     } else expert <- stats::as.formula(X ~ 1)
     
   # More managing of noise component
-    if(!tnull)    {
-      if(length(tau0)     > 1)  {
-        if(all(gate.x, 
-               noise.gate))     {
-          if(length(tau0)      != n)              stop(paste0("'tau0' must be a scalar or a vector of length N=", n), call.=FALSE)
-        } else                                    stop("'tau0' must be a scalar in the interval (0, 1)", call.=FALSE)
-      }
-    }
-    if(!nnull)      {
+    if(!tnull     &&
+      (length(tau0)      != 1  &&
+       length(tau0)      != n))                   stop(paste0("'tau0' must be a scalar or a vector of length N=", n), call.=FALSE)
+    if(!nnull)     {
       if(length(noise)         != n)              stop(paste0("'noise.args$noise.init' must be a vector of length N", n), call.=FALSE)
       if(!is.logical(noise))    {
         if(any(match(noise, Nseq,
                nomatch=0)      == 0))             stop("Numeric 'noise.args$noise.init' must correspond to row indices of data", call.=FALSE)
-        noise      <- as.logical(match(Nseq, noise, nomatch=0))
+        noise     <- as.logical(match(Nseq, noise, nomatch=0))
       }
-      if(!tnull)    {
-        tau0       <- tau0 * noise
-        noise      <- logical(n)
-        nnoise     <- 0L
-        noisen     <- n
+      if(!tnull)   {
+        tau0      <- tau0 * noise
+        noise     <- logical(n)
+        nnoise    <- 0L
+        noisen    <- n
       } else  {
-        nnoise     <- sum(as.numeric(noise))
-        noisen     <- n   - nnoise
-        if(any(G    > noisen)) range.G <- range.G[range.G <= noisen]
+        nnoise    <- sum(as.numeric(noise))
+        noisen    <- n    - nnoise
+        if(any(G   > noisen)) range.G <- range.G[range.G <= noisen]
       }
     } else    {
       noise       <- logical(n)
@@ -656,7 +653,7 @@
             zg        <- replicate(nstarts, list(unmap(classification=sample(x=Gseq, size=noisen, replace=TRUE), groups=Gseq)))
           } else       {
             switch(EXPR=init.z, list={
-            z.tmp     <- .renorm_z(z.list[[h]])
+            z.tmp     <- if(algo == "EM") .renorm_z(z.list[[h]]) else unmap(max.col(z.list[[h]]), groups=Gseq)
             },         {
             z.tmp     <- unmap(switch(EXPR     = init.z,
                                       hc       = hcZ[,h - anyg0 - hc1],
@@ -713,7 +710,11 @@
             ix    <- ix   + 1L
             for(k in Gseq)      {
              sub  <- z.tmp[,k] == 1
-             EXP  <- tryCatch(stats::lm(expN, data=exnoise, subset=sub),              error=function(e) try(if(drop.exp) stop("DROP") else stats::lm(drop_constants(exnoise, expN, sub), data=exnoise, subset=sub), silent=TRUE))
+             if(!all(z.tmp %in% c(0, 1)))      {
+              EXP <- stats::lm(expN, data=exnoise, weights=z.tmp[,k])
+             } else       {
+              EXP <- tryCatch(stats::lm(expN, data=exnoise, subset=sub),              error=function(e) try(if(drop.exp) stop("DROP") else stats::lm(drop_constants(exnoise, expN, sub), data=exnoise, subset=sub), silent=TRUE)) 
+             }
              if(inherits(EXP,   "try-error"))  {
                init.exp        <- FALSE
                break
@@ -823,6 +824,8 @@
         z.init    <- z
       }
       if(all(noiseG, gate.g, !noise.gate, gN  > 1, algo != "EM")) {
+        z[,gN]    <- stats::rbinom(n, size=1L, prob=z[,gN])
+        z[,-gN]   <- replace(z[,-gN], z[,gN] == 1, 0L)
         z[,-gN]   <- replace(z[,-gN], z[,-gN] > 0, 1L)
         z.init    <- z
       }
@@ -1748,7 +1751,7 @@
 #' Finally, when the model includes expert network covariates and \code{isTRUE(exp.init$mahalanobis)}, the argument \code{exp.init$estart} (see below) can be used to modify the behaviour of \code{init.z="random"} when \code{nstarts > 1}, toggling between a full run of the EM algorithm for each random initialisation (i.e. \code{exp.init$estart=FALSE}, the default), or a single run of the EM algorithm starting from the best initial partition obtained among the random starts according to the iterative reallocation initialisation routine (i.e. \code{exp.init$estart=TRUE}).
 #' @param noise.args A list supplying select named parameters to control inclusion of a noise component in the estimation of the mixture. If either or both of the arguments \code{tau0} &/or \code{noise.init} are supplied, a noise component is added to the the model in the estimation.
 #' \describe{
-#' \item{\code{tau0}}{Prior mixing proportion for the noise component. If supplied, a noise component will be added to the model in the estimation, with \code{tau0} giving the prior probability of belonging to the noise component for \emph{all} observations. Typically supplied as a scalar in the interval (0, 1), e.g. \code{0.1}. Can be supplied as a vector when gating covariates are present and \code{noise.args$noise.gate} is \code{TRUE}. This argument can be supplied instead of or in conjunction with the argument \code{noise.init} below.}
+#' \item{\code{tau0}}{Prior mixing proportion for the noise component. If supplied, a noise component will be added to the model in the estimation, with \code{tau0} giving the prior probability of belonging to the noise component. Typically supplied as a scalar in the interval (0, 1), e.g. \code{0.1}, such that the same prior probability of belonging to the noise component applies to \emph{all} observations. However, \code{tau0} can also be supplied as a vector (with length equal to the number of observations), which may be particularly useful when gating covariates are present and \code{noise.args$noise.gate} is \code{TRUE}. Finally, note that this argument can be supplied instead of or in conjunction with the argument \code{noise.init} below.}
 #' \item{\code{noise.init}}{A logical or numeric vector indicating an initial guess as to which observations are noise in the data. If numeric, the entries should correspond to row indices of the data. If supplied, a noise component will be added to the model in the estimation. This argument can be used in conjunction with \code{tau0} above, or can be replaced by that argument also.}
 #' \item{\code{noise.gate}}{A logical indicating whether gating network covariates influence the mixing proportion for the noise component, if any. Defaults to \code{TRUE}, but leads to greater parsimony if \code{FALSE}. Only relevant in the presence of a noise component; only effects estimation in the presence of gating covariates.}
 #' \item{\code{noise.meth}}{The method used to estimate the volume when a noise component is invoked. Defaults to \code{\link[mclust]{hypvol}}. For univariate data, this argument is ignored and the range of the data is used instead (unless \code{noise.vol} below is specified). The options \code{"convexhull"} and \code{"ellipsoidhull"} require loading the \pkg{geometry} and \pkg{cluster} packages, respectively. This argument is only relevant if \code{noise.vol} below is not supplied.}
@@ -1760,7 +1763,7 @@
 #' }
 #' In particular, the argument \code{noise.meth} will be ignored for high-dimensional \code{n <= d} data, in which case the argument \code{noise.vol} \emph{must be} specified. Note that this forces \code{noise.args$discard.noise} to \code{TRUE}. See \code{\link{noise_vol}} for more details.
 #' 
-#' The arguments \code{tau0} and \code{noise.init} can be used separately, to provide alternative means to invoke a noise component. However, they can also be supplied together, in which case observations corresponding to \code{noise.init} have probability \code{tau0} (rather than 1) of belonging to the noise component.
+#' The arguments \code{tau0} and \code{noise.init} can be used separately, to provide alternative means to invoke a noise component. However, they can also be supplied together, in which case observations corresponding to \code{noise.init} have probability \code{tau0} (rather than 1) of belonging to the noise component. This strategy also works when \code{tau0} is supplied as a vector.
 #' @param asMclust The default values of \code{stopping} and \code{hc.args$hcUse} (see below) are such that results for models with \emph{no covariates in either network} are liable to differ from results for equivalent models obtained via \code{\link[mclust]{Mclust}}. \pkg{MoEClust} uses \code{stopping="aitken"} and \code{hcUse="VARS"} by default, while \pkg{mclust} always implicitly uses \code{stopping="relative"} and defaults to \code{hcUse="SVD"}.
 #' 
 #' \code{asMclust} is a logical variable (\code{FALSE}, by default) which functions as a simple convenience tool for overriding \strong{only} these two arguments (even if explicitly supplied!) such that they behave like the function \code{\link[mclust]{Mclust}}. Other \emph{user-specified} arguments which differ from \pkg{mclust} are not affected by \code{asMclust}, as their defaults already correspond to \pkg{mclust}. Results may still differ slightly as \pkg{MoEClust} calculates log-likelihood values with greater precision and may also differ slightly in other numerical aspects which affect parameter estimation or convergence in some cases. Finally, note that \code{asMclust=TRUE} can be invoked even for models with covariates which are not accommodated by \pkg{mclust}.
@@ -1784,7 +1787,7 @@
 #' @param stopping The criterion used to assess convergence of the EM/CEM algorithm. The default (\code{"aitken"}) uses Aitken's acceleration method via \code{\link{aitken}}, otherwise the \code{"relative"} change in log-likelihood is monitored (which may be less strict). The \code{"relative"} option corresponds to the stopping criterion used by \code{\link[mclust]{Mclust}}: see \code{asMclust} above. 
 #' 
 #' Both stopping rules are ultimately governed by \code{tol[1]}. When the \code{"aitken"} method is employed, the asymptotic estimate of the final converged maximised log-likelihood is also returned as \code{linf} for models with 2 or more components, though the largest element of the returned vector \code{loglik} still gives the log-likelihood value achieved by the parameters returned at convergence, under both \code{stopping} methods (see \code{\link{MoE_clust}}).
-#' @param z.list A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. In particular, \code{z.list} must only include columns corresponding to \emph{non-noise} components when using this method to initialise in the presence of a noise component. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1. See \code{noise.init} and \code{tau0} above for details on initialisation in the presence of a noise component.
+#' @param z.list A user supplied list of initial cluster allocation matrices, with number of rows given by the number of observations, and numbers of columns given by the range of component numbers being considered. In particular, \code{z.list} must only include columns corresponding to \emph{non-noise} components when using this method to initialise in the presence of a noise component. Only relevant if \code{init.z == "z.list"}. These matrices are allowed correspond to both soft or hard clusterings, and will be internally normalised so that the rows sum to 1 (or coerced always to a 'hard' matrix if \code{algo != "EM"}). See \code{noise.init} and \code{tau0} above for details on initialisation in the presence of a noise component.
 #' @param nstarts The number of random initialisations to use when \code{init.z="random"}. Defaults to \code{1}. When there are no expert covariates (or when \code{exp.init$mahalanobis=FALSE} or \code{exp.init$estart=FALSE}), the results will be based on the random start yielding the highest estimated log-likelihood after each initial partition is subjected to a full run of the EM algorithm. Note, in this case, that all \code{nstarts} random initialisations are affected by \code{exp.init$mahalanobis}, if invoked in the presence of expert network covariates, which may remove some of the randomness. 
 #' 
 #' Conversely, if \code{exp.init$mahalanobis=TRUE} and \code{exp.init$estart=TRUE}, all \code{nstarts} random starts are put through the initial iterative reallocation routine and only the single best initial partition uncovered is put through the full run of the EM algorithm. See \code{init.z} and \code{exp.init$estart} above for more details, though note that \code{exp.init$mahalanobis=TRUE} and \code{exp.init$estart=FALSE}, by default. 
@@ -1882,9 +1885,13 @@
 #'                    
 #' # Include a noise component via an initial guess of which observations are noise
 #' mdist <- mahalanobis(ais[,3:7], colMeans(ais[,3:7]), cov(ais[,3:7]))
-#' cutp  <- qchisq(p = 0.95, df = ncol(ais[,3:7]))
+#' cutp  <- qchisq(p=0.95, df=ncol(ais[,3:7]))
 #' res6  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
-#'                    network.data=ais, noise.init=mdist > cutp)                   
+#'                    network.data=ais, noise.init=mdist > cutp)
+#'                    
+#' # Include a noise component by specifying tau0 as a vector
+#' res7  <- MoE_clust(ais[,3:7], G=2, modelNames="EVE", expert= ~ sex,
+#'                    network.data=ais, tau0=pchisq(mdist, df=ncol(ais[,3:7])))                                    
 #'                    
 #' # Investigate the use of random starts
 #' sex  <- ais$sex
@@ -4547,8 +4554,8 @@ predict.MoEClust  <- function(object, newdata = list(...), resid = FALSE, discar
   }
 
   .tau_noise      <- function(tau, z0)  {
-    t0            <- ifelse(length(z0) == 1, z0, mean(z0))
-      cbind(tau * (1 - t0), unname(t0))
+    z0            <- ifelse(length(z0) == 1, z0, mean(z0))
+      cbind(tau * (1 - z0), unname(z0))
   }
   
   .trim_out       <- function(x, signif = 0.01, na.rm = TRUE, replace = TRUE, ...) {

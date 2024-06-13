@@ -42,6 +42,8 @@ but old behaviour of highlighting uncertain observations can be recovered via `c
 which puts the actual observation values along the x-axis when `type="barplot"`.
 * Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
 functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
+* `tau0` can now always be supplied as a vector (previously allowed only with gating covariates & `noise.gate=TRUE`).
+* Fixed bugs when a 'soft' `z.list` is supplied when `algo != "EM"`.
 * Further related minor speed-ups for models with `G == 0` and `G == 1`.
 * `MoE_estep` & `MoE_cstep` now work when there is only one observation, with a related  
 fix to `predict.MoEClust(..., use.y=TRUE)` when predicting only one observation.
@@ -322,7 +324,7 @@ specifying models w/ noise, undoing another bug introduced in v1.4.1.
     * Accounted for predictions of single observations for models with a noise component.
     * Accounted for models with equal mixing proportions.
 * Accounted for categorical covariates in the `x.axis` arg. to `MoE_plotGate`.
-* `tau0` can now also be supplied as a vector in the presence of gating covariates.
+* `tau0` can now also be supplied as a vector when gating covariates are used & `noise.gate=TRUE`.
 * Fix to `expert_covar` for univariate models. 
 * Slight `MoE_estep` speed-up due to removal of unnecessary `sweep()`.
 * Small fixes for when `clustMD` is invoked, and added `snow` package to `Suggests:`.
