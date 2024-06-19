@@ -5,46 +5,53 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
-### New Features, Improvements, Bug Fixes, & Miscellaneous Edits
-* Various improvements to `MoE_gpairs`:  
-  * _Significant_ fixes when there are expert covariates & `diag.pars$show.dens=TRUE` &/or  
+### New Features & Improvements
+* Various improvements to `MoE_gpairs` (also see additional Bug Fixes below):  
+  * _Significant_ fixes when there are expert covariates and `diag.pars$show.dens=TRUE` &/or  
   `response.type="density"` by properly using log average density instead of average log density.
-  * Various edits in relation to `subset` args.:  
+  * Marginal densities when `diag.pars$show.dens=TRUE` are now always evaluated over evenly-spaced  
+  grids, the size of which can now be modified via `diag.pars$diag.grid` (equal to 100, by default):  
+  previously, the grids were formed using the observed values, which led to strange behaviour.
+  * Added `density.pars$dens.points=FALSE` for overlaying points when `response.type="density"`.
+  * Various improvements in relation to `subset` args.:  
+    * `data.ind` & `cov.ind` can now be character strings / variable names (previously numeric indices only).
     * Added `submat` for showing only `"upper"`/`"lower"` triangular & `"diagonal"` plot panels.
     * When `submat="all"`, the slowness of `response.type="density"` plots is now offset  
     by using densities pre-calculated from upper-triangular panels for lower-triangular panels.
-    * `data.ind` & `cov.ind` can now be character strings / variable names (previously numeric indices only).
-    * Subsetting is now allowed to result in only one single panel.
-    * `diag.pars$show.dens=TRUE` now works properly when `subset$data.ind` is used.
-  * Other edits in relation to `diag.pars$show.dens`:  
-    * Marginal densities when `show.dens=TRUE` are now always evaluated over an evenly-spaced grid,  
-  the size of which can now be modified via `diag.pars$diag.grid` (equal to 100, by default):  
-  previously, the grid was formed using the observed values, which led to strange behaviour.
-    * The `expert.covar` arg. is no longer invoked when `diag.pars$show.dens=TRUE`.
+* `MoE_Uncertainty` gains two new arguments:  
+  * `col`: default of `"cluster"` colours according to cluster-membership, but  
+  old behaviour of highlighting uncertain observations can be recovered via `col="uncertain"`.
+  * `rug1d` (`TRUE`, by default) for use with univariate models, which puts  
+  the actual observed values along the x axis when `type="barplot"`.
+* `MoE_control` gains new `init.z` option `"soft.random"`: the `"random"` option has been  
+renamed to `"random.hard"`, but `init.z="random"` will work as before due to partial matching.
+* `tau0` can now always be supplied as a vector (previously allowed only with gating covariates & `noise.gate=TRUE`).
+* Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
+functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
+* Further related minor speed-ups for models with `G == 0` and `G == 1`.
+
+### Bug Fixes & Miscellaneous Edits
+* Additional minor fixes to `MoE_gpairs`:  
+  * Subsetting is now allowed to result in only one single panel.
+  * Additional edits in relation to `diag.pars$show.dens`:  
+    * `show.dens=TRUE` now works properly when `subset$data.ind` is used.
+    * The `expert.covar` arg. is no longer invoked when `show.dens=TRUE`.
     * Fixed (i.e. increased) height of diagonal panels when `show.dens=TRUE` &/or `show.hist=TRUE`.
+  * Additional edits in relation to barcode panels:  
+    * Partially fixed dimensions of vertical panels when `conditional="barcode"`  
+  (caution still advised when using RStudio's "Plots" pane if non-square).
+    * Barcode panels now have colour throughout (previously only MAP-related panels),  
+  with related minor fixes when `barcode.pars$use.points=TRUE`.
   * Minor label-related adjustments:  
-    * Outer labels of mosaic panels now correct when `diagonal=FALSE`.
+    * Outer labels of mosaic panels are now correct when `diagonal=FALSE`.
     * Cosmetic adjustments to default orientation of labels matching categorical variable levels.
     * `density.pars$show.labels="mixed"` now works properly.
-  * Partially fixed dimensions of vertical panels when `conditional="barcode"`  
-  (caution still advised when using RStudio's "Plots" pane if non-square).
-  * Barcode panels now have colour throughout (previously only MAP-related panels),  
-  with related minor fixes when `barcode.pars$use.points=TRUE`.
-  * Added `density.pars$dens.points=FALSE` for overlaying points when `response.type="density"`.
   * Many documentation improvements & clarifications.
 * Minor fixes in relation to `MoECriterion` objects and `MoE_plotCrit`:
   * Bug fix in relation to non-finite values for direct plots of `MoECriterion` objects, e.g. `plot(x$BIC)`.
   * `crit="loglik"` formerly erroneously produced the same plot as `crit="aic"`.
-  * New `crit` options `"df"` & `"iters"` added. 
-* `MoE_Uncertainty` gains the arg. `col`: default of `"cluster"` colours according to cluster-membership,  
-but old behaviour of highlighting uncertain observations can be recovered via `col="uncertain"`.
-* `MoE_Uncertainty` gains the arg. `rug1d=TRUE` for use with univariate models,  
-which puts the actual observation values along the x-axis when `type="barplot"`.
-* Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
-functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
-* `tau0` can now always be supplied as a vector (previously allowed only with gating covariates & `noise.gate=TRUE`).
+  * New `crit` options `"df"` & `"iters"` added.
 * Fixed bugs when a 'soft' `z.list` is supplied when `algo != "EM"`.
-* Further related minor speed-ups for models with `G == 0` and `G == 1`.
 * `MoE_estep` & `MoE_cstep` now work when there is only one observation, with a related  
 fix to `predict.MoEClust(..., use.y=TRUE)` when predicting only one observation.
 * Fixed extremely rare bug in `MoE_clust` & associated `predict`, `fitted`, & `residuals` methods  

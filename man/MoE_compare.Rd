@@ -76,7 +76,7 @@ As such if two sets of results are supplied when \code{optimal.only} is \code{FA
 \note{
 The \code{criterion} argument here need not comply with the criterion used for model selection within each \code{"MoEClust"} object, but be aware that a mismatch in terms of \code{criterion} \emph{may} require the optimal model to be re-fit in order to be extracted, thereby slowing down \code{\link{MoE_compare}}.
 
-If random starts had been used via \code{init.z="random"} the \code{optimal} model may not necessarily correspond to the highest-ranking model in the presence of a criterion mismatch, due to the randomness of the initialisation. 
+If random starts had been used via \code{init.z="random.hard"} or \code{init.z="soft.random"}, the \code{optimal} model may not necessarily correspond to the highest-ranking model in the presence of a criterion mismatch, due to the randomness of the initialisation. 
 
 A dedicated \code{print} function exists for objects of class \code{"MoECompare"}.
 
