@@ -5,6 +5,7 @@ __with Gating and Expert Network Covariates__
 __and a Noise Component__
 =======================================================
 
+## MoEClust v1.6.0 - (_18<sup>th</sup> release [minor update]: 2025-03-05_)
 ### New Features & Improvements
 * Various improvements to `MoE_gpairs` (also see additional Bug Fixes below):  
   * _Significant_ fixes when there are expert covariates and `diag.pars$show.dens=TRUE` &/or  
@@ -28,6 +29,7 @@ renamed to `"random.hard"`, but `init.z="random"` will work as before due to par
 * `tau0` can now always be supplied as a vector (previously allowed only with gating covariates & `noise.gate=TRUE`).
 * Speed improvements by replacing `matrixStats::rowLogSumExps` with new `logsumexp` & `softmax`  
 functions from `mclust` (w/ `mclust (>= 6.1)` now ensured in `Imports:`) where appropriate throughout.
+* `stats::lm.wfit`-related speed-ups from previous update now extend to `MoE_gpairs` with `scatter.type="lm"`.
 * Further related minor speed-ups for models with `G == 0` and `G == 1`.
 
 ### Bug Fixes & Miscellaneous Edits

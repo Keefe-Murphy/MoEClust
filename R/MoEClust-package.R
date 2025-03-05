@@ -23,9 +23,9 @@
 #' @details
 #' \describe{
 #' \item{Type: }{Package}
-#' \item{Date: }{2023-12-11 (this version), 2017-11-28 (original release)}
-#' \item{Version: }{1.5.2}
 #' \item{Package: }{\pkg{MoEClust}}
+#' \item{Version: }{1.6.0}
+#' \item{Date: }{2025-03-05 (this version), 2017-11-28 (original release)}
 #' \item{Licence: }{GPL (>= 3)}
 #' }
 #'

@@ -53,7 +53,7 @@ For a more thorough intro, the vignette document is available as follows:
 vignette("MoEClust", package="MoEClust")
 ```
 
-However, if the package is installed from GitHub the vignette is not automatically created. It can be accessed when installing from GitHub with the code:
+However, if the package is installed from GitHub, the vignette is not automatically created. It can be accessed when installing from GitHub with the code:
 
 ```
 devtools::install_github('Keefe-Murphy/MoEClust', build_vignettes = TRUE)

@@ -1739,8 +1739,8 @@ plot.MoEClust <- function(x, what=c("gpairs", "gating", "criterion", "loglik", "
     for(g in rev(seq_len(G))) try(.mvn2D_panel(mu=mu[,g], sigma=sigma[,,g], k=15L, col=if(mvn.type == "inner") c("grey30", mvn.col[g], mvn.col[g]) else if(mvn.type == "outer") c(mvn.col[g], "grey30", "grey30") else if(mvn.type == "both") rep(mvn.col[g], 3L)), silent=TRUE)
   }, lm=   {
     for(g in seq_len(G)) {
-      xy.lm <- stats::lm(y ~ x, weights=z[,g])
-      panel.abline(xy.lm$coef[1L], xy.lm$coef[2L], col=scatter.pars$eci.col[g], lwd=1)
+      xy.lm <- stats::coef(stats::lm.wfit(cbind(1L, x), y, w=z[,g]))
+      panel.abline(xy.lm[1L], xy.lm[2L], col=scatter.pars$eci.col[g], lwd=1)
     }
   }, ci=   {
     for(g in seq_len(G)) {
